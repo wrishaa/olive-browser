@@ -61,6 +61,8 @@ const HELP = {
     'POST /windows {private?, url?}': 'open a window',
     'GET /history?q=': 'browsing history',
     'GET /downloads': 'downloads',
+    'POST /discard {olderThanMinutes?}': 'unload background tabs idle longer than that (default: settings.discardMinutes)',
+    'GET /metrics': 'process count + memory',
   },
 };
 
@@ -132,7 +134,7 @@ async function handle(mgr, req, res) {
         await waitLoad(tab, b.timeout);
         return send(res, 200, await describe(mgr, win, tab));
       case 'close':
-        win.closeTab(tab.id);
+        win.closeTab(tab.id, { force: true }); // agents close for real, pinned or not
         return send(res, 200, { ok: true });
       case 'eval': {
         win.ensureView(tab);
@@ -171,6 +173,16 @@ async function handle(mgr, req, res) {
     return send(res, 200, mgr.history.list({ query: url.searchParams.get('q') || '', limit: Number(url.searchParams.get('limit') || 100) }));
   }
   if (parts[0] === 'downloads' && m === 'GET') return send(res, 200, mgr.downloads);
+  if (parts[0] === 'discard' && m === 'POST') {
+    const b = await readJson(req);
+    return send(res, 200, { discarded: mgr.discardIdleTabs({ olderThanMinutes: b.olderThanMinutes ?? null }) });
+  }
+  if (parts[0] === 'metrics' && m === 'GET') {
+    const { app } = require('electron');
+    const procs = app.getAppMetrics();
+    const mb = (k) => Math.round(procs.reduce((s, p) => s + (p.memory?.[k] || 0), 0) / 1024);
+    return send(res, 200, { processes: procs.length, workingSetMB: mb('workingSetSize'), privateMB: mb('privateBytes'), loadedTabs: mgr.allTabs().filter((x) => x.tab.wc).length, tabs: mgr.allTabs().length });
+  }
   return send(res, 404, { error: 'not found', help: 'GET /' });
 }
 

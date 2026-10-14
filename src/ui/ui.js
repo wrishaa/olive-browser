@@ -117,7 +117,9 @@ function render() {
   $('#profile-badge').textContent = S.private ? 'Private' : '';
 
   const a = S.agent || {};
-  $('#agent-badge').innerHTML = a.cdpPort ? `<span class="dot"></span>cdp :${a.cdpPort}${a.apiPort ? ' · api :' + a.apiPort : ''}` : '';
+  const parts = [a.apiPort && `api :${a.apiPort}`, a.cdpPort && `cdp :${a.cdpPort}`].filter(Boolean);
+  $('#agent-badge').innerHTML = parts.length ? `<span class="dot"></span>${parts.join(' · ')}` : '';
+  $('#agent-badge').title = a.cdpPort ? 'Agent API + CDP on (click to copy endpoints)' : 'Agent API on, CDP port off (Developer menu to enable). Click to copy.';
 
   if (!drag) {
     setHtml($('#pinned'), listHtml(S.pinned));

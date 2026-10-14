@@ -114,6 +114,7 @@ function buildMenu(mgr) {
         { label: 'JavaScript Console', accelerator: 'Cmd+Alt+J', click: w('console') },
         hidden('F12', 'devtools'),
         { type: 'separator' },
+        { label: 'Allow Agent Control over CDP (port 9222)', type: 'checkbox', checked: !!mgr.settings.cdp, click: () => mgr.toggleCdp() },
         { label: 'Copy Agent Endpoints (CDP + API)', click: w('copyAgentInfo') },
         { label: 'Open Agent API Docs', click: () => shell.openPath(path.join(__dirname, '..', '..', 'AGENTS.md')) },
         { type: 'separator' },

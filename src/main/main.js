@@ -19,13 +19,43 @@ function portFree(port) {
   }
 }
 
+// settings that must be read before chromium starts
+const SETTINGS_FILE = path.join(app.getPath('userData'), 'settings.json');
+const DEFAULT_SETTINGS = { cdp: false, agentApi: true, discardMinutes: 30, maxLoadedTabs: 16 };
+let settings = { ...DEFAULT_SETTINGS };
+try { settings = { ...DEFAULT_SETTINGS, ...JSON.parse(fs.readFileSync(SETTINGS_FILE, 'utf8')) }; } catch {}
+function saveSettings() {
+  fs.mkdirSync(path.dirname(SETTINGS_FILE), { recursive: true });
+  fs.writeFileSync(SETTINGS_FILE, JSON.stringify(settings, null, 2));
+}
+
+// the chromium remote-debugging port is opt-in: it lets any local process drive the
+// browser, and google sign-in treats debuggable chromium as automated. turn it on with
+// the Developer menu toggle (persists, needs a relaunch), OLIVE_CDP=1, or --cdp.
+const cdpEnabled = settings.cdp || process.env.OLIVE_CDP === '1' || process.argv.includes('--cdp');
 const wantCdp = Number(process.env.OLIVE_CDP_PORT || 9222);
 const cdpPortArg = wantCdp && portFree(wantCdp) ? wantCdp : 0; // 0 = let chromium pick, read DevToolsActivePort
-app.commandLine.appendSwitch('remote-debugging-port', String(cdpPortArg));
+if (cdpEnabled) app.commandLine.appendSwitch('remote-debugging-port', String(cdpPortArg));
 // plain chrome user agent: some sites (google sign-in) block "Electron" in the UA
 const chromeMajor = process.versions.chrome.split('.')[0];
 const UA = `Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${chromeMajor}.0.0.0 Safari/537.36`;
-app.userAgentFallback = UA;
+// OLIVE_UA_MODE (testing): auto (default: chrome UA, firefox on google sign-in) | chrome | electron
+const UA_MODE = process.env.OLIVE_UA_MODE || 'auto';
+const ELECTRON_UA = app.userAgentFallback; // electron's default, captured before we override it
+if (UA_MODE !== 'electron') app.userAgentFallback = UA;
+// google sign-in (measured 2026-10-15, scripts/google-signin-test.sh): a clean chrome UA on
+// unbranded chromium is rejected ("this browser or app may not be secure"), but electron's
+// own honest UA (with "Electron/x") gets through to the password page, with or without the
+// cdp port. so on accounts.google.com we send electron's default UA; everywhere else chrome's.
+const GOOGLE_AUTH_HOSTS = new Set(['accounts.google.com']);
+function isGoogleAuth(url) {
+  try { return GOOGLE_AUTH_HOSTS.has(new URL(url).hostname); } catch { return false; }
+}
+
+// never let a main-process bug put up electron's modal "javascript error" alert: it blocks
+// the whole browser until dismissed. log it and keep going.
+process.on('uncaughtException', (err) => console.error('[olive] uncaught', err));
+process.on('unhandledRejection', (err) => console.error('[olive] unhandled rejection', err));
 
 if (!app.requestSingleInstanceLock()) {
   app.quit();
@@ -33,6 +63,7 @@ if (!app.requestSingleInstanceLock()) {
 }
 
 const { OliveWindow } = require('./window');
+module.exports.ua = { UA, ELECTRON_UA, isGoogleAuth };
 const { JsonStore } = require('../core/store');
 const { History } = require('../core/history');
 const { buildMenu } = require('./menu');
@@ -72,7 +103,12 @@ class Manager {
   }
 
   setupSession(ses) {
-    ses.setUserAgent(UA);
+    if (UA_MODE !== 'electron') ses.setUserAgent(UA);
+    if (UA_MODE === 'auto') ses.webRequest.onBeforeSendHeaders({ urls: ['https://accounts.google.com/*'] }, (details, cb) => {
+      const h = details.requestHeaders;
+      h['User-Agent'] = ELECTRON_UA;
+      cb({ requestHeaders: h });
+    });
     ses.setSpellCheckerLanguages(['en-US']);
     const prompting = new Set(['media', 'geolocation', 'notifications', 'midiSysex', 'clipboard-read', 'display-capture', 'openExternal', 'idle-detection', 'hid', 'serial', 'usb', 'storage-access', 'top-level-storage-access', 'speaker-selection', 'keyboardLock', 'window-management']);
     const label = {
@@ -251,6 +287,7 @@ class Manager {
 
   agentInfo() {
     return {
+      cdpEnabled,
       cdp: this.cdpPort ? `http://127.0.0.1:${this.cdpPort}` : null,
       api: this.apiPort ? `http://127.0.0.1:${this.apiPort}` : null,
       cdpPort: this.cdpPort,
@@ -258,7 +295,76 @@ class Manager {
     };
   }
 
+  applyUserAgent(wc, url) {
+    if (UA_MODE !== 'auto') return; // test modes: leave the session UA alone
+    const want = isGoogleAuth(url) ? ELECTRON_UA : UA;
+    if (wc.getUserAgent() !== want) wc.setUserAgent(want);
+  }
+
+  // tab discarding: background tabs that haven't been looked at for a while give
+  // their renderer back. the sidebar entry stays (url/title/favicon) and reloads on click.
+  startDiscardTimer() {
+    clearInterval(this.discardTimer);
+    this.discardTimer = setInterval(() => this.discardIdleTabs(), 60 * 1000);
+  }
+
+  discardIdleTabs({ olderThanMinutes = null } = {}) {
+    const now = Date.now();
+    const minutes = olderThanMinutes != null ? Number(olderThanMinutes) : Number(settings.discardMinutes) || 0;
+    const max = Number(settings.maxLoadedTabs) || 0;
+    const candidates = [];
+    let loaded = 0;
+    for (const w of this.windows) {
+      const visible = new Set(w.visibleIds());
+      for (const t of w.tabs.values()) {
+        if (!t.wc) continue;
+        loaded++;
+        if (visible.has(t.id) || t.devtools || t.wc.isCurrentlyAudible() || t.wc.debugger.isAttached()) continue;
+        candidates.push({ w, t });
+      }
+    }
+    candidates.sort((a, b) => a.t.lastActive - b.t.lastActive); // oldest first
+    let discarded = 0;
+    for (const { w, t } of candidates) {
+      const idle = (minutes > 0 || olderThanMinutes != null) && now - t.lastActive > minutes * 60 * 1000;
+      const over = max > 0 && loaded - discarded > max;
+      if (!idle && !over) continue;
+      w.unload(t);
+      w.changed();
+      discarded++;
+    }
+    return discarded;
+  }
+
+  get settings() {
+    return settings;
+  }
+
+  setSetting(key, value) {
+    settings[key] = value;
+    saveSettings();
+    this.broadcast();
+  }
+
+  async toggleCdp() {
+    const next = !settings.cdp;
+    this.setSetting('cdp', next);
+    const r = await dialog.showMessageBox({
+      message: next ? 'Agent control (CDP) will be on after a relaunch.' : 'Agent control (CDP) will be off after a relaunch.',
+      detail: next
+        ? 'Chromium will listen on 127.0.0.1:9222 so tools like Playwright can drive Olive. Any local program can then control the browser, and Google may refuse sign-in while it is on.'
+        : 'The Olive agent API (tabs, eval, per-tab CDP commands) keeps working without the port.',
+      buttons: ['Relaunch Now', 'Later'],
+      defaultId: 0,
+    });
+    if (r.response === 0) {
+      app.relaunch();
+      app.quit();
+    }
+  }
+
   async discoverCdpPort() {
+    if (!cdpEnabled) return null;
     const file = path.join(app.getPath('userData'), 'DevToolsActivePort');
     for (let i = 0; i < 50; i++) {
       try {
@@ -301,6 +407,14 @@ ipcMain.handle('olive:invoke', (e, type, args) => {
 
 // ---------- app lifecycle ----------
 
+// popups (oauth "continue with google" windows) aren't tabs: give them the same
+// per-site user agent switching as tabs
+app.on('web-contents-created', (_e, wc) => {
+  wc.on('did-start-navigation', (d) => {
+    if (d.isMainFrame && !d.isSameDocument && wc.getType() === 'window') mgr.applyUserAgent(wc, d.url);
+  });
+});
+
 app.on('open-url', (e, url) => {
   e.preventDefault();
   mgr.openUrl(url);
@@ -332,8 +446,9 @@ app.whenReady().then(async () => {
   mgr.pendingUrls = [];
 
   mgr.cdpPort = await mgr.discoverCdpPort();
-  const server = await startAgentApi(mgr, Number(process.env.OLIVE_API_PORT || 9333));
+  const server = settings.agentApi ? await startAgentApi(mgr, Number(process.env.OLIVE_API_PORT || 9333)) : null;
   mgr.apiPort = server ? server.address().port : null;
+  mgr.startDiscardTimer();
   mgr.writeAgentFile();
   mgr.broadcast();
 });

@@ -38,7 +38,8 @@ class Tab {
   }
 
   get wc() {
-    return this.view && !this.view.webContents.isDestroyed() ? this.view.webContents : null;
+    const wc = this.view?.webContents;
+    return wc && !wc.isDestroyed() ? wc : null;
   }
 
   snapshot() {
@@ -229,7 +230,10 @@ class OliveWindow {
     if (this.uiOnTop) this.win.contentView.addChildView(this.ui);
     this.wireTab(tab);
     if (tab.muted) view.webContents.setAudioMuted(true);
-    if (!webContents && tab.url) view.webContents.loadURL(tab.url).catch(() => {});
+    if (!webContents && tab.url) {
+      this.mgr.applyUserAgent(view.webContents, tab.url);
+      view.webContents.loadURL(tab.url).catch(() => {});
+    }
     return tab;
   }
 
@@ -274,6 +278,7 @@ class OliveWindow {
     wc.on('did-start-loading', () => { tab.loading = true; this.changed(); });
     wc.on('did-stop-loading', () => { tab.loading = false; this.changed(); });
     wc.on('did-start-navigation', (details) => {
+      if (details.isMainFrame && !details.isSameDocument) this.mgr.applyUserAgent(wc, details.url);
       if (details.isMainFrame && !details.isSameDocument && !details.url.startsWith('data:text/html;olive-error')) tab.errorFor = null;
     });
     wc.on('did-navigate', (_e, url) => {
@@ -360,10 +365,10 @@ class OliveWindow {
     this.changed();
   }
 
-  closeTab(id, { fromPage = false } = {}) {
+  closeTab(id, { fromPage = false, force = false } = {}) {
     const tab = this.tabs.get(id);
     if (!tab) return;
-    if (tab.pinned && !fromPage) {
+    if (tab.pinned && !fromPage && !force) {
       // arc-style: closing a pinned tab unloads it but keeps it in the sidebar
       this.unload(tab);
       if (this.activeId === id) this.activeId = null;
@@ -417,7 +422,7 @@ class OliveWindow {
       tab.loading = false;
       tab.audible = false;
       try { this.win.contentView.removeChildView(view); } catch {}
-      if (!view.webContents.isDestroyed()) view.webContents.close();
+      if (view.webContents && !view.webContents.isDestroyed()) view.webContents.close();
     }
   }
 
@@ -575,7 +580,7 @@ class OliveWindow {
     if (!dv) return;
     tab.devtools = null;
     try { this.win.contentView.removeChildView(dv); } catch {}
-    if (!dv.webContents.isDestroyed()) dv.webContents.close();
+    if (dv.webContents && !dv.webContents.isDestroyed()) dv.webContents.close();
     this.layout();
     this.changed();
   }
@@ -601,6 +606,7 @@ class OliveWindow {
     if (!url || !tab) return;
     this.ensureView(tab);
     tab.url = url;
+    this.mgr.applyUserAgent(tab.wc, url);
     tab.wc.loadURL(url).catch(() => {});
     tab.wc.focus();
     this.changed();
@@ -642,7 +648,9 @@ class OliveWindow {
       this.sendState();
       return;
     }
-    tab.wc.findInPage(query, { forward, findNext });
+    // electron's `findNext` means "start a new find session" (true for the first request),
+    // the opposite of what the name suggests. ours means "go to the next match".
+    tab.wc.findInPage(query, { forward, findNext: !findNext });
   }
 
   closeFind(focus = true) {
@@ -758,7 +766,7 @@ class OliveWindow {
   }
 
   send(channel, data) {
-    if (this.destroyed || this.ui.webContents.isDestroyed()) return;
+    if (this.destroyed || !this.ui.webContents || this.ui.webContents.isDestroyed()) return;
     this.ui.webContents.send('olive:' + channel, data);
   }
 
@@ -876,7 +884,7 @@ class OliveWindow {
     t.push(sep, { label: 'Open in New Window', enabled: !!tab.url, click: () => { const url = tab.url; this.closeTab(id); this.mgr.newWindow({ url, private: this.isPrivate }); } });
     t.push(sep);
     if (tab.pinned) t.push({ label: 'Unload', enabled: !!tab.wc, click: () => this.closeTab(id) }, { label: 'Remove Pinned Tab', click: () => { tab.pinned = false; this.pinned = this.pinned.filter((x) => x !== id); this.unpinned.unshift(id); this.closeTab(id); } });
-    else t.push({ label: 'Close Tab', click: () => this.closeTab(id) }, { label: 'Close Other Tabs', click: () => this.closeOthers(id) });
+    else t.push({ label: 'Unload (Free Memory)', enabled: !!tab.wc && !this.visibleIds().includes(id), click: () => { this.unload(tab); this.changed(); } }, { label: 'Close Tab', click: () => this.closeTab(id) }, { label: 'Close Other Tabs', click: () => this.closeOthers(id) });
     Menu.buildFromTemplate(t).popup({ window: this.win });
   }
 
@@ -1026,10 +1034,10 @@ class OliveWindow {
     if (this.destroyed) return;
     this.destroyed = true;
     for (const tab of this.tabs.values()) {
-      if (tab.devtools && !tab.devtools.webContents.isDestroyed()) tab.devtools.webContents.close();
-      if (tab.view && !tab.view.webContents.isDestroyed()) tab.view.webContents.close();
+      if (tab.devtools?.webContents && !tab.devtools.webContents.isDestroyed()) tab.devtools.webContents.close();
+      if (tab.view?.webContents && !tab.view.webContents.isDestroyed()) tab.view.webContents.close();
     }
-    if (!this.ui.webContents.isDestroyed()) this.ui.webContents.close();
+    if (this.ui.webContents && !this.ui.webContents.isDestroyed()) this.ui.webContents.close();
     this.mgr.onWindowClosed(this);
   }
 }
