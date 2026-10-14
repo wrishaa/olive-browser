@@ -57,5 +57,9 @@ if (!process.env.OLIVE_NO_INSTALL) {
   execFileSync('/usr/bin/ditto', [app, dest]);
   // register with launch services so "default browser" pickers see it
   execFileSync('/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister', ['-f', dest]);
+  // drop the build copy so launch services only knows the installed app (one "Olive" in
+  // the default-browser list)
+  try { execFileSync('/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister', ['-u', app]); } catch {}
+  fs.rmSync(path.join(root, 'dist'), { recursive: true, force: true });
   console.log('installed', dest);
 }
