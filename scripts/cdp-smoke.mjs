@@ -10,7 +10,7 @@ import path from 'node:path';
 const profile = process.env.OLIVE_PROFILE ? `Olive-${process.env.OLIVE_PROFILE}` : 'Olive';
 const info = JSON.parse(fs.readFileSync(path.join(os.homedir(), 'Library/Application Support', profile, 'agent.json'), 'utf8'));
 const api = (p, body) =>
-  fetch(info.api + p, { method: body ? 'POST' : 'GET', headers: { 'X-Olive-Agent': '1', 'content-type': 'application/json' }, body: body ? JSON.stringify(body) : undefined });
+  fetch(info.api + p, { method: body ? 'POST' : 'GET', headers: { authorization: `Bearer ${fs.readFileSync(info.tokenFile, 'utf8').trim()}`, 'content-type': 'application/json' }, body: body ? JSON.stringify(body) : undefined });
 
 const page0 = `data:text/html,<title>smoke</title><input id=q><button id=b onclick="document.title='clicked:'+q.value">go</button>`;
 const tab = await (await api('/tabs', { url: page0 })).json();

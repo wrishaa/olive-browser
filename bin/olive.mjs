@@ -25,11 +25,18 @@ try {
   console.error(`olive is not running (no ${infoFile})`);
   process.exit(1);
 }
+let token;
+try {
+  token = fs.readFileSync(info.tokenFile || path.join(path.dirname(infoFile), 'agent-token'), 'utf8').trim();
+} catch {
+  console.error(`can't read the agent token (${path.join(path.dirname(infoFile), 'agent-token')})`);
+  process.exit(1);
+}
 
 async function call(p, body, raw = false) {
   const res = await fetch(info.api + p, {
     method: body ? 'POST' : 'GET',
-    headers: { 'X-Olive-Agent': '1', 'content-type': 'application/json' },
+    headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' },
     body: body ? JSON.stringify(body) : undefined,
   });
   if (raw) return res;

@@ -1,14 +1,44 @@
 // local http api for ai agents. listens on 127.0.0.1 only. pairs with chromium's
 // own CDP endpoint (remote-debugging-port) for full puppeteer/playwright control.
 //
-// requests from web pages are refused: we require the X-Olive-Agent header (a
-// custom header forces a CORS preflight, which we never approve) and reject any
-// request that carries an Origin header or a non-local Host.
+// every request needs the secret token from <userData>/agent-token (mode 0600,
+// created on first launch) as `Authorization: Bearer <token>` (or X-Olive-Token).
+// on top of that, requests with an Origin header (web pages) or a non-local Host
+// (dns rebinding) are refused before the token is even looked at.
 const http = require('http');
+const fs = require('fs');
+const path = require('path');
+const crypto = require('crypto');
 
-function startAgentApi(mgr, port) {
+// load or create the token file. always 0600; regenerated if missing, short, or
+// readable by group/others.
+function loadToken(dir) {
+  const file = path.join(dir, 'agent-token');
+  try {
+    const st = fs.statSync(file);
+    const tok = fs.readFileSync(file, 'utf8').trim();
+    if ((st.mode & 0o077) === 0 && st.uid === process.getuid() && /^[A-Za-z0-9_-]{32,}$/.test(tok)) return { file, token: tok };
+  } catch {}
+  const token = crypto.randomBytes(32).toString('base64url');
+  try { fs.unlinkSync(file); } catch {}
+  fs.writeFileSync(file, token + '\n', { mode: 0o600, flag: 'wx' });
+  fs.chmodSync(file, 0o600);
+  return { file, token };
+}
+
+function tokenOk(req, token) {
+  const auth = req.headers.authorization || '';
+  const given = (auth.match(/^Bearer\s+(\S+)$/i) || [])[1] || req.headers['x-olive-token'] || '';
+  const a = Buffer.from(String(given));
+  const b = Buffer.from(token);
+  return a.length === b.length && crypto.timingSafeEqual(a, b);
+}
+
+function startAgentApi(mgr, port, dir) {
+  const { token, file } = loadToken(dir);
+  mgr.agentTokenFile = file;
   const server = http.createServer((req, res) => {
-    handle(mgr, req, res).catch((err) => send(res, 500, { error: String(err?.message || err) }));
+    handle(mgr, req, res, token).catch((err) => send(res, 500, { error: String(err?.message || err) }));
   });
   return new Promise((resolve) => {
     server.once('error', (err) => {
@@ -41,7 +71,7 @@ async function readJson(req) {
 
 const HELP = {
   name: 'olive agent api',
-  note: 'send header X-Olive-Agent: 1 on every request. ids are olive tab ids; targetId is the CDP target id for the same page.',
+  note: 'send `Authorization: Bearer <token>` on every request; the token is in agent-token next to agent.json (mode 0600). ids are olive tab ids; targetId is the CDP target id for the same page.',
   cdp: 'chromium devtools protocol is at the "cdp" url below (GET /json/version there for the browser websocket). playwright: chromium.connectOverCDP(cdp)',
   routes: {
     'GET /': 'this help + endpoints',
@@ -66,14 +96,14 @@ const HELP = {
   },
 };
 
-async function handle(mgr, req, res) {
+async function handle(mgr, req, res, token) {
   const host = (req.headers.host || '').toLowerCase();
   if (!/^(127\.0\.0\.1|localhost|\[::1\])(:\d+)?$/.test(host)) return send(res, 403, { error: 'bad host' });
-  if (req.headers.origin) return send(res, 403, { error: 'requests from web pages are not allowed' });
+  if (req.headers.origin != null || req.headers['sec-fetch-site'] != null) return send(res, 403, { error: 'requests from web pages are not allowed' });
+  if (!tokenOk(req, token)) return send(res, 401, { error: 'missing or wrong token: send Authorization: Bearer <contents of agent-token next to agent.json>' });
   const url = new URL(req.url, 'http://127.0.0.1');
   const parts = url.pathname.split('/').filter(Boolean);
   if (req.method === 'GET' && parts.length === 0) return send(res, 200, { ...HELP, endpoints: mgr.agentInfo() });
-  if (req.headers['x-olive-agent'] == null) return send(res, 401, { error: 'missing X-Olive-Agent header' });
 
   const m = req.method;
   if (parts[0] === 'tabs') {

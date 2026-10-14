@@ -8,7 +8,7 @@ import path from 'node:path';
 const profile = process.env.OLIVE_PROFILE ? `Olive-${process.env.OLIVE_PROFILE}` : 'Olive';
 const info = JSON.parse(fs.readFileSync(path.join(os.homedir(), 'Library/Application Support', profile, 'agent.json'), 'utf8'));
 const api = async (p, body) =>
-  (await fetch(info.api + p, { method: body ? 'POST' : 'GET', headers: { 'X-Olive-Agent': '1' }, body: body ? JSON.stringify(body) : undefined })).json();
+  (await fetch(info.api + p, { method: body ? 'POST' : 'GET', headers: { authorization: `Bearer ${fs.readFileSync(info.tokenFile, 'utf8').trim()}` }, body: body ? JSON.stringify(body) : undefined })).json();
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 let failures = 0;
 const check = (ok, what) => { console.log(ok ? 'ok  ' : 'FAIL', what); if (!ok) failures++; };

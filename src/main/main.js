@@ -292,6 +292,7 @@ class Manager {
       api: this.apiPort ? `http://127.0.0.1:${this.apiPort}` : null,
       cdpPort: this.cdpPort,
       apiPort: this.apiPort,
+      tokenFile: this.agentTokenFile || null,
     };
   }
 
@@ -378,7 +379,8 @@ class Manager {
 
   writeAgentFile() {
     const info = { ...this.agentInfo(), pid: process.pid, profile: profile || 'default', userData: app.getPath('userData'), started: new Date().toISOString() };
-    fs.writeFileSync(path.join(app.getPath('userData'), 'agent.json'), JSON.stringify(info, null, 2));
+    fs.writeFileSync(path.join(app.getPath('userData'), 'agent.json'), JSON.stringify(info, null, 2), { mode: 0o600 });
+    try { fs.chmodSync(path.join(app.getPath('userData'), 'agent.json'), 0o600); } catch {}
     console.log(`[olive] cdp ${info.cdp}  agent api ${info.api}  (${path.join(app.getPath('userData'), 'agent.json')})`);
   }
 }
@@ -446,7 +448,7 @@ app.whenReady().then(async () => {
   mgr.pendingUrls = [];
 
   mgr.cdpPort = await mgr.discoverCdpPort();
-  const server = settings.agentApi ? await startAgentApi(mgr, Number(process.env.OLIVE_API_PORT || 9333)) : null;
+  const server = settings.agentApi ? await startAgentApi(mgr, Number(process.env.OLIVE_API_PORT || 9333), app.getPath('userData')) : null;
   mgr.apiPort = server ? server.address().port : null;
   mgr.startDiscardTimer();
   mgr.writeAgentFile();

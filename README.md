@@ -44,7 +44,8 @@ installed app, not `npm start`).
 
 see [AGENTS.md](AGENTS.md). short version: CDP at `http://127.0.0.1:9222`,
 olive api at `http://127.0.0.1:9333`, both written to
-`~/Library/Application Support/Olive/agent.json`. `node bin/olive.mjs tabs`.
+`~/Library/Application Support/Olive/agent.json`; the api needs the bearer token
+from `agent-token` in the same folder (0600), see AGENTS.md. `node bin/olive.mjs tabs`.
 
 ## layout
 

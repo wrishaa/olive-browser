@@ -29,7 +29,11 @@ notes:
 
 ## 2. olive api (tabs, windows, quick actions)
 
-send `X-Olive-Agent: 1` on every request (requests from web pages are refused).
+every request needs the token in `agent-token` (next to `agent.json`, mode
+0600, created on first launch) as `Authorization: Bearer <token>`. the api binds
+127.0.0.1 only and refuses any request with an `Origin` header (web pages) or a
+non-localhost `Host` (dns rebinding). no token, no access, including `GET /`.
+to rotate the token: quit olive, delete `agent-token`, relaunch.
 
 | call | does |
 |---|---|
@@ -48,10 +52,11 @@ send `X-Olive-Agent: 1` on every request (requests from web pages are refused).
 | `GET /downloads` | |
 
 ```sh
-curl -s -H 'X-Olive-Agent: 1' localhost:9333/tabs
-curl -s -H 'X-Olive-Agent: 1' -X POST localhost:9333/tabs -d '{"url":"news.ycombinator.com"}'
-curl -s -H 'X-Olive-Agent: 1' -X POST localhost:9333/tabs/3/eval -d '{"expression":"document.title"}'
-curl -s -H 'X-Olive-Agent: 1' -X POST localhost:9333/tabs/3/cdp -d '{"method":"Network.enable"}'
+T="Authorization: Bearer $(cat "$HOME/Library/Application Support/Olive/agent-token")"
+curl -s -H "$T" localhost:9333/tabs
+curl -s -H "$T" -X POST localhost:9333/tabs -d '{"url":"news.ycombinator.com"}'
+curl -s -H "$T" -X POST localhost:9333/tabs/3/eval -d '{"expression":"document.title"}'
+curl -s -H "$T" -X POST localhost:9333/tabs/3/cdp -d '{"method":"Network.enable"}'
 ```
 
 ## 3. cli
