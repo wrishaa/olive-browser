@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#d9e8c2"/>
+      <stop offset="0.55" stop-color="#a9c98f"/>
+      <stop offset="1" stop-color="#7fa97a"/>
+    </linearGradient>
+    <radialGradient id="olive" cx="0.36" cy="0.32" r="0.75">
+      <stop offset="0" stop-color="#cde59a"/>
+      <stop offset="0.45" stop-color="#7d9f45"/>
+      <stop offset="1" stop-color="#3f5a22"/>
+    </radialGradient>
+    <linearGradient id="leaf" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#5f8a3a"/>
+      <stop offset="1" stop-color="#2f4d1f"/>
+    </linearGradient>
+  </defs>
+  <rect x="100" y="100" width="824" height="824" rx="190" fill="url(#bg)"/>
+  <rect x="100" y="100" width="824" height="824" rx="190" fill="none" stroke="#ffffff" stroke-opacity="0.35" stroke-width="6"/>
+  <path d="M560 300 C 640 210, 760 210, 800 250 C 750 330, 640 350, 560 300 Z" fill="url(#leaf)"/>
+  <path d="M560 300 C 520 320, 500 340, 488 372" stroke="#2f4d1f" stroke-width="18" stroke-linecap="round" fill="none"/>
+  <ellipse cx="470" cy="580" rx="210" ry="250" transform="rotate(-28 470 580)" fill="url(#olive)"/>
+  <ellipse cx="400" cy="470" rx="58" ry="32" transform="rotate(-40 400 470)" fill="#ffffff" fill-opacity="0.45"/>
+</svg>

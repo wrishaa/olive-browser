@@ -1,0 +1,19 @@
+{
+  "name": "olive-browser",
+  "productName": "Olive",
+  "version": "0.1.0",
+  "description": "Olive: an arc-like browser for mac, built on electron (chromium)",
+  "main": "src/main/main.js",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "dev": "OLIVE_PROFILE=dev electron .",
+    "package": "node scripts/package.mjs",
+    "test:cdp": "node scripts/cdp-smoke.mjs"
+  },
+  "devDependencies": {
+    "electron": "44.7.2",
+    "@electron/packager": "20.3.0",
+    "playwright-core": "1.64.1"
+  }
+}
