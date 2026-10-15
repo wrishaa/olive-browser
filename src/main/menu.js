@@ -19,6 +19,7 @@ function buildMenu(mgr) {
         { type: 'separator' },
         { label: 'Set as Default Browser…', click: () => mgr.makeDefault() },
       { label: 'Import from Arc…', click: () => require('./arc-import').showImport(mgr) },
+        { label: 'Reset Permissions for This Site', click: () => mgr.permissions.reset(mgr.focusedWindow()) },
         { label: 'Copy Agent Endpoints', click: w('copyAgentInfo') },
         { label: 'Clear Browsing History', click: () => mgr.history.clear() },
         { type: 'separator' },

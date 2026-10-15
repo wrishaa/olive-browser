@@ -93,3 +93,9 @@ and clicks a real Wikipedia page, and checks UI drag rectangles never cover page
 panes (CDP alone bypasses native window hit-testing). On macOS a full-window
 `-webkit-app-region: drag` in the background can swallow native page input even
 when a sibling WebContentsView is visibly above it. Keep dragging sidebar-only.
+
+### site permissions
+
+Mic/camera, notifications, location, clipboard and other permission requests use persistent, bottom-left stacked cards, not modal alerts. The rest of the page remains clickable and scrollable. Each card names the requesting origin and waits for **Allow** or **Deny**. Choices are remembered per origin (private choices stay in memory); pending requests are denied if their tab navigates or closes. Use **Olive → Reset Permissions for This Site**, then reload, to ask again. macOS's own first-use hardware/privacy dialogs are separate and cannot be replaced by an in-app toast.
+
+Try `https://permission.site/` → Notifications and Microphone. `OLIVE_PROFILE=dev node scripts/ui-test.mjs` exercises these real APIs, stacking, input while pending, saved decisions and navigation/close cleanup. Passwords/extensions are planning-only in the hive spec.

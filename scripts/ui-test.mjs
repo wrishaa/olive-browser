@@ -23,6 +23,9 @@ const c = await api('/tabs', { url: mk('gamma') }); // active
 const browser = await chromium.connectOverCDP(info.cdp);
 const ui = browser.contexts().flatMap((x) => x.pages()).find((p) => p.url().includes('/src/ui/index.html') || p.url().includes('/ui/index.html'));
 if (!ui) throw new Error('ui page not found');
+// The last test run may leave the sidebar hidden; establish a repeatable fixture.
+await ui.evaluate(async () => { const s = await olive.invoke('state'); if (s.sidebarHidden) olive.cmd('toggleSidebar'); });
+await sleep(300);
 
 // 1. drag alpha's row onto the page area -> split with active (gamma)
 const row = ui.locator(`.row[data-id="${a.id}"]`);
@@ -158,6 +161,9 @@ const input = await wiki.evaluate(() => ({ ...__oliveInput, scrollY }));
 check(input.click > 0, 'real webpage receives mouse click');
 check(input.wheel > 0 && input.scrollY > 100, `real webpage receives wheel and scrolls (${input.scrollY}px)`);
 await api(`/tabs/${wikiTab.id}/close`, {});
+
+const { permissionTests } = await import('./permission-test.mjs');
+await permissionTests({ api, browser, ui, check });
 
 await browser.close();
 console.log(failures ? `${failures} failed` : 'all passed');

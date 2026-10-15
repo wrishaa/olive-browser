@@ -85,6 +85,7 @@ class Manager {
     const ud = app.getPath('userData');
     this.state = new JsonStore(path.join(ud, 'session.json'), () => ({ windows: [] }));
     this.perms = new JsonStore(path.join(ud, 'permissions.json'), () => ({}));
+    this.permissions = new (require('./permissions').Permissions)(this);
     this.history = new History(path.join(ud, 'history.json'));
   }
 
@@ -110,51 +111,7 @@ class Manager {
       cb({ requestHeaders: h });
     });
     ses.setSpellCheckerLanguages(['en-US']);
-    const prompting = new Set(['media', 'geolocation', 'notifications', 'midiSysex', 'clipboard-read', 'display-capture', 'openExternal', 'idle-detection', 'hid', 'serial', 'usb', 'storage-access', 'top-level-storage-access', 'speaker-selection', 'keyboardLock', 'window-management']);
-    const label = {
-      media: 'camera / microphone', geolocation: 'location', notifications: 'notifications', midiSysex: 'MIDI devices',
-      'clipboard-read': 'clipboard', 'display-capture': 'screen sharing', openExternal: 'an external app', 'idle-detection': 'idle detection',
-      'storage-access': 'cookies (storage access)', 'top-level-storage-access': 'cookies (storage access)', 'window-management': 'window management',
-    };
-    const key = (origin, perm, details) => `${origin}|${perm}${perm === 'media' ? ':' + (details?.mediaTypes || []).sort().join(',') : ''}`;
-    const persist = !ses.isPersistent || ses.isPersistent();
-    ses.setPermissionRequestHandler(async (wc, permission, callback, details) => {
-      if (!prompting.has(permission)) return callback(true);
-      let origin;
-      try { origin = new URL(details.requestingUrl || wc.getURL()).origin; } catch { origin = 'this site'; }
-      const k = key(origin, permission, details);
-      const known = this.perms.data[k];
-      if (persist && known != null) return callback(known);
-      if (permission === 'openExternal') {
-        const ext = details.externalURL || '';
-        if (/^(mailto|tel|facetime|sms):/i.test(ext)) return callback(true);
-      }
-      const what = permission === 'openExternal' ? `open ${String(details.externalURL || '').split(':')[0]}: links in another app` : `use your ${label[permission] || permission}`;
-      const win = this.windows.find((w) => [...w.tabs.values()].some((t) => t.wc === wc)) || this.focused;
-      const r = await dialog.showMessageBox(win?.win, {
-        type: 'question',
-        message: `${origin.replace(/^https?:\/\//, '')} wants to ${what}`,
-        buttons: ['Allow', 'Block'],
-        defaultId: 0,
-        cancelId: 1,
-        checkboxLabel: persist ? 'Remember for this site' : undefined,
-        checkboxChecked: true,
-      });
-      const ok = r.response === 0;
-      if (persist && r.checkboxChecked) {
-        this.perms.data[k] = ok;
-        this.perms.save();
-      }
-      callback(ok);
-    });
-    ses.setPermissionCheckHandler((wc, permission, origin, details) => {
-      if (!prompting.has(permission)) return true;
-      const k = key(origin, permission, { mediaTypes: details?.mediaType ? [details.mediaType] : [] });
-      if (this.perms.data[k] != null) return this.perms.data[k];
-      // media checks come per type; allow if any granted media entry exists for origin
-      if (permission === 'media') return Object.entries(this.perms.data).some(([kk, v]) => v && kk.startsWith(`${origin}|media`));
-      return false;
-    });
+    this.permissions.install(ses, !ses.isPersistent || ses.isPersistent());
 
     ses.on('will-download', (_e, item) => {
       const dir = app.getPath('downloads');

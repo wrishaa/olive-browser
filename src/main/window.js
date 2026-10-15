@@ -682,6 +682,7 @@ class OliveWindow {
       const tab = this.tabs.get(this.activeId);
       if (tab?.wc && !this.find.open) tab.wc.focus();
     }
+    this.mgr.permissions.layout(this);
     this.sendState();
   }
 
@@ -752,6 +753,7 @@ class OliveWindow {
         } else tab.devtools.setVisible(false);
       }
     }
+    this.mgr.permissions.layout(this);
   }
 
   // ---------- state to ui ----------
@@ -901,6 +903,7 @@ class OliveWindow {
   cmd(type, a = {}) {
     const active = this.tabs.get(this.activeId);
     switch (type) {
+      case 'resetPermissions': this.mgr.permissions.reset(this); break;
       case 'newTab': return this.openPalette('new');
       case 'splitNew': return this.openPalette('split');
       case 'openLocation': return this.openPalette('edit', active ? active.errorFor || active.url : '');
