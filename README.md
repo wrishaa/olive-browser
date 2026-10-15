@@ -87,3 +87,9 @@ directory (0600). It contains counts and failed domain names, never values/keys.
 Tests: `node scripts/arc-import-test.cjs` (synthetic crypto/flags only), and
 `node scripts/arc-login-check.mjs` (opens GitHub, Google and X in Olive; reports
 only whether signed-in account UI is visible, never account names or secrets).
+
+Page-input regression: `OLIVE_PROFILE=dev node scripts/ui-test.mjs` also scrolls
+and clicks a real Wikipedia page, and checks UI drag rectangles never cover page
+panes (CDP alone bypasses native window hit-testing). On macOS a full-window
+`-webkit-app-region: drag` in the background can swallow native page input even
+when a sibling WebContentsView is visibly above it. Keep dragging sidebar-only.

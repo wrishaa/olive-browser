@@ -113,6 +113,52 @@ await api(`/tabs/${ex.id}/eval`, { expression: "window.open('https://example.org
 await sleep(1500);
 check((await api('/tabs')).length === before8 + 1, 'window.open(_blank) becomes a tab');
 
+// 9. Real webpage input. CDP dispatches real input events, not DOM .click().
+// It bypasses native NSWindow hit-testing, so ALSO guard the actual cause:
+// no UI draggable rectangle may overlap any page/devtools pane.
+const wikiTab = await api('/tabs', { url: 'https://en.wikipedia.org/wiki/Olive' });
+await sleep(400);
+let wiki;
+for (const ctx of browser.contexts()) for (const p of ctx.pages()) {
+  const session = await ctx.newCDPSession(p);
+  const { targetInfo } = await session.send('Target.getTargetInfo');
+  await session.detach();
+  if (targetInfo.targetId === wikiTab.targetId) wiki = p;
+}
+if (!wiki) throw new Error('real page target not found');
+await wiki.waitForSelector('#firstHeading');
+const guardDragRegions = async (label) => {
+  const overlap = await ui.evaluate(() => {
+    const panes = [...document.querySelectorAll('.card')].map(e => e.getBoundingClientRect());
+    return [...document.querySelectorAll('*')].filter(e => {
+      if (getComputedStyle(e).getPropertyValue('-webkit-app-region') !== 'drag') return false;
+      const r = e.getBoundingClientRect();
+      return r.width && r.height && panes.some(p => r.left < p.right && r.right > p.left && r.top < p.bottom && r.bottom > p.top);
+    }).map(e => e.id || e.className);
+  });
+  check(!overlap.length, `native drag regions never cover page panes (${label}: ${overlap.join(',') || 'clear'})`);
+};
+await guardDragRegions('normal');
+await ui.click('#btn-new');
+await sleep(200);
+await ui.keyboard.press('Escape');
+await sleep(200);
+await guardDragRegions('after palette');
+await wiki.evaluate(() => {
+  window.__oliveInput = { click: 0, wheel: 0 };
+  addEventListener('click', () => __oliveInput.click++);
+  addEventListener('wheel', () => __oliveInput.wheel++);
+});
+const hit = await wiki.evaluate(() => document.elementFromPoint(400, 300)?.tagName);
+check(!!hit, `real page elementFromPoint has a hit (${hit})`);
+await wiki.mouse.click(400, 300);
+await wiki.mouse.wheel(0, 800);
+await sleep(500);
+const input = await wiki.evaluate(() => ({ ...__oliveInput, scrollY }));
+check(input.click > 0, 'real webpage receives mouse click');
+check(input.wheel > 0 && input.scrollY > 100, `real webpage receives wheel and scrolls (${input.scrollY}px)`);
+await api(`/tabs/${wikiTab.id}/close`, {});
+
 await browser.close();
 console.log(failures ? `${failures} failed` : 'all passed');
 process.exit(failures ? 1 : 0);
