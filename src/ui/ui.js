@@ -115,6 +115,9 @@ function render() {
   $('#btn-forward').disabled = !S.active?.canGoForward;
   $('#btn-devtools').classList.toggle('on', !!S.active?.devtools);
   $('#profile-badge').textContent = S.private ? 'Private' : '';
+  $('#btn-ublock').hidden = S.private;
+  $('#btn-ublock').textContent = S.extension?.enabled ? 'uBO Lite · on' : 'uBO Lite · off';
+  $('#btn-ublock').onclick = () => olive.cmd('ublock');
 
   const a = S.agent || {};
   const parts = [a.apiPort && `api :${a.apiPort}`, a.cdpPort && `cdp :${a.cdpPort}`].filter(Boolean);

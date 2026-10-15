@@ -105,11 +105,9 @@ class Manager {
 
   setupSession(ses) {
     if (UA_MODE !== 'electron') ses.setUserAgent(UA);
-    if (UA_MODE === 'auto') ses.webRequest.onBeforeSendHeaders({ urls: ['https://accounts.google.com/*'] }, (details, cb) => {
-      const h = details.requestHeaders;
-      h['User-Agent'] = ELECTRON_UA;
-      cb({ requestHeaders: h });
-    });
+    // Do not attach Electron webRequest listeners here: even a Google-only header
+    // listener bypasses Chromium's native DNR matching (measured with uBO Lite).
+    // Google keeps its honest Electron UA through applyUserAgent() on navigation.
     ses.setSpellCheckerLanguages(['en-US']);
     this.permissions.install(ses, !ses.isPersistent || ses.isPersistent());
 
@@ -398,6 +396,8 @@ app.whenReady().then(async () => {
   nativeTheme.themeSource = 'system';
   buildMenu(mgr);
   mgr.session; // init persistent session
+  mgr.extensions = new (require('./extensions').Extensions)(mgr);
+  await mgr.extensions.load(mgr.session);
   mgr.restore();
   mgr.ready = true;
   const argvUrls = process.argv.slice(app.isPackaged ? 1 : 2).filter((a) => /^(https?|file):/i.test(a));

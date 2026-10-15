@@ -428,3 +428,5 @@ body.sidebar-hidden #sidebar-resize { display: none; }
 body.ui-on-top #cards, body.ui-on-top #empty { display: none; }
 body.ui-on-top #bg { right: auto; width: var(--sbw); }
 body.ui-on-top.sidebar-hidden #bg { display: none; }
+
+#btn-ublock { flex-shrink: 0; text-align: left; border: 0; border-radius: 7px; padding: 8px 12px; margin: 3px 12px; background: var(--hover, #dce5db); color: inherit; font: inherit; cursor: pointer; -webkit-app-region: no-drag; }

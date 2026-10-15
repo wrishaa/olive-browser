@@ -807,6 +807,7 @@ class OliveWindow {
       downloads: this.mgr.downloads.slice(0, 6),
       agent: this.mgr.agentInfo(),
       closedCount: this.closedStack.length,
+      extension: this.isPrivate ? null : this.mgr.extensions?.status,
     };
   }
 
@@ -903,6 +904,7 @@ class OliveWindow {
   cmd(type, a = {}) {
     const active = this.tabs.get(this.activeId);
     switch (type) {
+      case 'ublock': return this.mgr.extensions?.open(this);
       case 'resetPermissions': this.mgr.permissions.reset(this); break;
       case 'newTab': return this.openPalette('new');
       case 'splitNew': return this.openPalette('split');

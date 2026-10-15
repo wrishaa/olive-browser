@@ -99,3 +99,15 @@ when a sibling WebContentsView is visibly above it. Keep dragging sidebar-only.
 Mic/camera, notifications, location, clipboard and other permission requests use persistent, bottom-left stacked cards, not modal alerts. The rest of the page remains clickable and scrollable. Each card names the requesting origin and waits for **Allow** or **Deny**. Choices are remembered per origin (private choices stay in memory); pending requests are denied if their tab navigates or closes. Use **Olive → Reset Permissions for This Site**, then reload, to ask again. macOS's own first-use hardware/privacy dialogs are separate and cannot be replaced by an in-app toast.
 
 Try `https://permission.site/` → Notifications and Microphone. `OLIVE_PROFILE=dev node scripts/ui-test.mjs` exercises these real APIs, stacking, input while pending, saved decisions and navigation/close cleanup. Passwords/extensions are planning-only in the hive spec.
+
+### ublock origin lite spike
+
+only uBO Lite is enabled; chatgpt/claude extensions are deferred.
+
+- package: real CWS `ddkjiahejlhfcafbddmgiahcphecmpfh`, version `2026.1012.1545`.
+- download/reinstall: `python3 -I scripts/download-ublock.py`, then relaunch olive. this makes a fresh directory under `~/Library/Application Support/Olive Extensions`, saves the CRX and pins unpacked source hashes. no remote code runs in node. runtime extension code runs sandboxed in electron.
+- sidebar **uBO Lite · on** opens olive's basic on/off popup. six original default static rulesets use chromium's native `declarativeNetRequest`; no homemade ad-filter engine, API shims, or modified extension source.
+- **limits:** not full uBO Lite compatibility. the official background worker crashes on missing `chrome.permissions.onRemoved`. the official popup resource opens, but its full controls do not work; per-site modes, picker/cosmetic filtering and background-driven updates aren't available. olive's basic popup states this explicitly. no private-window extension loading and no automatic package updates.
+- important: even an electron `webRequest.onBeforeSendHeaders` listener scoped only to google disabled native DNR matching. removed that listener; existing navigation-specific UA handling remains. google still reached the password page in the dev regression probe (no password typed).
+- test: `OLIVE_PROFILE=dev node scripts/extension-test.mjs` (dev must run with `OLIVE_CDP=1`). actual CNN page: zero blocked requests off, fifteen native `ERR_BLOCKED_BY_CLIENT` requests on, including rubicon ad auctions, adsafeprotected, and google IMA SDK. this is network blocking, not a claim that every visual ad slot disappears.
+- next gap: estimate 2–5 days to investigate electron's MV3 worker-preload/API compatibility, then re-test the unmodified official popup. not an implementation promise; may need an upstream electron fix. no password-manager work.
