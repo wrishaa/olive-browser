@@ -63,3 +63,27 @@ passwords / autofill (chromium's password manager isn't in electron: plan is
 keychain + our own fill), extensions (electron has partial chrome.* support),
 spaces/profiles, bookmarks ui (pinned tabs cover it for now), tab sleeping,
 safari/chrome import, auto-update, a signed + notarized build.
+
+## import your Arc session
+
+Olive → **Import from Arc…** opens the native profile picker (names come from
+Arc’s `Local State`). Choose the profile you want, then **Quit Arc and Import**.
+Only that profile’s cookie database is copied; Arc’s files are never edited.
+macOS may ask to access the single **Arc Safe Storage** keychain item. Approve
+that locally; never paste a keychain password into chat.
+
+Cookie values are decrypted in memory and set through Chromium’s cookie API.
+Domain/host-only, path, secure, HttpOnly, SameSite and expiry are preserved.
+Expired and unsupported partitioned cookies are skipped. Matching Olive cookies
+are replaced. This is a **merge**, not an undoable profile swap.
+
+Passwords are skipped (Olive has no password manager). Local storage and IndexedDB
+are skipped rather than copying incompatible/shared LevelDB stores. Sites using
+those stores, bound sessions, or rejected cookies may need a fresh sign-in.
+Temporary database copies are deleted on completion/cancellation. An aggregate,
+credential-free `arc-import-report.json` is saved in Olive’s application support
+directory (0600). It contains counts and failed domain names, never values/keys.
+
+Tests: `node scripts/arc-import-test.cjs` (synthetic crypto/flags only), and
+`node scripts/arc-login-check.mjs` (opens GitHub, Google and X in Olive; reports
+only whether signed-in account UI is visible, never account names or secrets).
