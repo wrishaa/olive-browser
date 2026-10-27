@@ -33,7 +33,7 @@ const [appDir] = await packager({
   icon: path.join(root, 'assets', 'icon.icns'),
   // Electron's fs.cpSync cannot recursively copy a virtual ASAR directory.
   // Keep verified bundled extension bytes on disk for profile-local installation.
-  asar: { unpackDir: 'vendor/ublock/**' },
+  asar: { unpackDir: 'vendor/ublock' },
   prune: true,
   ignore: [/^\/dist($|\/)/, /^\/scripts($|\/)/, /^\/assets\/icon\.(svg|png)$/, /^\/\.git($|\/)/, /^\/notes($|\/)/],
   protocols: [{ name: 'Web site URL', schemes: ['http', 'https'] }],
@@ -54,6 +54,12 @@ const [appDir] = await packager({
 });
 
 const app = path.join(appDir, 'Olive.app');
+// Fail before signing if ASAR packaging has left the blocker in a virtual directory.
+const blocker = path.join(app, 'Contents/Resources/app.asar.unpacked/vendor/ublock');
+const blockerRecord = JSON.parse(fs.readFileSync(path.join(blocker, 'record.json'), 'utf8'));
+for (const file of Object.keys(blockerRecord.files)) {
+  if (!fs.statSync(path.join(blocker, 'unpacked', file)).isFile()) throw new Error(`Missing packaged blocker file: ${file}`);
+}
 // One keychain access/signing invocation for the entire bundle, not a per-file
 // osx-sign loop. The user must approve the key once with Always Allow.
 execFileSync('/usr/bin/codesign', ['--force', '--deep', '--options', 'runtime',
