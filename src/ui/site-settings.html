@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self'; script-src 'self'">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Site settings</title>
+<link rel="stylesheet" href="site-settings.css">
+</head>
+<body>
+<main>
+  <h1>Site settings</h1>
+  <p id="origin">Loading…</p>
+  <section aria-label="Site permissions" id="permissions"></section>
+  <p class="note">Changes are saved automatically. Reload the page for changes to take effect. Ask clears your saved choice.</p>
+  <section aria-labelledby="system-title">
+    <h2 id="system-title">macOS permissions</h2>
+    <p class="note">macOS must also allow Olive to use these devices.</p>
+    <div id="system"></div>
+  </section>
+  <p id="status" role="status" aria-live="polite"></p>
+</main>
+<script src="site-settings.js"></script>
+</body>
+</html>

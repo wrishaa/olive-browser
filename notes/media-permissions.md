@@ -1,0 +1,23 @@
+# media permissions fix — 2026-10-27
+
+## shipped
+
+- Reused session permission request/check handlers, adding **Allow / Allow once / Block**. Saved decisions are keyed by requesting origin plus permission; microphone and camera stay separate. Allow once is document/visit scoped, expires on main navigation/reload, and is never written to permissions.json. Pending decisions cancel on navigation/close, including while the macOS dialog is pending.
+- Address/site-settings button now opens per-site Ask / Allow / Block controls: microphone, camera, screen sharing, notifications, location, audio output devices, clipboard, local network. Displays distinct macOS microphone/camera/screen-recording status and opens the specific System Settings privacy pane. Changing permissions requires a page reload; changing a setting does not silently stop a current live stream.
+- After site consent, explicitly request `systemPreferences.askForMediaAccess` for microphone/camera when not determined. Denied/restricted access returns a denial and shows site settings; it does not pretend a site grant overrides macOS. Existing packaged Info.plist already included `NSMicrophoneUsageDescription` and `NSCameraUsageDescription`; both verified in the installed bundle.
+- `setDisplayMediaRequestHandler` plus `desktopCapturer` uses an explicit window/screen picker. Nothing is automatically shared. Source selection/cancellation is bound to the requesting tab and cancels on navigation/destruction. System-audio loopback is not implemented. Screen recording denied by macOS returns an error and opens settings rather than silently failing.
+- Electron 44 presents the display-media preflight as `media` with `mediaTypes: []` (verified in upstream `web_contents_permission_helper.cc` and reproduced in installed Olive). Normalize that to screen sharing, not microphone/camera; reuse its decision in the subsequent source-selection handler.
+
+## validation
+
+1. `node scripts/media-permissions-unit.cjs`: deterministic tests for allow once, origin isolation, navigation expiry, saved block/allow, macOS request/denial, screen gesture/denial/source routing, and cancellation during OS request. Mock devices only in this unit test.
+2. `OLIVE_PROFILE=dev node scripts/site-settings-test.mjs`: real settings window/lock button, save/reopen microphone allow and camera block, OS statuses, real Notification allow-once (no saved value, re-prompts on reload), block, navigation cleanup.
+3. `OLIVE_PROFILE=dev node scripts/ui-test.mjs`: all 27 passed, including real-page permission requests, input under cards, sidebar/split/drag/find. `cdp-smoke.mjs` passed. `extension-test.mjs` also passed (CNN 20 native blocked requests with uBO enabled, zero off).
+4. Installed `~/Applications/Olive.app`, ad-hoc signature verified. Preserved existing profile/cookies/cache; no Arc access. Initial six original tab URLs were all restored; left the additional Meet test tab open. Two orderly restarts were needed: initial integration, then a screen-preflight labeling fix found in the installed test. Second build staged before quitting to minimize downtime.
+5. **Final installed bundle**, signed-in `https://meet.google.com/home`: real `getUserMedia({audio:true,video:true})` returned live audio + video tracks. Meet Settings listed MacBook Pro Microphone and Speakers. Meet Video Settings showed FaceTime HD Camera, preview ON; DOM video had 1280×720, readyState 4, paused false and a live video track. Closed the preview and stopped test tracks; no recordings saved and no meeting joined/invites sent.
+6. Final installed screen-share preflight correctly said “screen sharing”. Allow once led to the existing macOS Screen Recording denial; page received `AbortError`, settings opened with Screen recording Blocked. **Successful screen sharing is not yet verified** because the user must enable Olive in macOS Screen Recording. The chooser's source-routing/cancellation is unit-tested, not a claim of actual successful OS capture. No system-audio support.
+7. Final site settings shows Microphone Allowed, Camera Allowed, site microphone/camera Allow; macOS approval is now granted for this final bundle. Ad-hoc rebuilds can prompt again. Screen recording still blocked; use the visible Open macOS screen recording settings button, enable Olive, and relaunch only if macOS asks.
+
+## automation/ports
+
+Preserved authenticated `http://127.0.0.1:9333` agent API. It was not a raw CDP listener. Installed Meet was driven with `/tabs/:id/cdp` through this existing API plus native UI. Raw CDP remains off in the real profile; separate dev profile uses 9222. Did not repurpose 9333 or persist new debug settings.

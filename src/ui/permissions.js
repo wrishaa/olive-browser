@@ -8,9 +8,9 @@ window.permissions.on(items => {
     const origin = document.createElement('strong'); origin.className = 'origin'; origin.textContent = item.origin; origin.title = item.origin;
     const text = document.createElement('p'); text.textContent = `Wants permission for ${item.label}`;
     const actions = document.createElement('div'); actions.className = 'actions';
-    for (const [label, allow] of [['Deny', false], ['Allow', true]]) {
+    for (const [label, allow, remember] of [['Block', false, true], ['Allow once', true, false], ['Allow', true, true]]) {
       const button = document.createElement('button'); button.textContent = label; if (allow) button.className = 'allow';
-      button.onclick = () => { for (const b of actions.children) b.disabled = true; window.permissions.answer(item.id, allow); };
+      button.onclick = () => { for (const b of actions.children) b.disabled = true; window.permissions.answer(item.id, allow, remember); };
       actions.append(button);
     }
     card.append(origin, text, actions); stack.append(card);

@@ -430,3 +430,7 @@ body.ui-on-top #bg { right: auto; width: var(--sbw); }
 body.ui-on-top.sidebar-hidden #bg { display: none; }
 
 #btn-ublock { flex-shrink: 0; text-align: left; border: 0; border-radius: 7px; padding: 8px 12px; margin: 3px 12px; background: var(--hover, #dce5db); color: inherit; font: inherit; cursor: pointer; -webkit-app-region: no-drag; }
+
+#urlbar .site-settings { display: flex; align-items: center; justify-content: center; flex: none; width: 24px; height: 24px; padding: 0; border: 0; border-radius: 6px; background: transparent; color: inherit; cursor: pointer; }
+#urlbar .site-settings:hover { background: var(--pill-hover); }
+#urlbar .site-settings:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }

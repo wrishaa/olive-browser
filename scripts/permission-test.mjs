@@ -25,7 +25,7 @@ export async function permissionTests({ api, browser, ui, check }) {
   check(await page.evaluate(()=>inputCount>0 && scrollY>0), 'page receives clicks and scroll while permissions are pending');
   const notification = toast.locator('.card').filter({ hasText: 'notifications' });
   await notification.getByRole('button', { name: 'Allow', exact:true }).click();
-  await toast.locator('.card:not(.leaving)').filter({ hasText:'microphone' }).getByRole('button',{name:'Deny',exact:true}).click();
+  await toast.locator('.card:not(.leaving)').filter({ hasText:'microphone' }).getByRole('button',{name:'Block',exact:true}).click();
   await sleep(400);
   check(await page.evaluate(()=>permissionResults.notification==='granted' && permissionResults.mic==='NotAllowedError'), 'allow and deny resolve real API callbacks');
   await page.reload(); await request(); await sleep(400);

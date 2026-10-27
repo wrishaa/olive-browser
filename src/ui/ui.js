@@ -222,6 +222,7 @@ $('#btn-devtools').onclick = () => olive.cmd('devtools');
 $('#btn-clear').onclick = () => olive.cmd('clearUnpinned');
 $('#agent-badge').onclick = () => olive.cmd('copyAgentInfo');
 $('#btn-copy').onclick = (e) => { e.stopPropagation(); olive.cmd('copyUrl'); };
+$('#btn-site-settings').onclick = (e) => { e.stopPropagation(); olive.cmd('sitePermissions'); };
 $('#urlbar').onclick = () => olive.cmd('openLocation');
 
 $('#downloads').addEventListener('click', (e) => {

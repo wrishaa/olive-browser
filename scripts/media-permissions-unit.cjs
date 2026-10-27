@@ -1,0 +1,45 @@
+// Deterministic handler tests. No real profile, devices, TCC, or capture accessed.
+const assert = require('node:assert/strict');
+const fs = require('node:fs'), vm = require('node:vm'), { EventEmitter } = require('node:events');
+const handlers = {}, ipc = {}, checks = {}, requests = [];
+let status = 'granted', saves = 0, prompts = 0, captures = 0;
+const electron = { ipcMain:{on:(n,f)=>ipc[n]=f,handle:(n,f)=>ipc[n]=f}, systemPreferences:{ getMediaAccessStatus:()=>status,askForMediaAccess:async kind=>{prompts++;status='granted';return true;} }, desktopCapturer:{getSources:async()=>{captures++;return [];}}, webContents:{fromFrame:f=>f.wc}, shell:{openExternal:async()=>{}} };
+const sandbox = { require:n=>n==='electron'?electron:require(n), module:{exports:{}}, __dirname:require('node:path').resolve(__dirname,'../src/main'), process:{platform:'darwin'},URL,setTimeout,clearTimeout,console };
+vm.runInNewContext(fs.readFileSync(require.resolve('../src/main/permissions'),'utf8'),sandbox);
+const wc = new EventEmitter(); wc.isDestroyed=()=>false; wc.getURL=()=> 'https://meet.google.com/preview';
+const win = {tabs:new Map([[1,{wc}]]),activeId:1,isPrivate:false,send:()=>{}};
+const choices = {}, mgr={windows:[win],perms:{data:choices,save:()=>saves++}};
+const p = new sandbox.module.exports.Permissions(mgr); p.refresh=()=>{}; p.showSettings=()=>{};
+const ses = {setPermissionCheckHandler:f=>handlers.check=f,setPermissionRequestHandler:f=>handlers.request=f,setDisplayMediaRequestHandler:f=>handlers.display=f};
+p.install(ses,true);
+const request = (permission,details={}) => { let result; handlers.request(wc,permission,v=>result=v,{requestingUrl:wc.getURL(),...details}); return ()=>result; };
+const last = ()=>[...p.pending.values()].at(-1);
+(async()=>{
+  assert.equal(handlers.check(wc,'media','https://meet.google.com',{mediaType:'audio'}),false);
+  let result=request('media',{mediaTypes:['audio','video']}); assert.equal(p.pending.size,1);
+  await p.finish(last(),true,false); assert.equal(result(),true); assert.equal(Object.keys(choices).length,0);
+  assert.equal(handlers.check(wc,'media','https://meet.google.com',{mediaType:'audio'}),true);
+  assert.equal(handlers.check(wc,'media','https://other.test',{mediaType:'audio'}),false);
+  wc.emit('did-start-navigation',{isMainFrame:true,isSameDocument:false});
+  assert.equal(handlers.check(wc,'media','https://meet.google.com',{mediaType:'audio'}),false);
+  result=request('media',{mediaTypes:['audio']}); await p.finish(last(),false,true); assert.equal(result(),false);
+  result=request('media',{mediaTypes:['audio']}); assert.equal(result(),false); assert.equal(p.pending.size,0);
+  delete choices['https://meet.google.com|media:audio']; status='not-determined';
+  result=request('media',{mediaTypes:['audio']}); await p.finish(last(),true,true); assert.equal(result(),true);assert.equal(prompts,1);assert.equal(choices['https://meet.google.com|media:audio'],true);
+  result=request('media',{mediaTypes:['video']}); wc.emit('did-start-navigation',{isMainFrame:true,isSameDocument:false}); assert.equal(result(),false);assert.equal(p.pending.size,0);
+  status='denied'; result=request('media',{mediaTypes:['video']}); await p.finish(last(),true,true);assert.equal(result(),false);assert.equal(choices['https://meet.google.com|media:video'],true);
+  choices['https://meet.google.com|display-capture']=false; let display;
+  handlers.display({frame:{wc},securityOrigin:'https://meet.google.com',userGesture:true,videoRequested:true},v=>display=v);assert.deepEqual(Object.keys(display),[]);assert.equal(captures,0);
+  delete choices['https://meet.google.com|display-capture'];
+  handlers.display({frame:{wc},securityOrigin:'https://meet.google.com',userGesture:false,videoRequested:true},v=>display=v);assert.equal(p.pending.size,0);assert.equal(captures,0);
+  result=request('media',{mediaTypes:[]});assert.equal(last().permission,'display-capture');assert.equal(last().label,'screen sharing');await p.finish(last(),false,false);assert.equal(result(),false);
+  let shared; p.pickSource=async()=>({id:'screen:test',name:'test screen'});
+  handlers.display({frame:{wc},securityOrigin:'https://meet.google.com',userGesture:true,videoRequested:true},v=>shared=v);
+  assert.equal(last().permission,'display-capture');await p.finish(last(),true,false);await new Promise(r=>setTimeout(r,0));assert.equal(shared.video.id,'screen:test');assert.equal(shared.audio,undefined);assert.equal(captures,0);
+  // Tab cancellation must win even while the native OS request is still pending.
+  delete choices['https://meet.google.com|media:audio'];status='not-determined';let release;
+  electron.systemPreferences.askForMediaAccess=()=>new Promise(r=>release=r);
+  result=request('media',{mediaTypes:['audio']}); const awaiting=p.finish(last(),true,false);
+  wc.emit('did-start-navigation',{isMainFrame:true,isSameDocument:false});release(true);await awaiting;assert.equal(result(),false);assert.equal(p.pending.size,0);
+  console.log('ok: media allow once, origin isolation, navigation expiry, remembered block/allow, macOS ask/denial, screen denial/gesture, cancellation during OS prompt');
+})().catch(e=>{console.error(e);process.exitCode=1;});

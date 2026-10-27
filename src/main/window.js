@@ -905,6 +905,7 @@ class OliveWindow {
     const active = this.tabs.get(this.activeId);
     switch (type) {
       case 'ublock': return this.mgr.extensions?.open(this);
+      case 'sitePermissions': return this.mgr.permissions.showSettings(this);
       case 'resetPermissions': this.mgr.permissions.reset(this); break;
       case 'newTab': return this.openPalette('new');
       case 'splitNew': return this.openPalette('split');
