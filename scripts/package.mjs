@@ -31,7 +31,9 @@ const [appDir] = await packager({
   appVersion: pkg.version,
   buildVersion: pkg.version,
   icon: path.join(root, 'assets', 'icon.icns'),
-  asar: true,
+  // Electron's fs.cpSync cannot recursively copy a virtual ASAR directory.
+  // Keep verified bundled extension bytes on disk for profile-local installation.
+  asar: { unpackDir: 'vendor/ublock/**' },
   prune: true,
   ignore: [/^\/dist($|\/)/, /^\/scripts($|\/)/, /^\/assets\/icon\.(svg|png)$/, /^\/\.git($|\/)/, /^\/notes($|\/)/],
   protocols: [{ name: 'Web site URL', schemes: ['http', 'https'] }],

@@ -31,7 +31,9 @@ function verifyPackage(root, record) {
   if (manifest.manifest_version !== 3 || manifest.version !== record.version) throw new Error('unexpected manifest');
   return manifest;
 }
-function preparePackage(dataPath, bundle = path.join(__dirname, '../../vendor/ublock')) {
+function preparePackage(dataPath, bundle = app?.isPackaged
+  ? path.join(process.resourcesPath, 'app.asar.unpacked/vendor/ublock')
+  : path.join(__dirname, '../../vendor/ublock')) {
   const record = JSON.parse(fs.readFileSync(path.join(bundle, 'record.json'), 'utf8'));
   const source = path.join(bundle, 'unpacked');
   verifyPackage(source, record);
