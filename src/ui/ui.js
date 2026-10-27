@@ -56,7 +56,7 @@ function wireFavicons(root) {
 
 function rowHtml(t, { inSplit = false, focus = false } = {}) {
   const cls = ['row'];
-  if (S.activeId === t.id && !inSplit) cls.push('active');
+  if (!S.onboarding?.active && !S.appPage && S.activeId === t.id && !inSplit) cls.push('active');
   if (inSplit && focus) cls.push('focus');
   if (t.unloaded) cls.push('unloaded');
   const audio = t.audible || t.muted ? `<span class="audio" data-act="mute" title="${t.muted ? 'Unmute' : 'Mute'}">${t.muted ? ICON.muted : ICON.audio}</span>` : '';
@@ -115,14 +115,15 @@ function render() {
   $('#btn-forward').disabled = !S.active?.canGoForward;
   $('#btn-devtools').classList.toggle('on', !!S.active?.devtools);
   $('#profile-badge').textContent = S.private ? 'Private' : '';
+  $('#settings-row').hidden = !S.appPage;
+  $('#settings-row .title').textContent=S.appPage?.title||'';
+  $('#setup-row').hidden = !S.onboarding;
+  $('#setup-row').classList.toggle('active',!!S.onboarding?.active);
+  $('#setup-left').textContent = S.onboarding?.step && S.onboarding.step!=='welcome' ? `${S.onboarding.remaining} left` : '';
   $('#btn-ublock').hidden = S.private;
+  $('#btn-ledger').hidden = S.private;
   $('#btn-ublock').textContent = S.extension?.enabled ? 'uBO Lite · on' : 'uBO Lite · off';
   $('#btn-ublock').onclick = () => olive.cmd('ublock');
-
-  const a = S.agent || {};
-  const parts = [a.apiPort && `api :${a.apiPort}`, a.cdpPort && `cdp :${a.cdpPort}`].filter(Boolean);
-  $('#agent-badge').innerHTML = parts.length ? `<span class="dot"></span>${parts.join(' · ')}` : '';
-  $('#agent-badge').title = a.cdpPort ? 'Agent API + CDP on (click to copy endpoints)' : 'Agent API on, CDP port off (Developer menu to enable). Click to copy.';
 
   if (!drag) {
     setHtml($('#pinned'), listHtml(S.pinned));
@@ -211,6 +212,9 @@ function renderDownloads() {
 
 // ---------- sidebar interactions ----------
 
+$('#settings-close').onclick = e => {e.stopPropagation();olive.cmd('closePanel');};
+$('#setup-row').onclick = () => olive.cmd('onboarding');
+$('#setup-close').onclick = e => {e.stopPropagation();olive.cmd('onboardingLater');};
 $('#btn-sidebar').onclick = () => olive.cmd('toggleSidebar');
 $('#btn-back').onclick = () => olive.cmd('back');
 $('#btn-forward').onclick = () => olive.cmd('forward');
@@ -220,7 +224,6 @@ $('#newtab').onclick = () => olive.cmd('newTab');
 $('#btn-split').onclick = () => olive.cmd('splitNew');
 $('#btn-devtools').onclick = () => olive.cmd('devtools');
 $('#btn-clear').onclick = () => olive.cmd('clearUnpinned');
-$('#agent-badge').onclick = () => olive.cmd('copyAgentInfo');
 $('#btn-copy').onclick = (e) => { e.stopPropagation(); olive.cmd('copyUrl'); };
 $('#btn-site-settings').onclick = (e) => { e.stopPropagation(); olive.cmd('sitePermissions'); };
 $('#urlbar').onclick = () => olive.cmd('openLocation');
@@ -620,3 +623,5 @@ olive.invoke('state').then((s) => { if (s) { S = s; render(); } });
 window.addEventListener('keydown', (e) => {
   if (e.key === 'Escape' && !pal.open && S?.overlay === 'peek') olive.cmd('overlay', { kind: null });
 });
+
+$('#btn-ledger').onclick = () => olive.cmd('ledger');

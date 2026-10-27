@@ -1,24 +1,17 @@
-:root { color-scheme: light dark; font: 13px -apple-system, BlinkMacSystemFont, sans-serif; color: #252923; background: #f6f7f3; }
-* { box-sizing: border-box; }
-body { margin: 0; }
-main { padding: 22px 24px; }
-h1 { font-size: 21px; margin: 0 0 6px; letter-spacing: -.4px; }
-#origin { margin: 0 0 18px; color: #62675e; overflow-wrap: anywhere; user-select: text; }
-h2 { margin: 18px 0 6px; font-size: 14px; }
-.row { display: flex; align-items: center; gap: 12px; min-height: 39px; border-bottom: 1px solid #dfe3d9; }
+/* Layout only; settings-base.css owns app colors and controls. */
+#origin { margin: 0 0 16px; overflow-wrap: anywhere; user-select: text; }
+.row { display: flex; align-items: center; gap: 10px; min-height: 39px; border-bottom: 1px solid var(--line); }
 .row label, .row .label { flex: 1; }
-select, button { font: inherit; color: inherit; background: #fff; border: 1px solid #cdd3c7; border-radius: 6px; padding: 5px 8px; }
 select { width: 103px; }
-button { cursor: pointer; font-size: 11px; }
-select:focus-visible, button:focus-visible { outline: 2px solid #728c4e; outline-offset: 2px; }
-select:disabled, button:disabled { opacity: .5; cursor: default; }
-.note { color: #62675e; font-size: 11px; line-height: 1.5; margin: 10px 0; }
-.os-status { font-size: 11px; color: #62675e; }
-#status { min-height: 15px; font-size: 11px; color: #8a382d; margin: 10px 0 0; }
-@media (prefers-color-scheme: dark) {
-  :root { color: #e4e8de; background: #22251f; }
-  #origin, .note, .os-status { color: #a7afa0; }
-  .row { border-color: #3b4234; }
-  select, button { background: #30362a; border-color: #515b46; }
-  #status { color: #efb6a3; }
-}
+.row button, .os-status { font-size: 11px; }
+.os-status { color: var(--text-dim); }
+#status { min-height: 15px; font-size: 12px; color: var(--text); margin: 10px 0 0; }
+#screen-setup, #system-warning { background: var(--palette-sel); border: 1px solid var(--line); border-radius: 8px; padding: 12px; margin: 12px 0; font-size: 12px; line-height: 1.45; }
+#screen-setup h2, #system-warning h2 { margin: 0 0 8px; }
+#screen-setup p { margin: 8px 0; }
+#screen-setup ol { padding-left: 18px; }
+#screen-setup li { margin-bottom: 7px; }
+#app-path { user-select: text; overflow-wrap: anywhere; font-size: 11px; }
+#screen-setup button, #system-warning button { margin: 0 4px 4px 0; }
+
+.row button { height: 22px; min-width: 0; padding: 0 10px; border-radius: 11px; font-size: 12px; font-weight: 500; }

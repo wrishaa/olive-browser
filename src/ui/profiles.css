@@ -1,0 +1,17 @@
+/* Layout only; settings-base.css owns app colors and controls. */
+body { display: flex; flex-direction: column; min-height: 100vh; }
+main { width: 100%; max-width: 680px; }
+.profile { display: flex; gap: 8px; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--line); }
+.profile input { width: 0; flex: 1; }
+.row { display: flex; gap: 8px; }
+.row input { flex: 1; }
+form { margin-top: 18px; }
+label { display: block; font-weight: 600; margin-bottom: 8px; }
+.note { margin-top: 18px; }
+
+.profile button { height: 28px; min-width: 0; padding: 0 10px; border-radius: 14px; font-size: 12px; font-weight: 500; }
+
+.profile button { border-radius: 6px; background: transparent; color: var(--text-dim); }
+.profile button:hover:not(:disabled) { background: var(--kbd); color: var(--text); }
+.profile button:disabled { opacity: 1; }
+.note { max-width: 520px; }

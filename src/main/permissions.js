@@ -1,17 +1,19 @@
+const { AppPanel } = require('./app-panel');
 // Only trusted chrome views can resolve permission requests or change site settings.
-const { WebContentsView, BrowserWindow, ipcMain, systemPreferences, desktopCapturer, webContents, shell } = require('electron');
+const { WebContentsView, ipcMain, systemPreferences, desktopCapturer, webContents, shell, app } = require('electron');
 const path = require('path');
 const labels = { media: 'camera / microphone', geolocation: 'your location', notifications: 'notifications', midiSysex: 'MIDI devices', 'clipboard-read': 'read your clipboard', 'clipboard-sanitized-write': 'write to your clipboard', 'display-capture': 'screen sharing', openExternal: 'open another app', 'idle-detection': 'idle detection', hid: 'HID devices', serial: 'serial devices', usb: 'USB devices', 'storage-access': 'cross-site storage', 'top-level-storage-access': 'cross-site storage', 'speaker-selection': 'audio output devices', keyboardLock: 'keyboard lock', 'window-management': 'window management', 'local-network-access': 'your local network' };
 const settingsPermissions = [['media:audio','Microphone'],['media:video','Camera'],['display-capture','Screen sharing'],['notifications','Notifications'],['geolocation','Location'],['speaker-selection','Audio output devices'],['clipboard-read','Clipboard'],['local-network-access','Local network']];
 class Permissions {
   constructor(mgr) {
-    this.mgr = mgr; this.pending = new Map(); this.views = new Map(); this.seq = 0; this.privateChoices = {}; this.once = new WeakMap(); this.settings = new Map(); this.pickers = new Map(); this.osRequests = new Map();
+    this.mgr = mgr; this.pending = new Map(); this.views = new Map(); this.seq = 0; this.privateChoices = {}; this.once = new WeakMap(); this.settings = new Map(); this.pickers = new Map(); this.osRequests = new Map(); this.screenSetupRequested = false;
     ipcMain.on('olive:permission', (e, id, allow, remember = true) => {
       const p = this.pending.get(id);
       if (p && this.views.get(p.win)?.view.webContents === e.sender && typeof allow === 'boolean' && typeof remember === 'boolean') this.finish(p, allow, remember);
     });
     ipcMain.handle('olive:site-settings', async (e, action, payload = {}) => {
       const entry = this.settings.get(e.sender.id); if (!entry || e.sender !== entry.view.webContents) return null;
+      if (action === 'close') {entry.view.close();return null;}
       if (action === 'set' && settingsPermissions.some(([key]) => key === payload.key) && ['ask','allow','block'].includes(payload.value)) {
         const key = `${entry.origin}|${payload.key}`;
         if (payload.value === 'ask') delete entry.choices[key]; else entry.choices[key] = payload.value === 'allow';
@@ -20,8 +22,17 @@ class Permissions {
         if (!entry.win.isPrivate) this.mgr.perms.save();
       }
       if (action === 'system' && ['microphone','camera','screen'].includes(payload.kind)) {
+        if (payload.kind === 'screen') {
+          if (payload.confirmed !== true) throw new Error('Confirm the macOS screen access warning first.');
+          await this.registerScreenAccess();
+        }
         const pane = { microphone: 'Microphone', camera: 'Camera', screen: 'ScreenCapture' }[payload.kind];
         await shell.openExternal(`x-apple.systempreferences:com.apple.preference.security?Privacy_${pane}`);
+      }
+      if (action === 'relaunch' && this.screenSetupRequested) {
+        if (payload.confirmed !== true) throw new Error('Confirm relaunch first.');
+        // Explicit user action only; before-quit saves tabs and flushes cookies.
+        app.relaunch(); app.quit(); return null;
       }
       return this.settingsState(entry);
     });
@@ -123,16 +134,25 @@ class Permissions {
     p.wc.removeListener('did-start-navigation', p.navigate); p.wc.removeListener('destroyed', p.destroy);
     if (remember) { for (const key of p.keys) p.choices[key] = allow; if (p.persist) this.mgr.perms.save(); }
     else if (allow) for (const key of p.keys) this.grants(p.wc).add(key);
+    this.mgr.ledger?.record('permission', { origin:p.origin, permission:p.permission, allowed:!!allow, remember:!!remember, private:p.win.isPrivate });
     try { p.callback(allow); } catch {}
     this.refresh(p.win);
   }
+  async registerScreenAccess() {
+    this.screenSetupRequested = true;
+    // Do not gate this on getMediaAccessStatus: macOS reports denied even when
+    // this app has never requested capture and therefore is absent from TCC's UI.
+    // A real request from the installed, signed bundle registers Olive with macOS.
+    try { return await desktopCapturer.getSources({ types:['screen','window'], thumbnailSize:{width:240,height:135} }); }
+    catch { return []; }
+  }
   settingsState(e) {
-    return { origin: e.origin, permissions: settingsPermissions.map(([key,label]) => ({ key,label,value: e.choices[`${e.origin}|${key}`] === true ? 'allow' : e.choices[`${e.origin}|${key}`] === false ? 'block' : 'ask' })), system: { microphone:this.status('microphone'),camera:this.status('camera'),screen:this.status('screen') } };
+    return { origin: e.origin, permissions: settingsPermissions.map(([key,label]) => ({ key,label,value: e.choices[`${e.origin}|${key}`] === true ? 'allow' : e.choices[`${e.origin}|${key}`] === false ? 'block' : 'ask' })), system: { microphone:this.status('microphone'),camera:this.status('camera'),screen:this.status('screen') }, screenSetup: { requested:this.screenSetupRequested, appPath:process.platform === 'darwin' && app.isPackaged ? path.dirname(path.dirname(app.getPath('exe'))) : null } };
   }
   showSettings(win, sourceWC = null) {
     const wc = sourceWC || win?.tabs.get(win.activeId)?.wc, origin = this.origin(wc?.getURL()); if (!origin) return win?.send('toast','Site permissions are available on web pages.');
     for (const e of this.settings.values()) if (e.wc === wc) { e.view.show(); e.view.focus(); return; }
-    const view = new BrowserWindow({ parent:win.win, width:440,height:650, title:'Site settings', resizable:false, minimizable:false, fullscreenable:false, webPreferences:{ preload:path.join(__dirname,'../ui/site-settings-preload.js'), sandbox:true,contextIsolation:true,nodeIntegration:false } });
+    const view = new AppPanel(win, { width:480,height:520, title:'Site settings', resizable:false, minimizable:false, fullscreenable:false, webPreferences:{ preload:path.join(__dirname,'../ui/site-settings-preload.js'), sandbox:true,contextIsolation:true,nodeIntegration:false } });
     const entry = { view,win,wc,origin,choices:win.isPrivate ? this.privateChoices : this.mgr.perms.data };
     this.settings.set(view.webContents.id,entry);
     const close = e => { if (!e || !e.isSameDocument) { if (!view.isDestroyed()) view.close(); } };
@@ -144,19 +164,20 @@ class Permissions {
   }
   async pickSource(win, wc, origin) {
     if (!win || wc.isDestroyed()) return null;
-    if (['denied','restricted'].includes(this.status('screen'))) {
-      win.send('toast','macOS blocked screen recording. Open Site settings → macOS screen recording settings.'); this.showSettings(win, wc); return null;
-    }
     const url = wc.getURL();
     let canceled = false; const abort = () => { canceled = true; };
     wc.once('did-start-navigation',abort); wc.once('destroyed',abort);
     let sources;
-    try { sources = await desktopCapturer.getSources({ types:['screen','window'],thumbnailSize:{width:240,height:135} }); }
-    catch { win.send('toast','Screen sharing unavailable. Open Site settings → macOS screen recording settings.'); this.showSettings(win, wc); }
+    try { sources = await this.registerScreenAccess(); }
+    catch { sources = []; }
     finally { wc.removeListener('did-start-navigation',abort); wc.removeListener('destroyed',abort); }
-    if (canceled || !sources?.length || wc.isDestroyed() || wc.getURL() !== url) return null;
+    if (canceled || wc.isDestroyed() || wc.getURL() !== url) return null;
+    if (['denied','restricted','not-determined'].includes(this.status('screen')) || !sources?.length) {
+      win.send('toast','Enable Olive in macOS Screen & System Audio Recording, then relaunch Olive.');
+      this.showSettings(win, wc); return null;
+    }
     return new Promise(resolve => {
-      const view = new BrowserWindow({ parent:win.win,width:620,height:540,title:'Choose what to share',webPreferences:{preload:path.join(__dirname,'../ui/capture-preload.js'),sandbox:true,contextIsolation:true,nodeIntegration:false} });
+      const view = new AppPanel(win, {width:720,height:520,title:'Choose what to share',webPreferences:{preload:path.join(__dirname,'../ui/capture-preload.js'),sandbox:true,contextIsolation:true,nodeIntegration:false} });
       const id = view.webContents.id; let done = false;
       const finish = source => { if (done) return; done=true; this.pickers.delete(id); wc.removeListener('did-start-navigation',cancel); wc.removeListener('destroyed',cancel); if (!view.isDestroyed()) view.close(); resolve(source); };
       const cancel = () => finish(null);

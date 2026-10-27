@@ -9,7 +9,11 @@
     "start": "electron .",
     "dev": "OLIVE_PROFILE=dev electron .",
     "package": "node scripts/package.mjs",
-    "test:cdp": "node scripts/cdp-smoke.mjs"
+    "test:cdp": "node scripts/cdp-smoke.mjs",
+    "test": "node --test tests/*.test.js && node scripts/onboarding-unit.cjs && node scripts/media-permissions-unit.cjs && node scripts/browser-import-test.cjs && node scripts/arc-import-test.cjs && node scripts/shortcuts-test.mjs",
+    "test:native": "node scripts/profiles-native-test.mjs && node scripts/extensions-native-test.mjs && node scripts/shortcuts-native-test.mjs && node scripts/ledger-panel-native-test.mjs",
+    "test:visual": "node scripts/chrome-visual-contract.mjs",
+    "test:visual:onboarding": "node scripts/onboarding-visual-test.mjs"
   },
   "devDependencies": {
     "electron": "44.7.2",

@@ -1,4 +1,4 @@
-// build Olive.app (local, ad-hoc signed) and install it to ~/Applications/Olive.app
+// build Olive.app (local, Developer ID signed) and install it to ~/Applications/Olive.app
 // usage: npm run package          (OLIVE_NO_INSTALL=1 to skip the copy)
 import { packager } from '@electron/packager';
 import { execFileSync } from 'node:child_process';
@@ -9,6 +9,12 @@ import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const pkg = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'));
+
+// Use a certificate-backed identity, not an ad-hoc cdhash requirement that changes
+// with app.asar. Do not silently downgrade an installed app's privacy identity.
+const identities = execFileSync('/usr/bin/security', ['find-identity', '-v', '-p', 'codesigning']).toString();
+const identity = process.env.OLIVE_SIGN_IDENTITY || identities.match(/"(Developer ID Application: Retune AI Inc \(GLUU6G59Y3\))"/)?.[1];
+if (!identity) throw new Error('A stable signing identity is required. Set OLIVE_SIGN_IDENTITY to an installed Developer ID identity.');
 
 const [appDir] = await packager({
   dir: root,
@@ -46,8 +52,13 @@ const [appDir] = await packager({
 });
 
 const app = path.join(appDir, 'Olive.app');
-// ad-hoc signature so macOS treats it as one consistent bundle (no apple id needed)
-execFileSync('/usr/bin/codesign', ['--force', '--deep', '--sign', '-', app], { stdio: 'inherit' });
+// One keychain access/signing invocation for the entire bundle, not a per-file
+// osx-sign loop. The user must approve the key once with Always Allow.
+execFileSync('/usr/bin/codesign', ['--force', '--deep', '--options', 'runtime',
+  '--entitlements', path.join(root, 'assets', 'entitlements.plist'),
+  '--timestamp=none', '--sign', identity, app], { stdio: 'inherit' });
+execFileSync('/usr/bin/codesign', ['--verify', '--deep', '--strict', app], { stdio: 'inherit' });
+console.log('signed with stable identity:', identity);
 console.log('built', app);
 
 if (!process.env.OLIVE_NO_INSTALL) {

@@ -1,0 +1,7 @@
+/* Layout only; settings-base.css owns app colors and controls. */
+h2 { font-size: 15px; margin: 0 0 8px; }
+h2 .muted { font-size: inherit; font-weight: 400; }
+button { margin: 6px 4px 8px 0; }
+#toggle { border-color: var(--accent); background: var(--palette-sel); }
+#gap { font-size: 12px; line-height: 1.5; color: var(--text-dim); }
+#status { font-weight: 600; }

@@ -3,7 +3,7 @@
   --bg2: rgba(170, 199, 172, 0.86);
   --bg3: rgba(150, 186, 180, 0.86);
   --text: #1d2a1f;
-  --text-dim: rgba(29, 42, 31, 0.58);
+  --text-dim: #4c584d;
   --row-hover: rgba(255, 255, 255, 0.32);
   --row-active: rgba(255, 255, 255, 0.82);
   --row-active-shadow: 0 1px 2px rgba(30, 50, 30, 0.12), 0 0 0 0.5px rgba(30, 50, 30, 0.06);
@@ -25,7 +25,7 @@
     --bg2: rgba(30, 40, 36, 0.9);
     --bg3: rgba(28, 36, 40, 0.9);
     --text: #e6eee2;
-    --text-dim: rgba(230, 238, 226, 0.55);
+    --text-dim: #a8b3a5;
     --row-hover: rgba(255, 255, 255, 0.07);
     --row-active: rgba(255, 255, 255, 0.15);
     --row-active-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
@@ -47,7 +47,7 @@ body.private {
   --bg2: rgba(40, 36, 58, 0.92);
   --bg3: rgba(30, 30, 46, 0.92);
   --text: #ece8f6;
-  --text-dim: rgba(236, 232, 246, 0.55);
+  --text-dim: #b9b1c9;
   --row-hover: rgba(255, 255, 255, 0.07);
   --row-active: rgba(255, 255, 255, 0.16);
   --pill: rgba(255, 255, 255, 0.08);
@@ -347,15 +347,6 @@ body.no-pinned .divider button { display: none; }
 
 .footer { flex: none; display: flex; align-items: center; gap: 2px; height: 32px; margin-top: 4px; }
 .footer .spacer { flex: 1; }
-#agent-badge {
-  font: 10.5px ui-monospace, SFMono-Regular, Menlo, monospace;
-  color: var(--text-dim);
-  padding: 3px 6px;
-  border-radius: 6px;
-  white-space: nowrap;
-}
-#agent-badge:hover { background: var(--row-hover); color: var(--text); }
-#agent-badge .dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); margin-right: 5px; vertical-align: 1px; }
 #profile-badge { font-size: 11px; font-weight: 600; color: var(--accent); padding: 0 4px; }
 
 #sidebar-resize { position: absolute; right: -4px; top: 46px; bottom: 0; width: 8px; cursor: col-resize; }
@@ -429,8 +420,24 @@ body.ui-on-top #cards, body.ui-on-top #empty { display: none; }
 body.ui-on-top #bg { right: auto; width: var(--sbw); }
 body.ui-on-top.sidebar-hidden #bg { display: none; }
 
-#btn-ublock { flex-shrink: 0; text-align: left; border: 0; border-radius: 7px; padding: 8px 12px; margin: 3px 12px; background: var(--hover, #dce5db); color: inherit; font: inherit; cursor: pointer; -webkit-app-region: no-drag; }
+#btn-ublock { flex: none; height: 30px; text-align: left; border: 0; border-radius: 7px; padding: 0 10px; margin: 3px 0; background: var(--pill); color: var(--text); font: inherit; cursor: default; -webkit-app-region: no-drag; }
+#btn-ublock:hover { background: var(--pill-hover); }
 
 #urlbar .site-settings { display: flex; align-items: center; justify-content: center; flex: none; width: 24px; height: 24px; padding: 0; border: 0; border-radius: 6px; background: transparent; color: inherit; cursor: pointer; }
 #urlbar .site-settings:hover { background: var(--pill-hover); }
 #urlbar .site-settings:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+/* setup is a trusted page beside the unchanged browser chrome */
+.setup-glyph { background:var(--accent); border-radius:5px; position:relative; }
+.setup-glyph::after {content:'';position:absolute;inset:4px;border:1.5px solid var(--card);border-radius:50% 20% 50% 20%;transform:rotate(-25deg);}
+#setup-left {font-size:11px;color:var(--text-dim);white-space:nowrap;}
+#setup-row .close {font-size:18px;}
+/* Fixed icon tracks cannot shrink or be pushed out by status text. */
+.footer {display:grid;grid-template-columns:minmax(0,1fr) repeat(3,28px);gap:2px;height:auto;min-height:32px;}
+.footer .spacer {display:none;}
+#profile-badge {grid-column:1/-1;}
+#profile-badge:empty {display:none;}
+#btn-ledger {justify-self:start;min-width:0;max-width:100%;padding:0 4px;overflow:hidden;text-overflow:ellipsis;}
+.footer button.icon {width:28px;min-width:28px;flex:none;}
+.settings-glyph {color:var(--text);font-size:16px;}
+#settings-close {font-size:18px;}

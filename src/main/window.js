@@ -2,6 +2,9 @@
 // bottom and one WebContentsView per loaded tab placed on top as rounded cards.
 const { BaseWindow, WebContentsView, Menu, clipboard, shell, nativeTheme, app } = require('electron');
 const path = require('path');
+const { TabMRU } = require('./tab-mru');
+const { COMMANDS } = require('./shortcuts');
+const { matchesInput, holdForInput, holdReleased } = require('./shortcut-input');
 const { toUrl, displayHost, SEARCH } = require('../core/url');
 
 const UI_HTML = path.join(__dirname, '..', 'ui', 'index.html');
@@ -76,6 +79,7 @@ class OliveWindow {
     this.unpinned = []; // tab ids
     this.splits = new Map(); // splitId -> {ids, ratios}
     this.activeId = null;
+    this.tabMRU = new TabMRU();
     this.closedStack = [];
     this.overlay = null; // 'palette' | 'peek' | null
     this.uiOnTop = false;
@@ -107,13 +111,14 @@ class OliveWindow {
     this.ui = new WebContentsView({
       webPreferences: { preload: UI_PRELOAD, sandbox: true, contextIsolation: true, nodeIntegration: false, spellcheck: false },
     });
+    this.wireTabKeys(this.ui.webContents);
     this.ui.setBackgroundColor('#00000000');
     this.win.contentView.addChildView(this.ui);
     this.ui.webContents.loadFile(UI_HTML, { query: { private: this.isPrivate ? '1' : '' } });
     this.ui.webContents.on('did-finish-load', () => {
       this.uiReady = true;
       this.sendState();
-      if (this.tabs.size === 0) this.openPalette('new');
+      if (this.tabs.size === 0 && !this.inlinePage) this.openPalette('new');
     });
     this.ui.webContents.setWindowOpenHandler(({ url }) => {
       this.createTab({ url, activate: true });
@@ -125,6 +130,7 @@ class OliveWindow {
     this.win.on('enter-full-screen', () => { this.layout(); this.sendState(); });
     this.win.on('leave-full-screen', () => { this.layout(); this.sendState(); });
     this.win.on('focus', () => { mgr.focused = this; });
+    this.win.on('blur', () => this.finishTabWalk());
     this.win.on('move', () => this.mgr.saveSoon());
     this.win.on('close', () => this.mgr.onWindowClosing(this));
     this.win.on('closed', () => this.destroy());
@@ -133,6 +139,11 @@ class OliveWindow {
     this.layout();
     this.win.show();
     mgr.focused = this;
+  }
+
+  // Only metadata, and never private windows. The manager owns the profile ledger.
+  recordActivity(type, details = {}) {
+    if (!this.isPrivate) this.mgr.ledger?.record(type, { ...details, windowId: this.id });
   }
 
   // ---------- tabs ----------
@@ -152,6 +163,7 @@ class OliveWindow {
       this.splits.set(sid, { ids, ratios: normRatios(sp.ratios, ids.length) });
       for (const id of ids) this.tabs.get(id).splitId = sid;
     }
+    this.tabMRU.order = [...this.tabs.values()].sort((a, b) => b.lastActive - a.lastActive).map(t => t.id);
     const active = byKey.get(s.activeKey);
     if (active) this.activate(active.id);
   }
@@ -196,6 +208,7 @@ class OliveWindow {
       }
     }
     list.splice(at, 0, tab.id);
+    this.recordActivity('tab-open', { tabId: tab.id, url });
     this.ensureView(tab, { webContents, webPreferences });
     if (activate) this.activate(tab.id);
     else this.changed();
@@ -239,6 +252,7 @@ class OliveWindow {
 
   wireTab(tab) {
     const wc = tab.view.webContents;
+    this.wireTabKeys(wc);
     wc.setVisualZoomLevelLimits(1, 4).catch(() => {});
 
     wc.setWindowOpenHandler(({ url, disposition, features }) => {
@@ -287,6 +301,7 @@ class OliveWindow {
       tab.committedUrl = url;
       tab.url = url;
       if (!this.isPrivate) this.mgr.history.add(url, wc.getTitle());
+      this.recordActivity('visit', { tabId: tab.id, url });
       if (this.find.open && tab.id === this.activeId) this.closeFind();
       this.changed();
     });
@@ -294,6 +309,7 @@ class OliveWindow {
       if (!isMainFrame) return;
       tab.url = url;
       if (!this.isPrivate) this.mgr.history.add(url, wc.getTitle());
+      this.recordActivity('visit', { tabId: tab.id, url, sameDocument: true });
       this.changed();
     });
     wc.on('did-fail-load', (_e, code, desc, url, isMainFrame) => {
@@ -333,7 +349,10 @@ class OliveWindow {
     wc.on('before-mouse-event', (_e, m) => {
       if (m.type !== 'mouseDown') return;
       if (tab.id !== this.activeId && this.visibleIds().includes(tab.id)) {
+        this.finishTabWalk();
+        this.recordActivity('tab-activate', { tabId: tab.id, url: tab.url });
         this.activeId = tab.id;
+        this.tabMRU.touch(tab.id);
         tab.lastActive = Date.now();
         this.changed();
       }
@@ -350,14 +369,17 @@ class OliveWindow {
     wc.on('close', () => {}); // window.close() from page: 'destroyed' handles cleanup
   }
 
-  activate(id) {
+  activate(id, { mruPreview = false } = {}) {
     const tab = this.tabs.get(id);
     if (!tab) return;
+    this.inlinePage?.close();
+    if (!mruPreview) this.finishTabWalk();
     this.ensureView(tab);
     if (tab.crashed) tab.wc.reload();
     if (this.find.open && id !== this.activeId) this.closeFind(false);
+    if (this.activeId !== id) this.recordActivity('tab-activate', { tabId: tab.id, url: tab.url });
     this.activeId = id;
-    tab.lastActive = Date.now();
+    if (!mruPreview) { this.tabMRU.touch(id); tab.lastActive = Date.now(); }
     // load other members of the split too
     if (tab.splitId) for (const sid of this.splits.get(tab.splitId).ids) this.ensureView(this.tabs.get(sid));
     this.layout();
@@ -368,6 +390,8 @@ class OliveWindow {
   closeTab(id, { fromPage = false, force = false } = {}) {
     const tab = this.tabs.get(id);
     if (!tab) return;
+    this.finishTabWalk();
+    this.recordActivity('tab-close', { tabId: tab.id, url: tab.url });
     if (tab.pinned && !fromPage && !force) {
       // arc-style: closing a pinned tab unloads it but keeps it in the sidebar
       this.unload(tab);
@@ -393,6 +417,7 @@ class OliveWindow {
     if (idx >= 0) list.splice(idx, 1);
     this.unload(tab);
     this.tabs.delete(id);
+    this.tabMRU.remove(id);
     if (wasActive) {
       this.activeId = null;
       if (siblings.length) this.activate(siblings[0]);
@@ -415,6 +440,7 @@ class OliveWindow {
   }
 
   unload(tab) {
+    if (tab.view) this.recordActivity('tab-unload', { tabId: tab.id, url: tab.url });
     this.dropDevtools(tab);
     if (tab.view) {
       const view = tab.view;
@@ -564,6 +590,7 @@ class OliveWindow {
   openDevtools(tab) {
     if (!tab.wc || tab.devtools) return;
     const dv = new WebContentsView();
+    this.wireTabKeys(dv.webContents);
     dv.setBorderRadius(RADIUS);
     dv.setBackgroundColor(nativeTheme.shouldUseDarkColors ? '#ff202124' : '#ffffffff');
     this.win.contentView.addChildView(dv);
@@ -604,6 +631,7 @@ class OliveWindow {
   navigate(tab, input) {
     const url = toUrl(input);
     if (!url || !tab) return;
+    this.recordActivity(url.startsWith(SEARCH) ? 'search' : 'navigation', { tabId: tab.id, url, action: 'navigate', ...(url.startsWith(SEARCH) ? { engine: 'google' } : {}) });
     this.ensureView(tab);
     tab.url = url;
     this.mgr.applyUserAgent(tab.wc, url);
@@ -620,6 +648,7 @@ class OliveWindow {
 
   reload(tab, hard = false) {
     if (!tab) return;
+    this.recordActivity('navigation', { tabId: tab.id, url: tab.url, action: 'reload' });
     if (!tab.wc) return this.activate(tab.id);
     if (tab.errorFor) return void tab.wc.loadURL(tab.errorFor).catch(() => {});
     hard ? tab.wc.reloadIgnoringCache() : tab.wc.reload();
@@ -665,6 +694,7 @@ class OliveWindow {
   // ---------- overlays ----------
 
   openPalette(mode = 'new', value = '') {
+    this.inlinePage?.close();
     this.setOverlay('palette');
     this.ui.webContents.focus();
     this.send('palette', { mode, value });
@@ -683,6 +713,8 @@ class OliveWindow {
       if (tab?.wc && !this.find.open) tab.wc.focus();
     }
     this.mgr.permissions.layout(this);
+    this.inlinePage?.layout();
+    this.appPanel?.layout();
     this.sendState();
   }
 
@@ -713,6 +745,9 @@ class OliveWindow {
     const fsTab = this.htmlFullscreenId && visible.includes(this.htmlFullscreenId) ? this.tabs.get(this.htmlFullscreenId) : null;
     if (fsTab) {
       placed.set(fsTab.id, { page: { x: 0, y: 0, width: w, height: h }, radius: 0 });
+    } else if (this.inlinePage && !this.inlinePage.isDestroyed()) {
+      const rect = this.inlinePage.geometry();
+      this.panes = [{id:'setup',rect,page:rect,devtools:null}];
     } else if (visible.length) {
       const left = this.sidebarHidden ? M : this.sidebarWidth;
       const top = M + (this.find.open ? FIND_H : 0);
@@ -754,6 +789,8 @@ class OliveWindow {
       }
     }
     this.mgr.permissions.layout(this);
+    this.inlinePage?.layout();
+    this.appPanel?.layout();
   }
 
   // ---------- state to ui ----------
@@ -791,7 +828,9 @@ class OliveWindow {
       panes: this.panes,
       find: this.find,
       htmlFullscreen: !!this.htmlFullscreenId,
-      active: active
+      appPage: this.inlinePage?.kind==='settings' ? {title:this.inlinePage.options.title||'Settings'} : null,
+      onboarding: !this.isPrivate && this.mgr.onboarding?.eligible() && !this.mgr.onboarding.saved.completed ? {active:this.inlinePage?.kind==='setup', step:this.mgr.onboarding.saved.step, remaining:Math.max(0,4-['welcome','calls','screen','import','done'].indexOf(this.mgr.onboarding.saved.step))} : null,
+      active: !this.inlinePage && active
         ? {
             id: active.id,
             url: active.errorFor || active.url,
@@ -904,6 +943,12 @@ class OliveWindow {
   cmd(type, a = {}) {
     const active = this.tabs.get(this.activeId);
     switch (type) {
+      case 'closePanel': return this.appPanel?.close();
+      case 'profiles': return this.mgr.profileControls?.show();
+      case 'onboarding': return this.mgr.onboarding?.show();
+      case 'onboardingLater': return this.mgr.onboarding?.command('later');
+      case 'shortcuts': return this.mgr.shortcuts?.showSettings(this);
+      case 'ledger': return this.mgr.ledgerUI ? this.mgr.ledgerUI.show(this) : require('./ledger-review').show(this);
       case 'ublock': return this.mgr.extensions?.open(this);
       case 'sitePermissions': return this.mgr.permissions.showSettings(this);
       case 'resetPermissions': this.mgr.permissions.reset(this); break;
@@ -911,6 +956,7 @@ class OliveWindow {
       case 'splitNew': return this.openPalette('split');
       case 'openLocation': return this.openPalette('edit', active ? active.errorFor || active.url : '');
       case 'closeTab':
+        if (this.inlinePage) return this.inlinePage.close();
         if (this.overlay === 'palette') return this.setOverlay(null);
         if (this.find.open) return this.closeFind();
         if (!active) return this.win.close();
@@ -918,8 +964,8 @@ class OliveWindow {
       case 'closeTabId': return this.closeTab(a.id);
       case 'activate': return this.activate(a.id);
       case 'reopenClosed': return this.reopenClosed();
-      case 'back': return active?.wc?.navigationHistory.goBack();
-      case 'forward': return active?.wc?.navigationHistory.goForward();
+      case 'back': if(this.inlinePage)return this.inlinePage.kind==='setup'?this.mgr.onboarding?.command('back'):this.inlinePage.close(); this.recordActivity('navigation', { tabId: active?.id, url: active?.url, action: 'back' }); return active?.wc?.navigationHistory.goBack();
+      case 'forward': this.recordActivity('navigation', { tabId: active?.id, url: active?.url, action: 'forward' }); return active?.wc?.navigationHistory.goForward();
       case 'reload': return this.reload(active);
       case 'hardReload': return this.reload(active, true);
       case 'stop': return active?.wc?.stop();
@@ -939,6 +985,8 @@ class OliveWindow {
       case 'findPrev': if (!this.find.open) return this.openFind(); return this.doFind(this.find.query, { forward: false, findNext: true });
       case 'closeFind': return this.closeFind();
       case 'copyUrl': if (active) clipboard.writeText(active.url); return this.send('toast', 'Copied URL');
+      case 'mruNext': this.walkTabs(1); return this.finishTabWalk();
+      case 'mruPrev': this.walkTabs(-1); return this.finishTabWalk();
       case 'nextTab': return this.cycle(1);
       case 'prevTab': return this.cycle(-1);
       case 'selectIndex': return this.selectIndex(a.index);
@@ -981,10 +1029,43 @@ class OliveWindow {
     const raw = item?.url || input;
     if (!raw) return;
     const url = toUrl(raw);
+    if (url.startsWith(SEARCH) && mode !== 'edit') this.recordActivity('search', { url, engine: 'google' });
     const active = this.tabs.get(this.activeId);
     if (inSplit || mode === 'split') return this.openInSplit(url, active);
     if (mode === 'edit' && active) return this.navigate(active, url);
     this.createTab({ url });
+  }
+
+  wireTabKeys(wc) {
+    wc.on('before-input-event', (event, input) => {
+      if (this.tabMRU.walk && holdReleased(this.tabWalkHold, input)) this.finishTabWalk();
+      if (input.type !== 'keyDown') return;
+      // Resolve on every keystroke: remapping and profile switches take effect live.
+      for (const [command, dir] of [['mruNext', 1], ['mruPrev', -1]]) {
+        const accelerator = this.mgr.shortcuts
+          ? this.mgr.shortcuts.accelerator(command)
+          : COMMANDS.find(c => c.id === command).accelerator;
+        if (!matchesInput(accelerator, input)) continue;
+        event.preventDefault(); // suppress both the page key and native menu accelerator
+        if (!this.tabMRU.walk) this.tabWalkHold = holdForInput(input);
+        this.walkTabs(dir);
+        break;
+      }
+    });
+  }
+
+  walkTabs(dir) {
+    const id = this.tabMRU.step(this.allIds(), this.activeId, dir);
+    if (id != null) this.activate(id, { mruPreview: true });
+  }
+
+  finishTabWalk() {
+    this.tabWalkHold = null;
+    if (!this.tabMRU.walk) return;
+    this.tabMRU.finish(this.activeId);
+    const tab = this.tabs.get(this.activeId);
+    if (tab) tab.lastActive = Date.now();
+    this.mgr.saveSoon?.();
   }
 
   cycle(dir) {

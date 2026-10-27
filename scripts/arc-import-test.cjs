@@ -18,5 +18,14 @@ assert.equal(details.expirationDate, 1800000000);
 assert.equal(cookieDetails({ ...row, host_key: 'example.com' }, '').domain, undefined);
 assert.throws(() => cookieDetails({ ...row, top_frame_site_key: 'https://partition.example' }, ''));
 assert.equal(cookieDetails({ ...row, has_expires: 0 }, '').expirationDate, undefined);
-assert.equal(profiles().find(p => p.name.toLowerCase() === 'dj')?.dir, 'Profile 2');
+const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
+const root = fs.mkdtempSync(path.join(os.tmpdir(), 'olive-arc-profiles-test-'));
+try {
+  fs.writeFileSync(path.join(root, 'Local State'), JSON.stringify({ profile: { info_cache: {
+    'Profile 2': { name: 'dj' }, 'Profile 3': { name: '__ARC_internal' }, '../escape': { name: 'unsafe' },
+  } } }));
+  assert.deepEqual(profiles(root), [{ dir: 'Profile 2', name: 'dj' }]);
+} finally { fs.rmSync(root, { recursive: true, force: true }); }
 console.log('arc import: 12 synthetic crypto/mapping/profile checks passed (no real cookie/key reads)');

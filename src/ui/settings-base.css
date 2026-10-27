@@ -1,0 +1,104 @@
+/* Shared light/dark app tokens; keep in sync with ui.css. */
+:root {
+  --bg1: rgba(196, 214, 176, 0.86);
+  --bg2: rgba(170, 199, 172, 0.86);
+  --bg3: rgba(150, 186, 180, 0.86);
+  --text: #1d2a1f;
+  --text-dim: #4c584d;
+  --row-hover: rgba(255, 255, 255, 0.32);
+  --row-active: rgba(255, 255, 255, 0.82);
+  --row-active-shadow: 0 1px 2px rgba(30, 50, 30, 0.12), 0 0 0 0.5px rgba(30, 50, 30, 0.06);
+  --pill: rgba(255, 255, 255, 0.42);
+  --pill-hover: rgba(255, 255, 255, 0.6);
+  --line: rgba(29, 42, 31, 0.14);
+  --accent: #5d7d3c;
+  --card: #fff;
+  --card-shadow: 0 1px 3px rgba(20, 40, 20, 0.12), 0 6px 22px rgba(20, 40, 20, 0.10);
+  --palette-bg: rgba(252, 253, 250, 0.97);
+  --palette-sel: rgba(93, 125, 60, 0.14);
+  --kbd: rgba(29, 42, 31, 0.08);
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg1: rgba(36, 46, 36, 0.9);
+    --bg2: rgba(30, 40, 36, 0.9);
+    --bg3: rgba(28, 36, 40, 0.9);
+    --text: #e6eee2;
+    --text-dim: #a8b3a5;
+    --row-hover: rgba(255, 255, 255, 0.07);
+    --row-active: rgba(255, 255, 255, 0.15);
+    --row-active-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    --pill: rgba(255, 255, 255, 0.08);
+    --pill-hover: rgba(255, 255, 255, 0.13);
+    --line: rgba(230, 238, 226, 0.12);
+    --accent: #a8cf7b;
+    --card: #1f2021;
+    --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.4), 0 8px 26px rgba(0, 0, 0, 0.35);
+    --palette-bg: rgba(40, 42, 40, 0.97);
+    --palette-sel: rgba(168, 207, 123, 0.16);
+    --kbd: rgba(255, 255, 255, 0.1);
+    color-scheme: dark;
+  }
+}
+
+/* Settings are ordinary opaque pages in the browser pane, not dialogs. */
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html { min-height: 100%; background: var(--card); color: var(--text); }
+body {
+  margin: 0 auto;
+  max-width: 960px;
+  min-height: 100vh;
+  padding: 24px 28px;
+  background: var(--card);
+  color: var(--text);
+  font: 13px/1.35 -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+h1, h2 { color: var(--text); font-weight: 600; letter-spacing: -.2px; }
+h1 { font-size: 15px; margin: 0 0 8px; }
+h2 { font-size: 13px; margin: 18px 0 8px; }
+p { margin: 8px 0 12px; line-height: 1.45; color: var(--text-dim); }
+button, input, select, textarea {
+  font: inherit;
+  color: var(--text);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--card);
+  height: 28px;
+  padding: 4px 8px;
+  min-width: 0;
+}
+button {
+  min-width: 72px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 14px;
+  background: var(--kbd);
+  font-weight: 500;
+  cursor: default;
+}
+button:hover:not(:disabled) { background: var(--pill-hover); }
+button:active:not(:disabled) { filter: brightness(.92); }
+button.primary { background: var(--accent); color: var(--card); }
+button.primary:hover:not(:disabled) { background: var(--accent); filter: brightness(.96); }
+button:disabled, input:disabled, select:disabled { opacity: .5; cursor: default; }
+select {
+  appearance: none;
+  padding-right: 26px;
+  background-image: linear-gradient(45deg, transparent 50%, currentColor 50%), linear-gradient(135deg, currentColor 50%, transparent 50%);
+  background-position: calc(100% - 11px) 11px, calc(100% - 7px) 11px;
+  background-size: 4px 4px;
+  background-repeat: no-repeat;
+}
+input[type="checkbox"], input[type="radio"] { height: 14px; width: 14px; padding: 0; accent-color: var(--accent); margin: 0 5px 0 0; vertical-align: -1px; }
+.panel-actions { display: flex; justify-content: flex-end; gap: 8px; flex: none; margin-top: 16px; }
+:focus-visible { outline: 3px solid color-mix(in srgb, var(--accent) 45%, transparent); outline-offset: 2px; }
+a { color: var(--accent); }
+kbd { font: 12px -apple-system, system-ui; background: var(--kbd); border-radius: 4px; padding: 1px 5px; }
+.note, .hint, .muted { color: var(--text-dim); font-size: 12px; }
+input::placeholder, textarea::placeholder { color: var(--text-dim); opacity: 1; }
+#error, [role="alert"] { color: var(--text); }
+@media (max-width: 640px) { body { padding: 20px; } }

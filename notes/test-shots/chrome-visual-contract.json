@@ -1,0 +1,1189 @@
+{
+  "results": [
+    {
+      "ok": true,
+      "message": "light/1280x800/sidebar-252: renderer is actually using light media"
+    },
+    {
+      "ok": true,
+      "message": "light/1280x800/sidebar-252: no visible API/CDP/port/debug text",
+      "detail": []
+    },
+    {
+      "ok": true,
+      "message": "light/1280x800/sidebar-252: footer buttons including <> devtools are unclipped",
+      "detail": []
+    },
+    {
+      "ok": true,
+      "message": "light/1280x800/sidebar-252: uBO foreground/background contrast >=4.5 with alpha",
+      "detail": {
+        "minimum": 7.4402360576153095,
+        "maximum": 9.462558789725703,
+        "samples": [
+          [
+            190,
+            205,
+            193,
+            0.9176470588235294
+          ],
+          [
+            189,
+            205,
+            194,
+            0.9176470588235294
+          ],
+          [
+            187,
+            202,
+            193,
+            0.9215686274509803
+          ],
+          [
+            189,
+            204,
+            194,
+            0.9176470588235294
+          ]
+        ],
+        "color": "rgb(29, 42, 31)",
+        "background": "rgba(255, 255, 255, 0.42)",
+        "opacity": 1
+      }
+    },
+    {
+      "ok": true,
+      "message": "light/1280x800/sidebar-252: settings opens no extra native window",
+      "detail": {
+        "before": {
+          "windows": [
+            1,
+            2
+          ],
+          "visible": [
+            2
+          ],
+          "inline": false,
+          "hasShell": false,
+          "attached": false,
+          "expected": {
+            "x": 252,
+            "y": 8,
+            "width": 1020,
+            "height": 784
+          },
+          "pane": {
+            "x": 252,
+            "y": 8,
+            "width": 1020,
+            "height": 784
+          },
+          "webVisible": true
+        },
+        "after": {
+          "windows": [
+            1,
+            2
+          ],
+          "visible": [
+            2
+          ],
+          "inline": true,
+          "hasShell": false,
+          "attached": true,
+          "bounds": {
+            "x": 252,
+            "y": 8,
+            "width": 1020,
+            "height": 784
+          },
+          "expected": {
+            "x": 252,
+            "y": 8,
+            "width": 1020,
+            "height": 784
+          },
+          "pane": {
+            "x": 252,
+            "y": 8,
+            "width": 1020,
+            "height": 784
+          },
+          "webVisible": false
+        }
+      }
+    },
+    {
+      "ok": true,
+      "message": "light/1280x800/sidebar-252: app page exact pane bounds, no shell or visible web tab",
+      "detail": {
+        "windows": [
+          1,
+          2
+        ],
+        "visible": [
+          2
+        ],
+        "inline": true,
+        "hasShell": false,
+        "attached": true,
+        "bounds": {
+          "x": 252,
+          "y": 8,
+          "width": 1020,
+          "height": 784
+        },
+        "expected": {
+          "x": 252,
+          "y": 8,
+          "width": 1020,
+          "height": 784
+        },
+        "pane": {
+          "x": 252,
+          "y": 8,
+          "width": 1020,
+          "height": 784
+        },
+        "webVisible": false
+      }
+    },
+    {
+      "ok": true,
+      "message": "light/1280x800/sidebar-180: renderer is actually using light media"
+    },
+    {
+      "ok": true,
+      "message": "light/1280x800/sidebar-180: no visible API/CDP/port/debug text",
+      "detail": []
+    },
+    {
+      "ok": true,
+      "message": "light/1280x800/sidebar-180: footer buttons including <> devtools are unclipped",
+      "detail": []
+    },
+    {
+      "ok": true,
+      "message": "light/1280x800/sidebar-180: uBO foreground/background contrast >=4.5 with alpha",
+      "detail": {
+        "minimum": 7.5107736424246,
+        "maximum": 9.462558789725703,
+        "samples": [
+          [
+            190,
+            205,
+            193,
+            0.9176470588235294
+          ],
+          [
+            189,
+            205,
+            194,
+            0.9176470588235294
+          ],
+          [
+            188,
+            203,
+            193,
+            0.9215686274509803
+          ],
+          [
+            189,
+            204,
+            194,
+            0.9176470588235294
+          ]
+        ],
+        "color": "rgb(29, 42, 31)",
+        "background": "rgba(255, 255, 255, 0.42)",
+        "opacity": 1
+      }
+    },
+    {
+      "ok": true,
+      "message": "light/1280x800/sidebar-180: settings opens no extra native window",
+      "detail": {
+        "before": {
+          "windows": [
+            1,
+            2
+          ],
+          "visible": [
+            2
+          ],
+          "inline": false,
+          "hasShell": false,
+          "attached": false,
+          "expected": {
+            "x": 180,
+            "y": 8,
+            "width": 1092,
+            "height": 784
+          },
+          "pane": {
+            "x": 180,
+            "y": 8,
+            "width": 1092,
+            "height": 784
+          },
+          "webVisible": true
+        },
+        "after": {
+          "windows": [
+            1,
+            2
+          ],
+          "visible": [
+            2
+          ],
+          "inline": true,
+          "hasShell": false,
+          "attached": true,
+          "bounds": {
+            "x": 180,
+            "y": 8,
+            "width": 1092,
+            "height": 784
+          },
+          "expected": {
+            "x": 180,
+            "y": 8,
+            "width": 1092,
+            "height": 784
+          },
+          "pane": {
+            "x": 180,
+            "y": 8,
+            "width": 1092,
+            "height": 784
+          },
+          "webVisible": false
+        }
+      }
+    },
+    {
+      "ok": true,
+      "message": "light/1280x800/sidebar-180: app page exact pane bounds, no shell or visible web tab",
+      "detail": {
+        "windows": [
+          1,
+          2
+        ],
+        "visible": [
+          2
+        ],
+        "inline": true,
+        "hasShell": false,
+        "attached": true,
+        "bounds": {
+          "x": 180,
+          "y": 8,
+          "width": 1092,
+          "height": 784
+        },
+        "expected": {
+          "x": 180,
+          "y": 8,
+          "width": 1092,
+          "height": 784
+        },
+        "pane": {
+          "x": 180,
+          "y": 8,
+          "width": 1092,
+          "height": 784
+        },
+        "webVisible": false
+      }
+    },
+    {
+      "ok": true,
+      "message": "light/1360x880/sidebar-252: renderer is actually using light media"
+    },
+    {
+      "ok": true,
+      "message": "light/1360x880/sidebar-252: no visible API/CDP/port/debug text",
+      "detail": []
+    },
+    {
+      "ok": true,
+      "message": "light/1360x880/sidebar-252: footer buttons including <> devtools are unclipped",
+      "detail": []
+    },
+    {
+      "ok": true,
+      "message": "light/1360x880/sidebar-252: uBO foreground/background contrast >=4.5 with alpha",
+      "detail": {
+        "minimum": 7.4402360576153095,
+        "maximum": 9.451206600587167,
+        "samples": [
+          [
+            189,
+            205,
+            194,
+            0.9176470588235294
+          ],
+          [
+            189,
+            204,
+            194,
+            0.9176470588235294
+          ],
+          [
+            187,
+            202,
+            193,
+            0.9215686274509803
+          ],
+          [
+            189,
+            203,
+            194,
+            0.9176470588235294
+          ]
+        ],
+        "color": "rgb(29, 42, 31)",
+        "background": "rgba(255, 255, 255, 0.42)",
+        "opacity": 1
+      }
+    },
+    {
+      "ok": true,
+      "message": "light/1360x880/sidebar-252: settings opens no extra native window",
+      "detail": {
+        "before": {
+          "windows": [
+            1,
+            2
+          ],
+          "visible": [
+            2
+          ],
+          "inline": false,
+          "hasShell": false,
+          "attached": false,
+          "expected": {
+            "x": 252,
+            "y": 8,
+            "width": 1100,
+            "height": 864
+          },
+          "pane": {
+            "x": 252,
+            "y": 8,
+            "width": 1100,
+            "height": 864
+          },
+          "webVisible": true
+        },
+        "after": {
+          "windows": [
+            1,
+            2
+          ],
+          "visible": [
+            2
+          ],
+          "inline": true,
+          "hasShell": false,
+          "attached": true,
+          "bounds": {
+            "x": 252,
+            "y": 8,
+            "width": 1100,
+            "height": 864
+          },
+          "expected": {
+            "x": 252,
+            "y": 8,
+            "width": 1100,
+            "height": 864
+          },
+          "pane": {
+            "x": 252,
+            "y": 8,
+            "width": 1100,
+            "height": 864
+          },
+          "webVisible": false
+        }
+      }
+    },
+    {
+      "ok": true,
+      "message": "light/1360x880/sidebar-252: app page exact pane bounds, no shell or visible web tab",
+      "detail": {
+        "windows": [
+          1,
+          2
+        ],
+        "visible": [
+          2
+        ],
+        "inline": true,
+        "hasShell": false,
+        "attached": true,
+        "bounds": {
+          "x": 252,
+          "y": 8,
+          "width": 1100,
+          "height": 864
+        },
+        "expected": {
+          "x": 252,
+          "y": 8,
+          "width": 1100,
+          "height": 864
+        },
+        "pane": {
+          "x": 252,
+          "y": 8,
+          "width": 1100,
+          "height": 864
+        },
+        "webVisible": false
+      }
+    },
+    {
+      "ok": true,
+      "message": "light/1360x880/sidebar-180: renderer is actually using light media"
+    },
+    {
+      "ok": true,
+      "message": "light/1360x880/sidebar-180: no visible API/CDP/port/debug text",
+      "detail": []
+    },
+    {
+      "ok": true,
+      "message": "light/1360x880/sidebar-180: footer buttons including <> devtools are unclipped",
+      "detail": []
+    },
+    {
+      "ok": true,
+      "message": "light/1360x880/sidebar-180: uBO foreground/background contrast >=4.5 with alpha",
+      "detail": {
+        "minimum": 7.45518794835848,
+        "maximum": 9.451206600587167,
+        "samples": [
+          [
+            189,
+            205,
+            194,
+            0.9176470588235294
+          ],
+          [
+            189,
+            204,
+            194,
+            0.9176470588235294
+          ],
+          [
+            188,
+            202,
+            193,
+            0.9215686274509803
+          ],
+          [
+            189,
+            204,
+            194,
+            0.9176470588235294
+          ]
+        ],
+        "color": "rgb(29, 42, 31)",
+        "background": "rgba(255, 255, 255, 0.42)",
+        "opacity": 1
+      }
+    },
+    {
+      "ok": true,
+      "message": "light/1360x880/sidebar-180: settings opens no extra native window",
+      "detail": {
+        "before": {
+          "windows": [
+            1,
+            2
+          ],
+          "visible": [
+            2
+          ],
+          "inline": false,
+          "hasShell": false,
+          "attached": false,
+          "expected": {
+            "x": 180,
+            "y": 8,
+            "width": 1172,
+            "height": 864
+          },
+          "pane": {
+            "x": 180,
+            "y": 8,
+            "width": 1172,
+            "height": 864
+          },
+          "webVisible": true
+        },
+        "after": {
+          "windows": [
+            1,
+            2
+          ],
+          "visible": [
+            2
+          ],
+          "inline": true,
+          "hasShell": false,
+          "attached": true,
+          "bounds": {
+            "x": 180,
+            "y": 8,
+            "width": 1172,
+            "height": 864
+          },
+          "expected": {
+            "x": 180,
+            "y": 8,
+            "width": 1172,
+            "height": 864
+          },
+          "pane": {
+            "x": 180,
+            "y": 8,
+            "width": 1172,
+            "height": 864
+          },
+          "webVisible": false
+        }
+      }
+    },
+    {
+      "ok": true,
+      "message": "light/1360x880/sidebar-180: app page exact pane bounds, no shell or visible web tab",
+      "detail": {
+        "windows": [
+          1,
+          2
+        ],
+        "visible": [
+          2
+        ],
+        "inline": true,
+        "hasShell": false,
+        "attached": true,
+        "bounds": {
+          "x": 180,
+          "y": 8,
+          "width": 1172,
+          "height": 864
+        },
+        "expected": {
+          "x": 180,
+          "y": 8,
+          "width": 1172,
+          "height": 864
+        },
+        "pane": {
+          "x": 180,
+          "y": 8,
+          "width": 1172,
+          "height": 864
+        },
+        "webVisible": false
+      }
+    },
+    {
+      "ok": true,
+      "message": "dark/1280x800/sidebar-252: renderer is actually using dark media"
+    },
+    {
+      "ok": true,
+      "message": "dark/1280x800/sidebar-252: no visible API/CDP/port/debug text",
+      "detail": []
+    },
+    {
+      "ok": true,
+      "message": "dark/1280x800/sidebar-252: footer buttons including <> devtools are unclipped",
+      "detail": []
+    },
+    {
+      "ok": true,
+      "message": "dark/1280x800/sidebar-252: uBO foreground/background contrast >=4.5 with alpha",
+      "detail": {
+        "minimum": 8.115623124071568,
+        "maximum": 11.706986140344304,
+        "samples": [
+          [
+            44,
+            52,
+            50,
+            0.9098039215686274
+          ],
+          [
+            44,
+            52,
+            50,
+            0.9098039215686274
+          ],
+          [
+            42,
+            50,
+            49,
+            0.9176470588235294
+          ],
+          [
+            44,
+            52,
+            50,
+            0.9098039215686274
+          ]
+        ],
+        "color": "rgb(230, 238, 226)",
+        "background": "rgba(255, 255, 255, 0.08)",
+        "opacity": 1
+      }
+    },
+    {
+      "ok": true,
+      "message": "dark/1280x800/sidebar-252: settings opens no extra native window",
+      "detail": {
+        "before": {
+          "windows": [
+            1,
+            2
+          ],
+          "visible": [
+            2
+          ],
+          "inline": false,
+          "hasShell": false,
+          "attached": false,
+          "expected": {
+            "x": 252,
+            "y": 8,
+            "width": 1020,
+            "height": 784
+          },
+          "pane": {
+            "x": 252,
+            "y": 8,
+            "width": 1020,
+            "height": 784
+          },
+          "webVisible": true
+        },
+        "after": {
+          "windows": [
+            1,
+            2
+          ],
+          "visible": [
+            2
+          ],
+          "inline": true,
+          "hasShell": false,
+          "attached": true,
+          "bounds": {
+            "x": 252,
+            "y": 8,
+            "width": 1020,
+            "height": 784
+          },
+          "expected": {
+            "x": 252,
+            "y": 8,
+            "width": 1020,
+            "height": 784
+          },
+          "pane": {
+            "x": 252,
+            "y": 8,
+            "width": 1020,
+            "height": 784
+          },
+          "webVisible": false
+        }
+      }
+    },
+    {
+      "ok": true,
+      "message": "dark/1280x800/sidebar-252: app page exact pane bounds, no shell or visible web tab",
+      "detail": {
+        "windows": [
+          1,
+          2
+        ],
+        "visible": [
+          2
+        ],
+        "inline": true,
+        "hasShell": false,
+        "attached": true,
+        "bounds": {
+          "x": 252,
+          "y": 8,
+          "width": 1020,
+          "height": 784
+        },
+        "expected": {
+          "x": 252,
+          "y": 8,
+          "width": 1020,
+          "height": 784
+        },
+        "pane": {
+          "x": 252,
+          "y": 8,
+          "width": 1020,
+          "height": 784
+        },
+        "webVisible": false
+      }
+    },
+    {
+      "ok": true,
+      "message": "dark/1280x800/sidebar-180: renderer is actually using dark media"
+    },
+    {
+      "ok": true,
+      "message": "dark/1280x800/sidebar-180: no visible API/CDP/port/debug text",
+      "detail": []
+    },
+    {
+      "ok": true,
+      "message": "dark/1280x800/sidebar-180: footer buttons including <> devtools are unclipped",
+      "detail": []
+    },
+    {
+      "ok": true,
+      "message": "dark/1280x800/sidebar-180: uBO foreground/background contrast >=4.5 with alpha",
+      "detail": {
+        "minimum": 8.115623124071568,
+        "maximum": 11.706986140344304,
+        "samples": [
+          [
+            44,
+            52,
+            50,
+            0.9098039215686274
+          ],
+          [
+            44,
+            52,
+            50,
+            0.9098039215686274
+          ],
+          [
+            42,
+            50,
+            49,
+            0.9176470588235294
+          ],
+          [
+            44,
+            52,
+            50,
+            0.9098039215686274
+          ]
+        ],
+        "color": "rgb(230, 238, 226)",
+        "background": "rgba(255, 255, 255, 0.08)",
+        "opacity": 1
+      }
+    },
+    {
+      "ok": true,
+      "message": "dark/1280x800/sidebar-180: settings opens no extra native window",
+      "detail": {
+        "before": {
+          "windows": [
+            1,
+            2
+          ],
+          "visible": [
+            2
+          ],
+          "inline": false,
+          "hasShell": false,
+          "attached": false,
+          "expected": {
+            "x": 180,
+            "y": 8,
+            "width": 1092,
+            "height": 784
+          },
+          "pane": {
+            "x": 180,
+            "y": 8,
+            "width": 1092,
+            "height": 784
+          },
+          "webVisible": true
+        },
+        "after": {
+          "windows": [
+            1,
+            2
+          ],
+          "visible": [
+            2
+          ],
+          "inline": true,
+          "hasShell": false,
+          "attached": true,
+          "bounds": {
+            "x": 180,
+            "y": 8,
+            "width": 1092,
+            "height": 784
+          },
+          "expected": {
+            "x": 180,
+            "y": 8,
+            "width": 1092,
+            "height": 784
+          },
+          "pane": {
+            "x": 180,
+            "y": 8,
+            "width": 1092,
+            "height": 784
+          },
+          "webVisible": false
+        }
+      }
+    },
+    {
+      "ok": true,
+      "message": "dark/1280x800/sidebar-180: app page exact pane bounds, no shell or visible web tab",
+      "detail": {
+        "windows": [
+          1,
+          2
+        ],
+        "visible": [
+          2
+        ],
+        "inline": true,
+        "hasShell": false,
+        "attached": true,
+        "bounds": {
+          "x": 180,
+          "y": 8,
+          "width": 1092,
+          "height": 784
+        },
+        "expected": {
+          "x": 180,
+          "y": 8,
+          "width": 1092,
+          "height": 784
+        },
+        "pane": {
+          "x": 180,
+          "y": 8,
+          "width": 1092,
+          "height": 784
+        },
+        "webVisible": false
+      }
+    },
+    {
+      "ok": true,
+      "message": "dark/1360x880/sidebar-252: renderer is actually using dark media"
+    },
+    {
+      "ok": true,
+      "message": "dark/1360x880/sidebar-252: no visible API/CDP/port/debug text",
+      "detail": []
+    },
+    {
+      "ok": true,
+      "message": "dark/1360x880/sidebar-252: footer buttons including <> devtools are unclipped",
+      "detail": []
+    },
+    {
+      "ok": true,
+      "message": "dark/1360x880/sidebar-252: uBO foreground/background contrast >=4.5 with alpha",
+      "detail": {
+        "minimum": 8.115623124071568,
+        "maximum": 11.706986140344304,
+        "samples": [
+          [
+            44,
+            52,
+            50,
+            0.9098039215686274
+          ],
+          [
+            44,
+            52,
+            50,
+            0.9098039215686274
+          ],
+          [
+            42,
+            50,
+            49,
+            0.9176470588235294
+          ],
+          [
+            45,
+            51,
+            50,
+            0.9098039215686274
+          ]
+        ],
+        "color": "rgb(230, 238, 226)",
+        "background": "rgba(255, 255, 255, 0.08)",
+        "opacity": 1
+      }
+    },
+    {
+      "ok": true,
+      "message": "dark/1360x880/sidebar-252: settings opens no extra native window",
+      "detail": {
+        "before": {
+          "windows": [
+            1,
+            2
+          ],
+          "visible": [
+            2
+          ],
+          "inline": false,
+          "hasShell": false,
+          "attached": false,
+          "expected": {
+            "x": 252,
+            "y": 8,
+            "width": 1100,
+            "height": 864
+          },
+          "pane": {
+            "x": 252,
+            "y": 8,
+            "width": 1100,
+            "height": 864
+          },
+          "webVisible": true
+        },
+        "after": {
+          "windows": [
+            1,
+            2
+          ],
+          "visible": [
+            2
+          ],
+          "inline": true,
+          "hasShell": false,
+          "attached": true,
+          "bounds": {
+            "x": 252,
+            "y": 8,
+            "width": 1100,
+            "height": 864
+          },
+          "expected": {
+            "x": 252,
+            "y": 8,
+            "width": 1100,
+            "height": 864
+          },
+          "pane": {
+            "x": 252,
+            "y": 8,
+            "width": 1100,
+            "height": 864
+          },
+          "webVisible": false
+        }
+      }
+    },
+    {
+      "ok": true,
+      "message": "dark/1360x880/sidebar-252: app page exact pane bounds, no shell or visible web tab",
+      "detail": {
+        "windows": [
+          1,
+          2
+        ],
+        "visible": [
+          2
+        ],
+        "inline": true,
+        "hasShell": false,
+        "attached": true,
+        "bounds": {
+          "x": 252,
+          "y": 8,
+          "width": 1100,
+          "height": 864
+        },
+        "expected": {
+          "x": 252,
+          "y": 8,
+          "width": 1100,
+          "height": 864
+        },
+        "pane": {
+          "x": 252,
+          "y": 8,
+          "width": 1100,
+          "height": 864
+        },
+        "webVisible": false
+      }
+    },
+    {
+      "ok": true,
+      "message": "dark/1360x880/sidebar-180: renderer is actually using dark media"
+    },
+    {
+      "ok": true,
+      "message": "dark/1360x880/sidebar-180: no visible API/CDP/port/debug text",
+      "detail": []
+    },
+    {
+      "ok": true,
+      "message": "dark/1360x880/sidebar-180: footer buttons including <> devtools are unclipped",
+      "detail": []
+    },
+    {
+      "ok": true,
+      "message": "dark/1360x880/sidebar-180: uBO foreground/background contrast >=4.5 with alpha",
+      "detail": {
+        "minimum": 8.115623124071568,
+        "maximum": 11.706986140344304,
+        "samples": [
+          [
+            44,
+            52,
+            50,
+            0.9098039215686274
+          ],
+          [
+            44,
+            52,
+            50,
+            0.9098039215686274
+          ],
+          [
+            42,
+            50,
+            49,
+            0.9176470588235294
+          ],
+          [
+            44,
+            52,
+            50,
+            0.9098039215686274
+          ]
+        ],
+        "color": "rgb(230, 238, 226)",
+        "background": "rgba(255, 255, 255, 0.08)",
+        "opacity": 1
+      }
+    },
+    {
+      "ok": true,
+      "message": "dark/1360x880/sidebar-180: settings opens no extra native window",
+      "detail": {
+        "before": {
+          "windows": [
+            1,
+            2
+          ],
+          "visible": [
+            2
+          ],
+          "inline": false,
+          "hasShell": false,
+          "attached": false,
+          "expected": {
+            "x": 180,
+            "y": 8,
+            "width": 1172,
+            "height": 864
+          },
+          "pane": {
+            "x": 180,
+            "y": 8,
+            "width": 1172,
+            "height": 864
+          },
+          "webVisible": true
+        },
+        "after": {
+          "windows": [
+            1,
+            2
+          ],
+          "visible": [
+            2
+          ],
+          "inline": true,
+          "hasShell": false,
+          "attached": true,
+          "bounds": {
+            "x": 180,
+            "y": 8,
+            "width": 1172,
+            "height": 864
+          },
+          "expected": {
+            "x": 180,
+            "y": 8,
+            "width": 1172,
+            "height": 864
+          },
+          "pane": {
+            "x": 180,
+            "y": 8,
+            "width": 1172,
+            "height": 864
+          },
+          "webVisible": false
+        }
+      }
+    },
+    {
+      "ok": true,
+      "message": "dark/1360x880/sidebar-180: app page exact pane bounds, no shell or visible web tab",
+      "detail": {
+        "windows": [
+          1,
+          2
+        ],
+        "visible": [
+          2
+        ],
+        "inline": true,
+        "hasShell": false,
+        "attached": true,
+        "bounds": {
+          "x": 180,
+          "y": 8,
+          "width": 1172,
+          "height": 864
+        },
+        "expected": {
+          "x": 180,
+          "y": 8,
+          "width": 1172,
+          "height": 864
+        },
+        "pane": {
+          "x": 180,
+          "y": 8,
+          "width": 1172,
+          "height": 864
+        },
+        "webVisible": false
+      }
+    }
+  ],
+  "failures": []
+}

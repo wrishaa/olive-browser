@@ -1,0 +1,22 @@
+/* Layout only; settings-base.css owns app colors and controls. */
+header p:first-child { margin-top: 0; }
+#status { min-height: 17px; color: var(--text); }
+.row { display: grid; grid-template-columns: minmax(0, 1fr) 164px 55px; gap: 8px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--line); }
+.row input { width: 100%; }
+@media (max-width: 450px) { .row { grid-template-columns: minmax(0, 1fr) 135px 48px; gap: 6px; } }
+
+.row button { min-width: 0; height: 22px; padding: 0 10px; border-radius: 11px; font-size: 12px; font-weight: 500; }
+
+/* A compact key list, not a column of primary save capsules. */
+header { max-width: 720px; }
+header p { font-size: 12px; }
+header p:nth-of-type(2) { margin-top: 4px; }
+#commands { margin-top: 8px; }
+.row { grid-template-columns: minmax(0, 1fr) 164px 48px; padding: 6px 0; min-height: 40px; }
+.row input { text-align: center; background: var(--kbd); border-color: transparent; font-size: 12px; }
+.row button { background: transparent; border-radius: 4px; color: var(--text-dim); padding: 0 6px; }
+.row button:hover:not(:disabled), .row button:focus-visible { background: var(--kbd); color: var(--text); }
+@media (max-width: 640px) { .row { grid-template-columns: minmax(0, 1fr) 140px 42px; } }
+/* Reveal the commit action only while editing its row. */
+.row button { visibility: hidden; }
+.row:focus-within button { visibility: visible; }

@@ -1,0 +1,24 @@
+/* Layout only; settings-base.css owns app colors and controls. */
+body { display: flex; flex-direction: column; height: 100vh; gap: 0; }
+header p { margin-bottom: 4px; }
+.controls, .filters, .actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 10px 0; }
+.controls label, .filters label { display: flex; gap: 6px; align-items: center; }
+#query { width: 180px; }
+#status { color: var(--text); }
+#count { margin-right: auto; }
+.hint { margin-top: 0; }
+.table { flex: 1; min-height: 80px; overflow: auto; border: 1px solid var(--line); border-radius: 8px; }
+table { border-collapse: collapse; width: 100%; text-align: left; }
+th { position: sticky; top: 0; background: var(--card); box-shadow: 0 1px var(--line); font-weight: 600; }
+td, th { padding: 8px; vertical-align: top; border-bottom: 1px solid var(--line); }
+td:first-child { white-space: nowrap; }
+td:last-child { overflow-wrap: anywhere; color: var(--text-dim); min-width: 220px; }
+#empty { padding: 16px; }
+
+.controls { padding: 10px 0 14px; border-bottom: 1px solid var(--line); }
+.filters { margin: 14px 0 8px; }
+.actions { gap: 6px; }
+.actions button { min-width: 0; height: 24px; padding: 0 10px; border-radius: 6px; font-size: 12px; }
+.table { border: 0; border-radius: 0; }
+th { padding-top: 10px; padding-bottom: 10px; }
+.hint { margin: 6px 0 12px; }

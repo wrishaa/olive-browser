@@ -1,5 +1,5 @@
 // native app menu; every action goes to the focused olive window
-const { Menu, app, shell } = require('electron');
+const { Menu, shell } = require('electron');
 const path = require('path');
 
 function buildMenu(mgr) {
@@ -9,6 +9,7 @@ function buildMenu(mgr) {
     else if (type === 'newTab' || type === 'newWindow') mgr.newWindow({});
     else if (type === 'newPrivateWindow') mgr.newWindow({ private: true });
   };
+  const shortcut = (id) => mgr.shortcuts ? mgr.shortcuts.accelerator(id) : require('./shortcuts').COMMANDS.find(c => c.id === id)?.accelerator;
   const hidden = (accelerator, type, args) => ({ label: type, accelerator, click: w(type, args), visible: false, acceleratorWorksWhenHidden: true });
 
   const template = [
@@ -17,8 +18,13 @@ function buildMenu(mgr) {
       submenu: [
         { role: 'about' },
         { type: 'separator' },
+        { label: 'Profiles…', click: () => mgr.profileControls?.show() },
+        { label: 'Activity…', click: () => mgr.ledgerUI?.show(mgr.focusedWindow()) },
+        { label: 'Set Up Olive…', click: () => mgr.onboarding?.show() },
+        { label: 'Keyboard Shortcuts…', accelerator: shortcut('settings'), click: () => mgr.shortcuts?.showSettings(mgr.focusedWindow()) },
+        { type: 'separator' },
         { label: 'Set as Default Browser…', click: () => mgr.makeDefault() },
-      { label: 'Import from Arc…', click: () => require('./arc-import').showImport(mgr) },
+        { label: 'Import from Arc…', click: () => require('./arc-import').showImport(mgr) },
         { label: 'Reset Permissions for This Site', click: () => mgr.permissions.reset(mgr.focusedWindow()) },
         { label: 'Copy Agent Endpoints', click: w('copyAgentInfo') },
         { label: 'Clear Browsing History', click: () => mgr.history.clear() },
@@ -35,14 +41,14 @@ function buildMenu(mgr) {
     {
       label: 'File',
       submenu: [
-        { label: 'New Tab', accelerator: 'Cmd+T', click: w('newTab') },
-        { label: 'New Window', accelerator: 'Cmd+N', click: w('newWindow') },
-        { label: 'New Private Window', accelerator: 'Cmd+Shift+N', click: w('newPrivateWindow') },
-        { label: 'Open Location…', accelerator: 'Cmd+L', click: w('openLocation') },
-        { label: 'Reopen Closed Tab', accelerator: 'Cmd+Shift+T', click: w('reopenClosed') },
+        { label: 'New Tab', accelerator: shortcut('newTab'), click: w('newTab') },
+        { label: 'New Window', accelerator: shortcut('newWindow'), click: w('newWindow') },
+        { label: 'New Private Window', accelerator: shortcut('newPrivateWindow'), click: w('newPrivateWindow') },
+        { label: 'Open Location…', accelerator: shortcut('openLocation'), click: w('openLocation') },
+        { label: 'Reopen Closed Tab', accelerator: shortcut('reopenClosed'), click: w('reopenClosed') },
         { type: 'separator' },
-        { label: 'Close Tab', accelerator: 'Cmd+W', click: w('closeTab') },
-        { label: 'Close Window', accelerator: 'Cmd+Shift+W', click: () => mgr.focusedWindow()?.win.close() },
+        { label: 'Close Tab', accelerator: shortcut('closeTab'), click: w('closeTab') },
+        { label: 'Close Window', accelerator: shortcut('closeWindow'), click: () => mgr.focusedWindow()?.win.close() },
       ],
     },
     {
@@ -58,26 +64,26 @@ function buildMenu(mgr) {
         { role: 'delete' },
         { role: 'selectAll' },
         { type: 'separator' },
-        { label: 'Copy URL', accelerator: 'Cmd+Shift+C', click: w('copyUrl') },
+        { label: 'Copy URL', accelerator: shortcut('copyUrl'), click: w('copyUrl') },
         { type: 'separator' },
-        { label: 'Find…', accelerator: 'Cmd+F', click: w('find') },
-        { label: 'Find Next', accelerator: 'Cmd+G', click: w('findNext') },
-        { label: 'Find Previous', accelerator: 'Cmd+Shift+G', click: w('findPrev') },
+        { label: 'Find…', accelerator: shortcut('find'), click: w('find') },
+        { label: 'Find Next', accelerator: shortcut('findNext'), click: w('findNext') },
+        { label: 'Find Previous', accelerator: shortcut('findPrev'), click: w('findPrev') },
       ],
     },
     {
       label: 'View',
       submenu: [
-        { label: 'Toggle Sidebar', accelerator: 'Cmd+S', click: w('toggleSidebar') },
+        { label: 'Toggle Sidebar', accelerator: shortcut('toggleSidebar'), click: w('toggleSidebar') },
         { type: 'separator' },
-        { label: 'Reload', accelerator: 'Cmd+R', click: w('reload') },
-        { label: 'Hard Reload', accelerator: 'Cmd+Shift+R', click: w('hardReload') },
-        { label: 'Stop', accelerator: 'Cmd+.', click: w('stop') },
+        { label: 'Reload', accelerator: shortcut('reload'), click: w('reload') },
+        { label: 'Hard Reload', accelerator: shortcut('hardReload'), click: w('hardReload') },
+        { label: 'Stop', accelerator: shortcut('stop'), click: w('stop') },
         { type: 'separator' },
-        { label: 'Actual Size', accelerator: 'Cmd+0', click: w('zoomReset') },
-        { label: 'Zoom In', accelerator: 'Cmd+=', click: w('zoomIn') },
+        { label: 'Actual Size', accelerator: shortcut('zoomReset'), click: w('zoomReset') },
+        { label: 'Zoom In', accelerator: shortcut('zoomIn'), click: w('zoomIn') },
         hidden('Cmd+Plus', 'zoomIn'),
-        { label: 'Zoom Out', accelerator: 'Cmd+-', click: w('zoomOut') },
+        { label: 'Zoom Out', accelerator: shortcut('zoomOut'), click: w('zoomOut') },
         { type: 'separator' },
         { role: 'togglefullscreen' },
       ],
@@ -85,19 +91,19 @@ function buildMenu(mgr) {
     {
       label: 'Tabs',
       submenu: [
-        { label: 'Next Tab', accelerator: 'Ctrl+Tab', click: w('nextTab') },
-        { label: 'Previous Tab', accelerator: 'Ctrl+Shift+Tab', click: w('prevTab') },
+        { label: 'Next Recently Used Tab', accelerator: shortcut('mruNext'), click: w('mruNext') },
+        { label: 'Previous Recently Used Tab', accelerator: shortcut('mruPrev'), click: w('mruPrev') },
+        { label: 'Next Tab', accelerator: shortcut('nextTab'), click: w('nextTab') },
+        { label: 'Previous Tab', accelerator: shortcut('prevTab'), click: w('prevTab') },
         hidden('Cmd+Shift+]', 'nextTab'),
         hidden('Cmd+Shift+[', 'prevTab'),
-        hidden('Cmd+Alt+Down', 'nextTab'),
-        hidden('Cmd+Alt+Up', 'prevTab'),
         { type: 'separator' },
-        { label: 'Pin / Unpin Tab', accelerator: 'Cmd+D', click: w('togglePin') },
-        { label: 'Duplicate Tab', accelerator: 'Cmd+Shift+D', click: w('duplicate') },
+        { label: 'Pin / Unpin Tab', accelerator: shortcut('togglePin'), click: w('togglePin') },
+        { label: 'Duplicate Tab', accelerator: shortcut('duplicate'), click: w('duplicate') },
         { type: 'separator' },
-        { label: 'Split View with New Tab', accelerator: 'Ctrl+Shift+=', click: w('splitNew') },
+        { label: 'Split View with New Tab', accelerator: shortcut('splitNew'), click: w('splitNew') },
         hidden('Ctrl+Shift+Plus', 'splitNew'),
-        { label: 'Separate Split View', accelerator: 'Ctrl+Shift+-', click: w('unsplit') },
+        { label: 'Separate Split View', accelerator: shortcut('unsplit'), click: w('unsplit') },
         { type: 'separator' },
         ...[1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => hidden(`Cmd+${n}`, 'selectIndex', { index: n })),
       ],
@@ -105,15 +111,15 @@ function buildMenu(mgr) {
     {
       label: 'History',
       submenu: [
-        { label: 'Back', accelerator: 'Cmd+[', click: w('back') },
-        { label: 'Forward', accelerator: 'Cmd+]', click: w('forward') },
+        { label: 'Back', accelerator: shortcut('back'), click: w('back') },
+        { label: 'Forward', accelerator: shortcut('forward'), click: w('forward') },
       ],
     },
     {
       label: 'Developer',
       submenu: [
-        { label: 'Developer Tools', accelerator: 'Cmd+Alt+I', click: w('devtools') },
-        { label: 'JavaScript Console', accelerator: 'Cmd+Alt+J', click: w('console') },
+        { label: 'Developer Tools', accelerator: shortcut('devtools'), click: w('devtools') },
+        { label: 'JavaScript Console', accelerator: shortcut('console'), click: w('console') },
         hidden('F12', 'devtools'),
         { type: 'separator' },
         { label: 'Allow Agent Control over CDP (port 9222)', type: 'checkbox', checked: !!mgr.settings.cdp, click: () => mgr.toggleCdp() },

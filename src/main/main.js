@@ -8,7 +8,8 @@ const { execFileSync } = require('child_process');
 
 const profile = process.env.OLIVE_PROFILE || '';
 app.setName('Olive');
-app.setPath('userData', path.join(app.getPath('appData'), profile ? `Olive-${profile}` : 'Olive'));
+app.setPath('userData', process.env.OLIVE_USER_DATA_DIR ? path.resolve(process.env.OLIVE_USER_DATA_DIR) : path.join(app.getPath('appData'), profile ? `Olive-${profile}` : 'Olive'));
+fs.mkdirSync(app.getPath('userData'), { recursive:true, mode:0o700 });
 
 function portFree(port) {
   try {
@@ -82,19 +83,57 @@ class Manager {
     this.saveTimer = null;
     this.quitting = false;
     this.pendingUrls = [];
-    const ud = app.getPath('userData');
+    this.profiles = new (require('../core/profiles').Profiles)(app.getPath('userData'));
+    const ud = this.dataPath;
     this.state = new JsonStore(path.join(ud, 'session.json'), () => ({ windows: [] }));
     this.perms = new JsonStore(path.join(ud, 'permissions.json'), () => ({}));
     this.permissions = new (require('./permissions').Permissions)(this);
     this.history = new History(path.join(ud, 'history.json'));
+    this.ledger = new (require('../core/ledger').Ledger)(path.join(ud, 'activity.json'));
+    this.ledgerUI = new (require('./ledger-review').LedgerUI)(this);
+    this.shortcuts = new (require('./shortcuts').Shortcuts)(this);
+    this.profileControls = new (require('./profile-controls').ProfileControls)(this);
   }
 
   get session() {
     if (!this._session) {
-      this._session = session.fromPartition('persist:olive');
+      this._session = session.fromPartition(this.profiles.partition());
       this.setupSession(this._session);
     }
     return this._session;
+  }
+
+  get dataPath() { return this.profiles.directory(); }
+  get profileInfo() { return { ...this.profiles.current }; }
+
+  async switchProfile(id) {
+    if (id === this.profiles.current.id) return;
+    if (this.switchingProfile) throw new Error('A profile switch is already in progress.');
+    if (!this.profiles.get(id)) throw new Error('Unknown profile');
+    if (this.downloads.some(d => ['progressing','paused'].includes(d.state))) throw new Error('Finish or cancel your downloads before switching profiles.');
+    if (this.arcImportBusy || this.onboarding?.busy || this.permissions.osRequests.size || this.permissions.pending.size || this.permissions.pickers.size) throw new Error('Finish the current setup or permission request before switching profiles.');
+    this.switchingProfile = true;
+    try {
+      this.saveNow(); this.history.flush(); this.perms.flush(); this.ledgerUI.close(); this.ledger.close(); this.shortcuts.flush();
+      await this.session.cookies.flushStore();
+      this.onboarding?.close?.();
+      await this.extensions?.dispose?.();
+      // Session state was saved above. Closing these windows must not overwrite it.
+      this.quitting = true;
+      for (const w of [...this.windows]) w.win.close();
+      this.quitting = false; this.keepState = false;
+      this.profiles.activate(id);
+      const ud=this.dataPath;fs.mkdirSync(ud,{recursive:true,mode:0o700});
+      this.state=new JsonStore(path.join(ud,'session.json'),()=>({windows:[]}));
+      this.perms=new JsonStore(path.join(ud,'permissions.json'),()=>({}));
+      this.history=new History(path.join(ud,'history.json'));
+      this.downloads=[];this._session=null;this.permissions.privateChoices={};
+      this.ledger=new (require('../core/ledger').Ledger)(path.join(ud,'activity.json'));
+      this.shortcuts.reload();this.onboarding?.reload();
+      await this.extensions.load(this.session);
+      this.restore();buildMenu(this);this.broadcast();this.writeAgentFile();
+      await this.onboarding?.maybeRun?.();
+    } finally { this.quitting=false;this.switchingProfile=false; }
   }
 
   privateSession(id) {
@@ -111,7 +150,11 @@ class Manager {
     ses.setSpellCheckerLanguages(['en-US']);
     this.permissions.install(ses, !ses.isPersistent || ses.isPersistent());
 
+    if (ses.__oliveDownloadsInstalled) return;
+    ses.__oliveDownloadsInstalled = true;
     ses.on('will-download', (_e, item) => {
+      const privateDownload = !ses.isPersistent();
+      const profileId = this.profileInfo.id;
       const dir = app.getPath('downloads');
       const name = item.getFilename() || 'download';
       let p = path.join(dir, name);
@@ -120,6 +163,8 @@ class Manager {
       for (let i = 1; fs.existsSync(p) && i < 1000; i++) p = path.join(dir, `${base} (${i})${ext}`);
       item.setSavePath(p);
       const d = { id: Date.now() + Math.random(), filename: path.basename(p), path: p, url: item.getURL(), received: 0, total: item.getTotalBytes(), state: 'progressing', started: Date.now() };
+      const recordDownload = () => { if (this.profileInfo.id === profileId) this.ledger.record('download', { url:d.url, state:d.state, receivedBytes:d.received, totalBytes:d.total, private:privateDownload }); };
+      recordDownload();
       this.downloads.unshift(d);
       if (this.downloads.length > 30) this.downloads.length = 30;
       this.broadcast();
@@ -139,6 +184,7 @@ class Manager {
       item.once('done', (_ev, state) => {
         d.state = state;
         d.received = item.getReceivedBytes();
+        recordDownload();
         this.focusedWindow()?.win.setProgressBar(-1);
         if (state === 'completed') app.dock?.downloadFinished(p);
         this.broadcast();
@@ -198,7 +244,7 @@ class Manager {
   }
 
   saveSoon() {
-    if (this.quitting) return;
+    if (this.quitting || this.switchingProfile) return;
     clearTimeout(this.saveTimer);
     this.saveTimer = setTimeout(() => this.saveNow(), 800);
   }
@@ -248,6 +294,7 @@ class Manager {
       cdpPort: this.cdpPort,
       apiPort: this.apiPort,
       tokenFile: this.agentTokenFile || null,
+      activeProfile: this.profileInfo,
     };
   }
 
@@ -396,6 +443,7 @@ app.whenReady().then(async () => {
   nativeTheme.themeSource = 'system';
   buildMenu(mgr);
   mgr.session; // init persistent session
+  mgr.onboarding = new (require('./onboarding').Onboarding)(mgr);
   mgr.extensions = new (require('./extensions').Extensions)(mgr);
   await mgr.extensions.load(mgr.session);
   mgr.restore();
@@ -410,6 +458,7 @@ app.whenReady().then(async () => {
   mgr.startDiscardTimer();
   mgr.writeAgentFile();
   mgr.broadcast();
+  await mgr.onboarding.maybeRun();
 });
 
 app.on('activate', () => {
@@ -425,5 +474,6 @@ app.on('before-quit', () => {
   mgr.quitting = true;
   mgr.history.flush();
   mgr.perms.flush();
+  mgr.ledgerUI.dispose(); mgr.ledger.close(); mgr.shortcuts.flush(); mgr.onboarding?.close();
   try { mgr.session.cookies.flushStore(); } catch {}
 });

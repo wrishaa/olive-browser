@@ -1,0 +1,10 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'"><title>activity ledger</title><link rel="stylesheet" href="settings-base.css"><link rel="stylesheet" href="ledger.css"></head>
+<body><header><h1>activity ledger</h1><p>activity stays on this mac, separate from browsing history. private browsing is never recorded.</p></header>
+<section class="controls"><label><input id="enabled" type="checkbox"> record activity</label><label>keep <select id="retention"></select></label><span id="status" role="status"></span></section>
+<section class="filters"><label>filter <input id="query" type="search" placeholder="url, event, permission…"></label><label>type <select id="type"><option value="">all events</option></select></label><label>period <select id="period"><option value="">all time</option><option value="today">today</option><option value="7">last 7 days</option><option value="30">last 30 days</option></select></label><button id="refresh">refresh</button></section>
+<section class="actions"><span id="count"></span><button id="json">export json</button><button id="csv">export csv</button><button id="delete">delete matching</button><button id="clear">clear ledger</button></section>
+<p class="hint">only event metadata is saved, never page contents or search terms. exports and deletion include all matching events.</p>
+<div class="table"><table><thead><tr><th>time</th><th>event</th><th>details</th></tr></thead><tbody id="events"></tbody></table><p id="empty" hidden>no matching activity.</p></div>
+
+<script src="ledger.js"></script></body></html>

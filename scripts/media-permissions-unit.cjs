@@ -4,7 +4,7 @@ const fs = require('node:fs'), vm = require('node:vm'), { EventEmitter } = requi
 const handlers = {}, ipc = {}, checks = {}, requests = [];
 let status = 'granted', saves = 0, prompts = 0, captures = 0;
 const electron = { ipcMain:{on:(n,f)=>ipc[n]=f,handle:(n,f)=>ipc[n]=f}, systemPreferences:{ getMediaAccessStatus:()=>status,askForMediaAccess:async kind=>{prompts++;status='granted';return true;} }, desktopCapturer:{getSources:async()=>{captures++;return [];}}, webContents:{fromFrame:f=>f.wc}, shell:{openExternal:async()=>{}} };
-const sandbox = { require:n=>n==='electron'?electron:require(n), module:{exports:{}}, __dirname:require('node:path').resolve(__dirname,'../src/main'), process:{platform:'darwin'},URL,setTimeout,clearTimeout,console };
+const sandbox = { require:n=>n==='electron'?electron:n==='./app-panel'?{AppPanel:class{}}:require(n), module:{exports:{}}, __dirname:require('node:path').resolve(__dirname,'../src/main'), process:{platform:'darwin'},URL,setTimeout,clearTimeout,console };
 vm.runInNewContext(fs.readFileSync(require.resolve('../src/main/permissions'),'utf8'),sandbox);
 const wc = new EventEmitter(); wc.isDestroyed=()=>false; wc.getURL=()=> 'https://meet.google.com/preview';
 const win = {tabs:new Map([[1,{wc}]]),activeId:1,isPrivate:false,send:()=>{}};
