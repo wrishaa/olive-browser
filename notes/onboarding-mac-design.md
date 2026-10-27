@@ -554,3 +554,29 @@ polish (not blockers, do in one pass):
 6. shortcuts body ("recently used tabs default to ...") is 3 lines of dense help at the top; move it under the two recent-tab rows or behind a "?" so the list starts higher.
 
 onboarding after-shots still pending (#403); same checks apply (sec 6).
+
+## 10. finish verdict: onboarding after-shots (fable #408, 2026-10-27 21:3x)
+
+judged the eight whole-window captures in notes/test-shots/onboarding-visual/
+1280x800-{light,dark}-{welcome,calls,import,done}-full-window.jpg (2560x1600, 2x).
+
+**verdict: PASS. no ship blockers. onboarding is done from the design side.**
+
+what passes, per acceptance (sec 6):
+
+1. one app, both modes: page fill matches the window; dark is dark, light is light. no cream, no forced scheme.
+2. inline in the pane, radius matched, no floating card, no scrim, no separate titlebar, no "Done".
+3. type is -apple-system only; 22px title, 13px body/help, no serif, no uppercase eyebrow, no step pills.
+4. structure is the same on every step: glyph tile top, title, one-line lead, rows, muted note, dot pager bottom-centre, actions bottom-right. back chevron top-left on steps 2-5.
+5. sidebar row "Set Up Olive" is a normal row, selected state when open, trailing "3 left" / "1 left" / "0 left" muted. uBO Lite pill and Activity footer readable in both modes.
+6. one accent capsule per step (Continue / Start Browsing). import's primary is disabled until a source is checked, which is right.
+7. everything fits 1280x800 with no scroll; long import note wraps inside the 580px column.
+8. copy: calls says macOS asks mic then camera, each site still asks; import says cookies/sessions only, keychain prompt explained in text, no keychain checkbox; done lists Calls/Screen sharing/Import/Ad blocking with Skipped / "uBO Lite basic, on" and where to change them later.
+
+non-blocking polish, only if someone is already in the file (do not reopen scope for these):
+
+- light mode: secondary capsule (--pill) and the disabled primary are invisible on the white page, so "Set Up Later" / "Skip" / disabled "Import" read as bare text and the disabled primary is indistinguishable from Skip. dark mode is fine. fix is a slightly darker --pill in light (e.g. rgba(0,0,0,.06)) and the disabled primary keeping its --accent fill at ~40% opacity.
+- the step-5 note "Olive ▸ Set Up Olive…" could name the menu as "Olive menu ▸ Set Up Olive…".
+- steps 2-5 carry a glyph tile; sec 8 said welcome only. it reads fine, keep it.
+
+screen step: no full-window jpg exists, judged from 1280x800-{light,dark}-screen-page.png instead. same template as calls; "Screen & System Audio Recording / Not allowed" row, note says macOS opens System Settings and Olive has to quit and reopen once. PASS.
