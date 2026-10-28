@@ -1125,7 +1125,7 @@ class OliveWindow {
       visibleIds: this.visibleIds(),
       pinned: this.pinned.map(t),
       unpinned: this.unpinned.map(t),
-      agent: this.agent.map(t),
+      agentTabs: this.agent.map(t), // `agent` below is the api endpoint info
       agentOrder: this.agentOrder,
       groups: Object.fromEntries([...this.groups.values()].map((g) => [g.id, { id: g.id, name: g.name, agent: g.agent, working: g.working, status: TG.statusShown(this, g), collapsed: g.collapsed }])),
       looseCount: this.looseCount(),
