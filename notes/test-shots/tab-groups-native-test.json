@@ -7,13 +7,13 @@
     "ok": true,
     "label": "a new group is a contiguous run where its first tab was",
     "detail": [
-      null,
-      null,
-      null,
       1,
       1,
       1,
-      1
+      1,
+      null,
+      null,
+      null
     ]
   },
   {
@@ -82,7 +82,7 @@
       "windowId": 1,
       "private": false,
       "title": "Lisbon flights · Nov 12–16",
-      "url": "http://127.0.0.1:63772/f1",
+      "url": "http://127.0.0.1:52192/f1",
       "active": false,
       "visible": false,
       "pinned": false,
@@ -90,7 +90,7 @@
       "groupId": 2,
       "loading": false,
       "loaded": true,
-      "targetId": "5A25870E05BCC6FAB6566BFF5B825AD8",
+      "targetId": "3F2DAF0E8D08C3B8015567372ECAE126",
       "webSocketDebuggerUrl": null
     }
   },
@@ -102,7 +102,7 @@
       "windowId": 1,
       "private": false,
       "title": "SFO → LIS · 2 adults",
-      "url": "http://127.0.0.1:63772/f2",
+      "url": "http://127.0.0.1:52192/f2",
       "active": false,
       "visible": false,
       "pinned": false,
@@ -110,7 +110,7 @@
       "groupId": 2,
       "loading": false,
       "loaded": true,
-      "targetId": "0CD16A393025F768EB11DC2614AF23B5",
+      "targetId": "11623DF4746384D3C8C225F0CD334CF8",
       "webSocketDebuggerUrl": null
     }
   },
@@ -122,7 +122,7 @@
       "windowId": 1,
       "private": false,
       "title": "Fare rules",
-      "url": "http://127.0.0.1:63772/f3",
+      "url": "http://127.0.0.1:52192/f3",
       "active": false,
       "visible": false,
       "pinned": false,
@@ -130,7 +130,7 @@
       "groupId": 2,
       "loading": false,
       "loaded": true,
-      "targetId": "1BD7816DD6C674243CA7E5BF7F624779",
+      "targetId": "65431846361AC86982F85083BEBDBC4C",
       "webSocketDebuggerUrl": null
     }
   },
@@ -142,7 +142,7 @@
       "windowId": 1,
       "private": false,
       "title": "Hotel near Alfama",
-      "url": "http://127.0.0.1:63772/f4",
+      "url": "http://127.0.0.1:52192/f4",
       "active": false,
       "visible": false,
       "pinned": false,
@@ -150,7 +150,7 @@
       "groupId": 2,
       "loading": false,
       "loaded": true,
-      "targetId": "D60AB988A02BAA618BEEE03B44359BBC",
+      "targetId": "CAA9CC27C5BD8133DA6468719CDB3C41",
       "webSocketDebuggerUrl": null
     }
   },
@@ -162,7 +162,7 @@
       "windowId": 1,
       "private": false,
       "title": "Lisbon in November",
-      "url": "http://127.0.0.1:63772/f5",
+      "url": "http://127.0.0.1:52192/f5",
       "active": false,
       "visible": false,
       "pinned": false,
@@ -170,7 +170,7 @@
       "groupId": 2,
       "loading": false,
       "loaded": true,
-      "targetId": "1881BBB861F60494F6353E8D570084CC",
+      "targetId": "F52B79CF6FA3B1E0F3F582EF0EA34266",
       "webSocketDebuggerUrl": null
     }
   },
@@ -276,15 +276,15 @@
     "label": "⌘-click toggles two tabs into the selection without activating",
     "detail": {
       "d": [
-        10,
-        8
+        8,
+        10
       ],
       "st": {
         "sel": [
           8,
           10
         ],
-        "active": 7
+        "active": 4
       }
     }
   },
@@ -386,21 +386,21 @@
     "ok": true,
     "label": "⇧-click selects the visible range from the anchor",
     "detail": [
-      9,
-      8,
-      7,
-      6,
+      4,
       5,
-      4
+      6,
+      7,
+      8,
+      9
     ]
   },
   {
     "ok": true,
     "label": "a range skips a collapsed group it is not anchored in",
     "detail": [
-      10,
+      8,
       9,
-      8
+      10
     ]
   },
   {
@@ -437,11 +437,11 @@
     "label": "dropped before a member: inserted right before it, still in the group",
     "detail": {
       "m": [
-        7,
-        6,
-        5,
         9,
-        4
+        4,
+        5,
+        6,
+        7
       ],
       "ok": true
     }
@@ -496,13 +496,14 @@
   },
   {
     "ok": true,
-    "label": "double-click opens the in-place rename field, text selected, same weight",
+    "label": "double-click opens the in-place rename field, text selected, same weight, no × on the row",
     "detail": {
       "field": true,
       "focused": true,
       "selected": true,
       "weight": "600",
-      "h": 22
+      "h": 22,
+      "close": "none"
     }
   },
   {
@@ -528,7 +529,8 @@
     "detail": {
       "name": "Reading",
       "n": 2,
-      "pos": 4
+      "pos": 5,
+      "posBefore": 5
     }
   },
   {
@@ -553,10 +555,10 @@
     "detail": {
       "name": "Research",
       "urls": [
-        "http://127.0.0.1:63772/retries",
-        "http://127.0.0.1:63772/readme",
-        "http://127.0.0.1:63772/idempotent",
-        "http://127.0.0.1:63772/webhooks"
+        "http://127.0.0.1:52192/webhooks",
+        "http://127.0.0.1:52192/idempotent",
+        "http://127.0.0.1:52192/readme",
+        "http://127.0.0.1:52192/retries"
       ],
       "pos": 0,
       "active": true

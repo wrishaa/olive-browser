@@ -245,8 +245,8 @@ try {
   // ---------- rename ----------
   await researchHead.dblclick();
   await pause(150);
-  d = await dom(() => { const f = document.querySelector('.group-head .rename'); return { field: !!f, focused: document.activeElement === f, selected: f && f.selectionStart === 0 && f.selectionEnd === f.value.length, weight: f && getComputedStyle(f).fontWeight, h: f && Math.round(f.getBoundingClientRect().height) }; });
-  check(d.field && d.focused && d.selected && d.weight === '600' && d.h === 22, 'double-click opens the in-place rename field, text selected, same weight', d);
+  d = await dom(() => { const f = document.querySelector('.group-head .rename'); return { field: !!f, focused: document.activeElement === f, selected: f && f.selectionStart === 0 && f.selectionEnd === f.value.length, weight: f && getComputedStyle(f).fontWeight, h: f && Math.round(f.getBoundingClientRect().height), close: f && getComputedStyle(f.parentElement.querySelector('.close')).display }; });
+  check(d.field && d.focused && d.selected && d.weight === '600' && d.h === 22 && d.close === 'none', 'double-click opens the in-place rename field, text selected, same weight, no × on the row', d);
   await ui.keyboard.type('Payments research');
   await ui.keyboard.press('Enter');
   await settle();
@@ -259,6 +259,7 @@ try {
   check((await W((w, id) => w.groups.get(id).name, research)) === 'Payments research', 'esc reverts');
   await W((w, id) => w.renameGroup(id, 'Research'), research);
   // ⌃⌘N on a selection opens the rename field on a new Untitled Group
+  const posBefore = await W((w, ids) => Math.min(...ids.map((i) => w.unpinned.indexOf(i))), [loose.design, loose.standup]);
   await W((w, ids) => w.newGroup(ids), [loose.design, loose.standup]);
   await pause(150);
   d = await dom(() => { const f = document.querySelector('.group-head .rename'); return { field: !!f, value: f?.value, focused: document.activeElement === f }; });
@@ -268,7 +269,7 @@ try {
   await ui.keyboard.press('Enter');
   await settle();
   st = await W((w, id) => ({ name: w.groups.get(id)?.name, n: w.unpinned.filter((x) => w.tabs.get(x).groupId === id).length, pos: w.unpinned.findIndex((x) => w.tabs.get(x).groupId === id) }), untitled);
-  check(st.name === 'Reading' && st.n === 2 && st.pos === 4, 'the new group holds the two selected tabs, where the first of them was', st);
+  check(st.name === 'Reading' && st.n === 2 && st.pos === posBefore, 'the new group holds the two selected tabs, where the first of them was', { ...st, posBefore });
 
   // ---------- closing ----------
   await W((w, id) => w.closeTab(id), loose.design);
@@ -376,7 +377,7 @@ try {
       'agent-done': async () => { await W((w, id) => { w.setGroupCollapsed(id, true); w.activate(w.unpinned.find((x) => w.tabs.get(x).groupId == null && w.tabs.get(x).url.endsWith('/roadmap'))); }, research2); await call('PATCH', `/groups/${g4.id}`, { status: 'done · cheapest $612', working: false }); },
       'agent-hover-done': async () => { await scenes['agent-done'](); await settle(); const b = await ui.locator(`#agent .group[data-group="${g4.id}"] .group-head`).boundingBox(); await ui.mouse.move(b.x + 70, b.y + 18); },
       'agent-hover': async () => { await scenes['agent-working'](); await settle(); const b = await ui.locator(`#agent .group[data-group="${g4.id}"] .group-head`).boundingBox(); await ui.mouse.move(b.x + 70, b.y + 18); },
-      rename: async () => { await researchHead2().dblclick(); },
+      rename: async () => { await researchHead2().dblclick(); await ui.mouse.move(700, 500); },
       'two-agents': async () => { await scenes['agent-working'](); },
     };
     const researchHead2 = () => ui.locator(`#unpinned .group[data-group="${research2}"] .group-head`);

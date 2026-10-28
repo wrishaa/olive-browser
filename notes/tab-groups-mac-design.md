@@ -543,3 +543,36 @@ hidden at 180 with a status, menu labels as in 2.7. in `many-groups` the 28px fa
 shows the top of the lifted "Q4 roadmap" row as a soft sliver under "Design review notes":
 that is the scroll-edge effect doing its job (the row is scrolled under the hairline), not
 an artefact.
+
+## 11. built review (2026-10-28, blind fable #516 on built-vs-mockup pairs)
+
+the build on branch `tab-groups` (`src/core/tab-groups.js`, `window.js`, `ui.js`, `ui.css`,
+`agent-api.js`) was shot by `scripts/tab-groups-native-test.mjs --shots` into
+`notes/test-shots/tab-groups-built/` (light/dark, 252 and 180, mockup|built pairs plus
+`contact-sheet-{light,dark}.png`) and reviewed blind against the mockups.
+
+verdict: PASS. measured as identical to the mockups: chevron x 27, bold 13/600 name at 45,
+members +25 (favicon 53, title 70), agent members +51 (favicon 69, title 86), 38px pitch
+with 4px air around an expanded group, favicon stack 181/198/215 + count 234, agent header
+44css two-line with the dot at 214 and the count/× sharing one slot on hover, active pill
+10 → 244 at 35 tall, selected and selected+active tints, 180px truncation and hiding, both
+hairlines ending at the same x (decision 7.9), light/dark parity.
+
+one verify item: the rename shot was read as still showing a ×. checked by eye (no × in the
+shot; the selection band sits behind the name; the field runs to the pill's edge) and the
+native test now asserts `getComputedStyle(.close).display === 'none'` while the field is open.
+
+polish taken: the rename scene moves the mouse off the header after the double-click (the
+hover tint in the first shot was the harness's cursor). polish noted, no action: 1css
+name→status gap and 1css hover-pill delta vs the proto (font rendering in electron vs the
+proto browser), collapsed-active pill a hair lighter in light built, dark selected pill a
+touch more olive (`--palette-sel`), a faint strip at the sidebar's right edge in the crop
+(card shadow, not tab groups).
+
+mockup-wrong, built follows the spec: the active collapsed favicon ring (sec 1), select-all
+on rename entry (2.4), spinner only on loading tabs, no scroll fade when the list fits,
+three selected across group and list in `multiselect` (sec 4).
+
+fixture artefacts to ignore in the pairs: the first built set read the fixture bottom-up
+(pinned and member order reversed, loose tabs above the group); fixed in the harness
+(`open()` appends top-down) and reshot.
