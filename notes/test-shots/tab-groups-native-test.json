@@ -82,7 +82,7 @@
       "windowId": 1,
       "private": false,
       "title": "Lisbon flights · Nov 12–16",
-      "url": "http://127.0.0.1:52192/f1",
+      "url": "http://127.0.0.1:57736/f1",
       "active": false,
       "visible": false,
       "pinned": false,
@@ -90,7 +90,7 @@
       "groupId": 2,
       "loading": false,
       "loaded": true,
-      "targetId": "3F2DAF0E8D08C3B8015567372ECAE126",
+      "targetId": "2AE9F306D12CE6E103694DD438049F7B",
       "webSocketDebuggerUrl": null
     }
   },
@@ -102,7 +102,7 @@
       "windowId": 1,
       "private": false,
       "title": "SFO → LIS · 2 adults",
-      "url": "http://127.0.0.1:52192/f2",
+      "url": "http://127.0.0.1:57736/f2",
       "active": false,
       "visible": false,
       "pinned": false,
@@ -110,7 +110,7 @@
       "groupId": 2,
       "loading": false,
       "loaded": true,
-      "targetId": "11623DF4746384D3C8C225F0CD334CF8",
+      "targetId": "BA5CA0EE28D7C3E5AA8950165E40D469",
       "webSocketDebuggerUrl": null
     }
   },
@@ -122,7 +122,7 @@
       "windowId": 1,
       "private": false,
       "title": "Fare rules",
-      "url": "http://127.0.0.1:52192/f3",
+      "url": "http://127.0.0.1:57736/f3",
       "active": false,
       "visible": false,
       "pinned": false,
@@ -130,7 +130,7 @@
       "groupId": 2,
       "loading": false,
       "loaded": true,
-      "targetId": "65431846361AC86982F85083BEBDBC4C",
+      "targetId": "F756D456F3F592356262587EFB1B81FD",
       "webSocketDebuggerUrl": null
     }
   },
@@ -142,7 +142,7 @@
       "windowId": 1,
       "private": false,
       "title": "Hotel near Alfama",
-      "url": "http://127.0.0.1:52192/f4",
+      "url": "http://127.0.0.1:57736/f4",
       "active": false,
       "visible": false,
       "pinned": false,
@@ -150,7 +150,7 @@
       "groupId": 2,
       "loading": false,
       "loaded": true,
-      "targetId": "CAA9CC27C5BD8133DA6468719CDB3C41",
+      "targetId": "B9FA650E833901E12DB91C0387AD9084",
       "webSocketDebuggerUrl": null
     }
   },
@@ -162,7 +162,7 @@
       "windowId": 1,
       "private": false,
       "title": "Lisbon in November",
-      "url": "http://127.0.0.1:52192/f5",
+      "url": "http://127.0.0.1:57736/f5",
       "active": false,
       "visible": false,
       "pinned": false,
@@ -170,7 +170,7 @@
       "groupId": 2,
       "loading": false,
       "loaded": true,
-      "targetId": "F52B79CF6FA3B1E0F3F582EF0EA34266",
+      "targetId": "B53104AABFE0A5D765485FE8B7EEADC3",
       "webSocketDebuggerUrl": null
     }
   },
@@ -555,10 +555,10 @@
     "detail": {
       "name": "Research",
       "urls": [
-        "http://127.0.0.1:52192/webhooks",
-        "http://127.0.0.1:52192/idempotent",
-        "http://127.0.0.1:52192/readme",
-        "http://127.0.0.1:52192/retries"
+        "http://127.0.0.1:57736/webhooks",
+        "http://127.0.0.1:57736/idempotent",
+        "http://127.0.0.1:57736/readme",
+        "http://127.0.0.1:57736/retries"
       ],
       "pos": 0,
       "active": true
