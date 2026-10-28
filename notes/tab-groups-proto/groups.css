@@ -1,0 +1,156 @@
+/* tab groups: the css that would be appended to src/ui/ui.css.
+   only existing tokens (plus the two token changes below). a group is an outline node
+   like Notes/Mail: a header row (disclosure + name) and indented member rows.
+   no box, no tint, no rail. */
+
+/* ---------- token changes (implementer: edit these lines in ui.css itself) ----------
+   --text-dim darkened so 11px dim text (counts, status lines, divider labels) holds 4.5:1
+   on the bottom of the light vibrancy gradient (was 3.88:1 at the agent header) and on
+   the dark active row (was 4.49:1). --on-accent is the text colour on an --accent fill
+   (drag badge); body.private needs its own because its accent is lavender. */
+:root { --text-dim: #3f4b40; --on-accent: #fff; }
+@media (prefers-color-scheme: dark) { :root { --text-dim: #b0bbad; --on-accent: #1d2a1f; } }
+body.private { --on-accent: #1f1a33; }
+
+/* ---------- group block ----------
+   a collapsed group is one row and keeps the list's 2px rhythm (Notes' folder list is
+   uniform); only an expanded block gets 4px of air above and below (6px to a neighbour). */
+.group { display: flex; flex-direction: column; gap: 2px; flex: none; position: relative; margin: 0; }
+.group:not(.collapsed) { margin: 4px 0; }
+.group:first-child { margin-top: 0; }
+.group:last-child { margin-bottom: 0; }
+.group-body { display: flex; flex-direction: column; gap: 2px; }
+.group.collapsed .group-body { display: none; }
+
+/* member rows: full-width fill, content indented so the favicon sits under the header's name (10 + 16 + 9 = 35) */
+.group-body > .row { padding-left: 35px; }
+.group-body > .split-group { padding-left: 25px; }
+.group-body > .row.drop-before::after, .group-body > .row.drop-after::after,
+.group-body > .split-group.drop-before::after, .group-body > .split-group.drop-after::after { left: 33px; }
+/* agent groups: the sparkle pushes the name to 51 (35 + 13 − 6 + 9); members follow it */
+.group.agent .group-body > .row, .group.agent .group-body .newtab-row { padding-left: 51px; }
+.group.agent .group-body > .split-group { padding-left: 41px; }
+.group.agent .group-body > .row.drop-before::after, .group.agent .group-body > .row.drop-after::after,
+.group.agent .group-body > .split-group.drop-before::after, .group.agent .group-body > .split-group.drop-after::after { left: 49px; }
+
+/* ---------- header row ---------- */
+.group-head { gap: 9px; }
+.group-head .disc { width: 16px; height: 16px; flex: none; display: grid; place-items: center; color: var(--text-dim); border-radius: 4px; }
+.group-head .disc svg { width: 10px; height: 10px; transform: rotate(90deg); transition: transform .16s ease; }
+.group.collapsed .group-head .disc svg { transform: none; }
+.group-head:hover .disc { color: var(--text); }
+.group-head .title { font-weight: 600; }
+body.w500 .group-head .title { font-weight: 500; } /* weight study only (sec 7, weight) */
+.group-head .count { flex: none; font-size: 11px; color: var(--text-dim); font-variant-numeric: tabular-nums; }
+/* agent status: one short line set by the agent. the header becomes two lines
+   (name 13/600 over status 11 dim) inside the same 36px so the name never truncates for it */
+.group-head .lines { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 1px; }
+.group-head .lines .title { flex: none; line-height: 15px; }
+.group-head .lines .status { flex: none; max-width: 100%; line-height: 13px; }
+.group-head .status { font-size: 11px; color: var(--text-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* collapsed: up to three member favicons, newest first, then the count. a status line replaces the favicons */
+.group-head .favs { display: none; flex: none; align-items: center; gap: 3px; }
+.group.collapsed .group-head .favs { display: flex; }
+.group.collapsed .group-head .lines ~ .favs { display: none; }
+.group-head .favs .fav { width: 14px; height: 14px; border-radius: 3.5px; font-size: 9px; margin: 0; }
+.group-head .favs .fav.is-active { box-shadow: 0 0 0 1.5px var(--accent); }
+/* under 210px there is no room for favicons: name and count only; with a status line, not even the count */
+body.narrow .group-head .favs { display: none !important; }
+body.narrow .group-head .lines ~ .count { display: none; }
+/* the hover × means Close Group; it takes only the count's slot. favicons and the dot stay
+   (mac rows add on hover, they do not remove) */
+.group-head:hover .count { display: none; }
+.group-head.drop-into .close { display: none !important; }
+
+/* ---------- agent section: the bottom of the sidebar ----------
+   groups opened by agents never sit among the user's tabs. they form a third section
+   below the scrolling tab list, resting on the bottom of the sidebar (above uBO Lite),
+   so the user's rows never move when an agent opens tabs and the section stays in view
+   however long the list gets. it takes at most half the sidebar and scrolls inside
+   itself beyond that. one hairline above, like the pinned divider; the whole section
+   disappears with its last group. */
+#agent { flex: none; max-height: 50%; overflow-y: auto; overflow-x: hidden; margin: 0 -4px; padding: 0 4px 8px; }
+#agent::-webkit-scrollbar { width: 0; }
+.divider.agent-divider { height: 1px; margin: 0 4px 8px; }
+body.no-pinned .divider.agent-divider { height: 1px; margin: 0 4px 8px; }
+body.no-pinned .divider.agent-divider .line { opacity: 1; }
+body.no-agent .agent-divider, body.no-agent #agent { display: none; }
+/* both hairlines span the full row width (14→w−12): the pinned divider's Clear button
+   overlays its line instead of shortening it */
+.divider { position: relative; }
+.divider .line { flex: none; width: 100%; }
+.divider button { position: absolute; right: 0; top: 50%; transform: translateY(-50%); background: var(--bg2); }
+/* when a list scrolls under the hairline, its last 28px fade out (macOS scroll-edge effect),
+   so a half-visible row never butts against the line. #agent gets the same only while it
+   overflows (the renderer sets .overflows after each render), else its last row would fade. */
+body:not(.no-agent) #tablist, #agent.overflows {
+  -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 28px), transparent);
+  mask-image: linear-gradient(to bottom, #000 calc(100% - 28px), transparent);
+}
+
+/* ---------- agent groups ---------- */
+.group-head .agent-glyph { width: 13px; height: 13px; flex: none; color: var(--accent); margin: 0 -3px; }
+.group-head .agent-glyph svg { width: 13px; height: 13px; display: block; }
+.group-head .pulse { width: 6px; height: 6px; flex: none; border-radius: 50%; background: var(--accent); margin: 0 4px 0 2px; animation: breathe 1.6s ease-in-out infinite; }
+@keyframes breathe { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
+@media (prefers-reduced-motion: reduce) { .group-head .pulse { animation: none; } }
+body.shot .group-head .pulse { animation: none; }
+/* a working agent group has no hover ×: closing it kills the run and ⇧⌘T cannot bring
+   the run back (only the tabs). Close Group stays in its menu; the × returns once done. */
+.group.agent.working .group-head:hover .close { display: none; }
+.group.agent.working .group-head:hover .count { display: inline; }
+
+/* ---------- empty group ---------- */
+.group-body .newtab-row { padding-left: 35px; }
+
+/* ---------- multi-selection ---------- */
+.row.selected { background: var(--palette-sel); }
+.row.selected:hover { background: var(--palette-sel); }
+/* the active tab inside a selection: the lifted row with a faint accent tint, no stroke
+   (macOS never outlines a selection) */
+.row.selected.active { background: color-mix(in srgb, var(--row-active), var(--accent) 10%); box-shadow: var(--row-active-shadow); }
+.row.selected .close { display: none; }
+
+/* ---------- drag ---------- */
+.group-head.drop-into { background: var(--palette-sel); box-shadow: inset 0 0 0 1.5px var(--accent); }
+.group-head.drop-into .count, .group-head.drop-into .favs { display: flex; }
+#drag-ghost .badge { flex: none; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: var(--accent); color: var(--on-accent); font-size: 11px; font-weight: 600; display: grid; place-items: center; margin-left: 2px; }
+
+/* ---------- inline rename (the header's title becomes a field; same face, same weight, text does not move) ---------- */
+.group-head .rename {
+  flex: 1; min-width: 0; height: 22px; margin: 0 0 0 -5px; padding: 0 4px;
+  border-radius: 5px; background: var(--card); color: var(--text);
+  font: 13px/22px -apple-system, BlinkMacSystemFont, system-ui, sans-serif; font-weight: 600;
+  box-shadow: 0 0 0 1px var(--line), 0 0 0 3.5px color-mix(in srgb, var(--accent) 38%, transparent);
+  white-space: nowrap; overflow: hidden; user-select: text; cursor: text;
+}
+body.w500 .group-head .rename { font-weight: 500; }
+.group-head .rename .sel { background: color-mix(in srgb, var(--accent) 32%, transparent); border-radius: 2px; }
+.group-head .rename .caret { display: inline-block; width: 1px; height: 14px; background: var(--text); vertical-align: -2px; margin-left: 0.5px; }
+
+/* ---------- mock of the native context menu (the build uses Menu.popup) ---------- */
+#ctx { position: fixed; z-index: 300; min-width: 212px; padding: 5px; border-radius: 10px;
+  background: rgba(246, 246, 246, .9); backdrop-filter: blur(40px) saturate(1.4);
+  box-shadow: 0 0 0 .5px rgba(0, 0, 0, .18), 0 10px 36px rgba(0, 0, 0, .22); color: #1a1a1a; font-size: 13px; }
+@media (prefers-color-scheme: dark) { #ctx { background: rgba(44, 44, 46, .9); color: #f2f2f2; box-shadow: 0 0 0 .5px rgba(255, 255, 255, .14), 0 10px 36px rgba(0, 0, 0, .5); } }
+#ctx .mi { display: flex; align-items: center; height: 22px; padding: 0 9px; border-radius: 5px; gap: 8px; white-space: nowrap; }
+#ctx .mi .k { margin-left: auto; opacity: .5; font-size: 12.5px; padding-left: 18px; }
+#ctx .mi .sub { margin-left: auto; width: 10px; height: 10px; opacity: .7; }
+#ctx .mi.hl { background: #3a7df8; color: #fff; }
+#ctx .mi.hl .k, #ctx .mi.hl .sub { opacity: .85; }
+#ctx .mi.dis { opacity: .35; }
+#ctx .sep { height: 1px; margin: 5px 9px; background: rgba(0, 0, 0, .12); }
+@media (prefers-color-scheme: dark) { #ctx .sep { background: rgba(255, 255, 255, .14); } }
+#ctx .mi .agent-glyph { width: 12px; height: 12px; color: inherit; opacity: .8; }
+#ctx .mi .fav { width: 14px; height: 14px; border-radius: 3.5px; font-size: 9px; }
+#ctx .mi .chk { width: 12px; text-align: center; margin: 0 -2px 0 -4px; }
+#ctx.submenu { min-width: 190px; }
+
+/* ---------- prototype chrome only: desktop under the vibrancy, mock traffic lights ---------- */
+html { background: linear-gradient(135deg, #dfe6ea 0%, #cdd7df 50%, #d9d4cc 100%); }
+@media (prefers-color-scheme: dark) { html { background: linear-gradient(135deg, #2a2f36 0%, #1a1e24 55%, #24201f 100%); } }
+.lights { position: fixed; left: 19px; top: 17px; display: flex; gap: 8px; z-index: 20; }
+.lights i { width: 12px; height: 12px; border-radius: 50%; display: block; box-shadow: inset 0 0 0 .5px rgba(0, 0, 0, .12); }
+.lights i:nth-child(1) { background: #ff5f57; } .lights i:nth-child(2) { background: #febc2e; } .lights i:nth-child(3) { background: #28c840; }
+#sidebar.proto-full { height: 100%; }
