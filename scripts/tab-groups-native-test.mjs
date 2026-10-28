@@ -63,6 +63,9 @@ try {
   api = info.api;
   token = fs.readFileSync(path.join(root, 'agent-token'), 'utf8').trim();
 
+  const menuItem = await app.evaluate(({ Menu }) => { const tabs = Menu.getApplicationMenu()?.items.find((i) => i.label === 'Tabs'); const it = tabs?.submenu?.items.find((i) => /^New Group/.test(i.label)); return it ? { label: it.label, accelerator: it.accelerator, enabled: it.enabled } : null; });
+  check(menuItem?.label === 'New Group with Selection' && /Ctrl\+(Cmd|CmdOrCtrl|Command)\+N/.test(menuItem.accelerator || '') && menuItem.enabled, 'the Tabs menu has New Group with Selection, ⌃⌘N shown', menuItem);
+
   // ---------- fixture: pinned, a user group, loose tabs, an agent group ----------
   for (const s of ['inbox', 'general', 'calendar']) await open(s, { pinned: true, activate: false });
   const r = {};
@@ -432,7 +435,9 @@ try {
   results.push({ ok: false, label: 'test exception', detail: String(error.stack || error) });
   console.error(error);
 } finally {
-  fs.writeFileSync(path.join(repo, 'notes/test-shots/tab-groups-native-test.json'), JSON.stringify(results, null, 2));
+  // stable json: no fixture port, no cdp target ids (they change every run)
+  const scrub = (k, v) => (k === 'targetId' || k === 'webSocketDebuggerUrl') && v ? '<target>' : typeof v === 'string' ? v.replaceAll(base, 'http://127.0.0.1:<port>').replace(/127\.0\.0\.1:\d+/g, '127.0.0.1:<port>') : v;
+  fs.writeFileSync(path.join(repo, 'notes/test-shots/tab-groups-native-test.json'), JSON.stringify(results, scrub, 2));
   if (app) await app.close().catch(() => {});
   server.close();
   fs.rmSync(root, { recursive: true, force: true });
