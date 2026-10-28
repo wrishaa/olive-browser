@@ -88,6 +88,7 @@ class Manager {
     this.state = new JsonStore(path.join(ud, 'session.json'), () => ({ windows: [] }));
     this.perms = new JsonStore(path.join(ud, 'permissions.json'), () => ({}));
     this.permissions = new (require('./permissions').Permissions)(this);
+    this.pageDialogs = new (require('./page-dialogs').PageDialogs)(this);
     this.history = new History(path.join(ud, 'history.json'));
     this.ledger = new (require('../core/ledger').Ledger)(path.join(ud, 'activity.json'));
     this.ledgerUI = new (require('./ledger-review').LedgerUI)(this);
@@ -152,6 +153,11 @@ class Manager {
     // Google keeps its honest Electron UA through applyUserAgent() on navigation.
     ses.setSpellCheckerLanguages(['en-US']);
     this.permissions.install(ses, !ses.isPersistent || ses.isPersistent());
+    // alert / confirm / prompt in every page frame go to olive's popup (src/main/page-dialogs.js)
+    if (!ses.__olivePageDialogs) {
+      ses.__olivePageDialogs = true;
+      ses.registerPreloadScript({ type: 'frame', id: 'olive-page-dialogs', filePath: path.join(__dirname, '../ui/page-dialogs-preload.js') });
+    }
 
     if (ses.__oliveDownloadsInstalled) return;
     ses.__oliveDownloadsInstalled = true;

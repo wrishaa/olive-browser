@@ -277,6 +277,7 @@ class OliveWindow {
           spellcheck: true,
           scrollBounce: true,
           safeDialogs: true,
+          nodeIntegrationInSubFrames: true, // only so the page-dialogs preload runs in iframes too (no node: sandboxed)
         },
       });
     }
@@ -307,7 +308,7 @@ class OliveWindow {
         // real popup (oauth, payment): keep it a window so window.opener works
         return {
           action: 'allow',
-          overrideBrowserWindowOptions: { autoHideMenuBar: true, webPreferences: { session: this.session, sandbox: true, contextIsolation: true } },
+          overrideBrowserWindowOptions: { autoHideMenuBar: true, webPreferences: { session: this.session, sandbox: true, contextIsolation: true, nodeIntegrationInSubFrames: true } },
         };
       }
       if (disposition === 'save-to-disk' || disposition === 'other') return { action: 'deny' };
@@ -988,6 +989,7 @@ class OliveWindow {
       if (tab?.wc && !this.find.open) tab.wc.focus();
     }
     this.mgr.permissions.layout(this);
+    this.mgr.pageDialogs?.layout(this);
     this.inlinePage?.layout();
     this.appPanel?.layout();
     this.mgr.siteTime?.refresh();
@@ -1088,6 +1090,7 @@ class OliveWindow {
       }
     }
     this.mgr.permissions.layout(this);
+    this.mgr.pageDialogs?.layout(this);
     this.inlinePage?.layout();
     this.appPanel?.layout();
     this.mgr.siteTime?.refresh();
