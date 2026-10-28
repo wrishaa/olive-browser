@@ -1,0 +1,2345 @@
+[
+  {
+    "ok": true,
+    "label": "light/252 pinned sidebar shows native lights"
+  },
+  {
+    "ok": true,
+    "label": "light/252 pinned header reserves native lights (also at minimum width)",
+    "detail": {
+      "reserve": {
+        "x": 10,
+        "y": 0,
+        "right": 84,
+        "bottom": 46
+      },
+      "nav": {
+        "x": 126,
+        "y": 0,
+        "right": 244,
+        "bottom": 46
+      },
+      "first": {
+        "x": 10,
+        "y": 92,
+        "right": 244,
+        "bottom": 128
+      },
+      "top": {
+        "x": 10,
+        "y": 0,
+        "right": 244,
+        "bottom": 46
+      }
+    }
+  },
+  {
+    "ok": true,
+    "label": "light/252 hidden lights absent and page retains full card bounds",
+    "detail": {
+      "hidden": true,
+      "overlay": null,
+      "lights": false,
+      "history": [
+        true,
+        false
+      ],
+      "panes": [
+        {
+          "id": 1,
+          "rect": {
+            "x": 8,
+            "y": 8,
+            "width": 1264,
+            "height": 784
+          },
+          "page": {
+            "x": 8,
+            "y": 8,
+            "width": 1264,
+            "height": 784
+          },
+          "devtools": null,
+          "splitId": null,
+          "index": 0
+        }
+      ],
+      "fullscreen": false
+    }
+  },
+  {
+    "ok": true,
+    "label": "light/252 very top-left edge reveals sidebar + native lights",
+    "detail": {
+      "hidden": true,
+      "overlay": "peek",
+      "lights": true,
+      "history": [
+        true,
+        false,
+        true
+      ],
+      "panes": [
+        {
+          "id": 1,
+          "rect": {
+            "x": 8,
+            "y": 8,
+            "width": 1264,
+            "height": 784
+          },
+          "page": {
+            "x": 8,
+            "y": 8,
+            "width": 1264,
+            "height": 784
+          },
+          "devtools": null,
+          "splitId": null,
+          "index": 0
+        }
+      ],
+      "fullscreen": false
+    }
+  },
+  {
+    "ok": true,
+    "label": "light/252 no top/left inset gap in hover envelope",
+    "detail": {
+      "x": 0,
+      "y": 0,
+      "bottom": 800
+    }
+  },
+  {
+    "ok": true,
+    "label": "light/252 pointer (50,1) does not collapse header",
+    "detail": {
+      "hidden": true,
+      "overlay": "peek",
+      "lights": true,
+      "history": [
+        true,
+        false,
+        true
+      ],
+      "panes": [
+        {
+          "id": 1,
+          "rect": {
+            "x": 8,
+            "y": 8,
+            "width": 1264,
+            "height": 784
+          },
+          "page": {
+            "x": 8,
+            "y": 8,
+            "width": 1264,
+            "height": 784
+          },
+          "devtools": null,
+          "splitId": null,
+          "index": 0
+        }
+      ],
+      "fullscreen": false
+    }
+  },
+  {
+    "ok": true,
+    "label": "light/252 pointer (100,1) does not collapse header",
+    "detail": {
+      "hidden": true,
+      "overlay": "peek",
+      "lights": true,
+      "history": [
+        true,
+        false,
+        true
+      ],
+      "panes": [
+        {
+          "id": 1,
+          "rect": {
+            "x": 8,
+            "y": 8,
+            "width": 1264,
+            "height": 784
+          },
+          "page": {
+            "x": 8,
+            "y": 8,
+            "width": 1264,
+            "height": 784
+          },
+          "devtools": null,
+          "splitId": null,
+          "index": 0
+        }
+      ],
+      "fullscreen": false
+    }
+  },
+  {
+    "ok": true,
+    "label": "light/252 pointer (100,24) does not collapse header",
+    "detail": {
+      "hidden": true,
+      "overlay": "peek",
+      "lights": true,
+      "history": [
+        true,
+        false,
+        true
+      ],
+      "panes": [
+        {
+          "id": 1,
+          "rect": {
+            "x": 8,
+            "y": 8,
+            "width": 1264,
+            "height": 784
+          },
+          "page": {
+            "x": 8,
+            "y": 8,
+            "width": 1264,
+            "height": 784
+          },
+          "devtools": null,
+          "splitId": null,
+          "index": 0
+        }
+      ],
+      "fullscreen": false
+    }
+  },
+  {
+    "ok": true,
+    "label": "light/252 pointer (50,25) does not collapse header",
+    "detail": {
+      "hidden": true,
+      "overlay": "peek",
+      "lights": true,
+      "history": [
+        true,
+        false,
+        true
+      ],
+      "panes": [
+        {
+          "id": 1,
+          "rect": {
+            "x": 8,
+            "y": 8,
+            "width": 1264,
+            "height": 784
+          },
+          "page": {
+            "x": 8,
+            "y": 8,
+            "width": 1264,
+            "height": 784
+          },
+          "devtools": null,
+          "splitId": null,
+          "index": 0
+        }
+      ],
+      "fullscreen": false
+    }
+  },
+  {
+    "ok": true,
+    "label": "light/252 pointer (242,24) does not collapse header",
+    "detail": {
+      "hidden": true,
+      "overlay": "peek",
+      "lights": true,
+      "history": [
+        true,
+        false,
+        true
+      ],
+      "panes": [
+        {
+          "id": 1,
+          "rect": {
+            "x": 8,
+            "y": 8,
+            "width": 1264,
+            "height": 784
+          },
+          "page": {
+            "x": 8,
+            "y": 8,
+            "width": 1264,
+            "height": 784
+          },
+          "devtools": null,
+          "splitId": null,
+          "index": 0
+        }
+      ],
+      "fullscreen": false
+    }
+  },
+  {
+    "ok": true,
+    "label": "light/252 pointer (12,44) does not collapse header",
+    "detail": {
+      "hidden": true,
+      "overlay": "peek",
+      "lights": true,
+      "history": [
+        true,
+        false,
+        true
+      ],
+      "panes": [
+        {
+          "id": 1,
+          "rect": {
+            "x": 8,
+            "y": 8,
+            "width": 1264,
+            "height": 784
+          },
+          "page": {
+            "x": 8,
+            "y": 8,
+            "width": 1264,
+            "height": 784
+          },
+          "devtools": null,
+          "splitId": null,
+          "index": 0
+        }
+      ],
+      "fullscreen": false
+    }
+  },
+  {
+    "ok": true,
+    "label": "light/252 peek keeps full reserve and header receives pointer events",
+    "detail": {
+      "reserve": {
+        "x": 10,
+        "y": 0,
+        "right": 84,
+        "bottom": 46
+      },
+      "nav": {
+        "x": 126,
+        "y": 0,
+        "right": 244,
+        "bottom": 46
+      },
+      "first": {
+        "x": 10,
+        "y": 92,
+        "right": 244,
+        "bottom": 128
+      },
+      "region": "no-drag"
+    }
+  },
+  {
+    "ok": true,
+    "label": "light/252 short page crossing cancels delayed collapse"
+  },
+  {
+    "ok": true,
+    "label": "light/252 deliberate page crossing hides sidebar + native lights",
+    "detail": {
+      "hidden": true,
+      "overlay": null,
+      "lights": false,
+      "history": [
+        true,
+        false,
+        true,
+        false
+      ],
+      "panes": [
+        {
+          "id": 1,
+          "rect": {
+            "x": 8,
+            "y": 8,
+            "width": 1264,
+            "height": 784
+          },
+          "page": {
+            "x": 8,
+            "y": 8,
+            "width": 1264,
+            "height": 784
+          },
+          "devtools": null,
+          "splitId": null,
+          "index": 0
+        }
+      ],
+      "fullscreen": false
+    }
+  },
+  {
+    "ok": true,
+    "label": "light/252 left edge reopens after collapse"
+  },
+  {
+    "ok": true,
+    "label": "light/252 escape hides sidebar and native lights",
+    "detail": {
+      "hidden": true,
+      "overlay": null,
+      "lights": false,
+      "history": [
+        true,
+        false,
+        true,
+        false,
+        true,
+        false
+      ],
+      "panes": [
+        {
+          "id": 1,
+          "rect": {
+            "x": 8,
+            "y": 8,
+            "width": 1264,
+            "height": 784
+          },
+          "page": {
+            "x": 8,
+            "y": 8,
+            "width": 1264,
+            "height": 784
+          },
+          "devtools": null,
+          "splitId": null,
+          "index": 0
+        }
+      ],
+      "fullscreen": false
+    }
+  },
+  {
+    "ok": true,
+    "label": "light/252 hidden-sidebar palette does not expose lights or activate peek",
+    "detail": {
+      "hidden": true,
+      "overlay": "palette",
+      "lights": false,
+      "history": [
+        true,
+        false,
+        true,
+        false,
+        true,
+        false
+      ],
+      "panes": [
+        {
+          "id": 1,
+          "rect": {
+            "x": 8,
+            "y": 8,
+            "width": 1264,
+            "height": 784
+          },
+          "page": {
+            "x": 8,
+            "y": 8,
+            "width": 1264,
+            "height": 784
+          },
+          "devtools": null,
+          "splitId": null,
+          "index": 0
+        }
+      ],
+      "fullscreen": false
+    }
+  },
+  {
+    "ok": true,
+    "label": "light/180 pinned sidebar shows native lights"
+  },
+  {
+    "ok": true,
+    "label": "light/180 pinned header reserves native lights (also at minimum width)",
+    "detail": {
+      "reserve": {
+        "x": 10,
+        "y": 0,
+        "right": 84,
+        "bottom": 46
+      },
+      "nav": {
+        "x": 54,
+        "y": 46,
+        "right": 172,
+        "bottom": 92
+      },
+      "first": {
+        "x": 10,
+        "y": 138,
+        "right": 172,
+        "bottom": 174
+      },
+      "top": {
+        "x": 10,
+        "y": 0,
+        "right": 172,
+        "bottom": 92
+      }
+    }
+  },
+  {
+    "ok": true,
+    "label": "light/180 hidden lights absent and page retains full card bounds",
+    "detail": {
+      "hidden": true,
+      "overlay": null,
+      "lights": false,
+      "history": [
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false
+      ],
+      "panes": [
+        {
+          "id": 1,
+          "rect": {
+            "x": 8,
+            "y": 8,
+            "width": 1264,
+            "height": 784
+          },
+          "page": {
+            "x": 8,
+            "y": 8,
+            "width": 1264,
+            "height": 784
+          },
+          "devtools": null,
+          "splitId": null,
+          "index": 0
+        }
+      ],
+      "fullscreen": false
+    }
+  },
+  {
+    "ok": true,
+    "label": "light/180 very top-left edge reveals sidebar + native lights",
+    "detail": {
+      "hidden": true,
+      "overlay": "peek",
+      "lights": true,
+      "history": [
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true
+      ],
+      "panes": [
+        {
+          "id": 1,
+          "rect": {
+            "x": 8,
+            "y": 8,
+            "width": 1264,
+            "height": 784
+          },
+          "page": {
+            "x": 8,
+            "y": 8,
+            "width": 1264,
+            "height": 784
+          },
+          "devtools": null,
+          "splitId": null,
+          "index": 0
+        }
+      ],
+      "fullscreen": false
+    }
+  },
+  {
+    "ok": true,
+    "label": "light/180 no top/left inset gap in hover envelope",
+    "detail": {
+      "x": 0,
+      "y": 0,
+      "bottom": 800
+    }
+  },
+  {
+    "ok": true,
+    "label": "light/180 pointer (50,1) does not collapse header",
+    "detail": {
+      "hidden": true,
+      "overlay": "peek",
+      "lights": true,
+      "history": [
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true
+      ],
+      "panes": [
+        {
+          "id": 1,
+          "rect": {
+            "x": 8,
+            "y": 8,
+            "width": 1264,
+            "height": 784
+          },
+          "page": {
+            "x": 8,
+            "y": 8,
+            "width": 1264,
+            "height": 784
+          },
+          "devtools": null,
+          "splitId": null,
+          "index": 0
+        }
+      ],
+      "fullscreen": false
+    }
+  },
+  {
+    "ok": true,
+    "label": "light/180 pointer (100,1) does not collapse header",
+    "detail": {
+      "hidden": true,
+      "overlay": "peek",
+      "lights": true,
+      "history": [
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true
+      ],
+      "panes": [
+        {
+          "id": 1,
+          "rect": {
+            "x": 8,
+            "y": 8,
+            "width": 1264,
+            "height": 784
+          },
+          "page": {
+            "x": 8,
+            "y": 8,
+            "width": 1264,
+            "height": 784
+          },
+          "devtools": null,
+          "splitId": null,
+          "index": 0
+        }
+      ],
+      "fullscreen": false
+    }
+  },
+  {
+    "ok": true,
+    "label": "light/180 pointer (100,24) does not collapse header",
+    "detail": {
+      "hidden": true,
+      "overlay": "peek",
+      "lights": true,
+      "history": [
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true
+      ],
+      "panes": [
+        {
+          "id": 1,
+          "rect": {
+            "x": 8,
+            "y": 8,
+            "width": 1264,
+            "height": 784
+          },
+          "page": {
+            "x": 8,
+            "y": 8,
+            "width": 1264,
+            "height": 784
+          },
+          "devtools": null,
+          "splitId": null,
+          "index": 0
+        }
+      ],
+      "fullscreen": false
+    }
+  },
+  {
+    "ok": true,
+    "label": "light/180 pointer (50,25) does not collapse header",
+    "detail": {
+      "hidden": true,
+      "overlay": "peek",
+      "lights": true,
+      "history": [
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true
+      ],
+      "panes": [
+        {
+          "id": 1,
+          "rect": {
+            "x": 8,
+            "y": 8,
+            "width": 1264,
+            "height": 784
+          },
+          "page": {
+            "x": 8,
+            "y": 8,
+            "width": 1264,
+            "height": 784
+          },
+          "devtools": null,
+          "splitId": null,
+          "index": 0
+        }
+      ],
+      "fullscreen": false
+    }
+  },
+  {
+    "ok": true,
+    "label": "light/180 pointer (170,24) does not collapse header",
+    "detail": {
+      "hidden": true,
+      "overlay": "peek",
+      "lights": true,
+      "history": [
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true
+      ],
+      "panes": [
+        {
+          "id": 1,
+          "rect": {
+            "x": 8,
+            "y": 8,
+            "width": 1264,
+            "height": 784
+          },
+          "page": {
+            "x": 8,
+            "y": 8,
+            "width": 1264,
+            "height": 784
+          },
+          "devtools": null,
+          "splitId": null,
+          "index": 0
+        }
+      ],
+      "fullscreen": false
+    }
+  },
+  {
+    "ok": true,
+    "label": "light/180 pointer (12,44) does not collapse header",
+    "detail": {
+      "hidden": true,
+      "overlay": "peek",
+      "lights": true,
+      "history": [
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true
+      ],
+      "panes": [
+        {
+          "id": 1,
+          "rect": {
+            "x": 8,
+            "y": 8,
+            "width": 1264,
+            "height": 784
+          },
+          "page": {
+            "x": 8,
+            "y": 8,
+            "width": 1264,
+            "height": 784
+          },
+          "devtools": null,
+          "splitId": null,
+          "index": 0
+        }
+      ],
+      "fullscreen": false
+    }
+  },
+  {
+    "ok": true,
+    "label": "light/180 peek keeps full reserve and header receives pointer events",
+    "detail": {
+      "reserve": {
+        "x": 10,
+        "y": 0,
+        "right": 84,
+        "bottom": 46
+      },
+      "nav": {
+        "x": 54,
+        "y": 46,
+        "right": 172,
+        "bottom": 92
+      },
+      "first": {
+        "x": 10,
+        "y": 138,
+        "right": 172,
+        "bottom": 174
+      },
+      "region": "no-drag"
+    }
+  },
+  {
+    "ok": true,
+    "label": "light/180 short page crossing cancels delayed collapse"
+  },
+  {
+    "ok": true,
+    "label": "light/180 deliberate page crossing hides sidebar + native lights",
+    "detail": {
+      "hidden": true,
+      "overlay": null,
+      "lights": false,
+      "history": [
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false
+      ],
+      "panes": [
+        {
+          "id": 1,
+          "rect": {
+            "x": 8,
+            "y": 8,
+            "width": 1264,
+            "height": 784
+          },
+          "page": {
+            "x": 8,
+            "y": 8,
+            "width": 1264,
+            "height": 784
+          },
+          "devtools": null,
+          "splitId": null,
+          "index": 0
+        }
+      ],
+      "fullscreen": false
+    }
+  },
+  {
+    "ok": true,
+    "label": "light/180 left edge reopens after collapse"
+  },
+  {
+    "ok": true,
+    "label": "light/180 escape hides sidebar and native lights",
+    "detail": {
+      "hidden": true,
+      "overlay": null,
+      "lights": false,
+      "history": [
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false
+      ],
+      "panes": [
+        {
+          "id": 1,
+          "rect": {
+            "x": 8,
+            "y": 8,
+            "width": 1264,
+            "height": 784
+          },
+          "page": {
+            "x": 8,
+            "y": 8,
+            "width": 1264,
+            "height": 784
+          },
+          "devtools": null,
+          "splitId": null,
+          "index": 0
+        }
+      ],
+      "fullscreen": false
+    }
+  },
+  {
+    "ok": true,
+    "label": "light/180 hidden-sidebar palette does not expose lights or activate peek",
+    "detail": {
+      "hidden": true,
+      "overlay": "palette",
+      "lights": false,
+      "history": [
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false
+      ],
+      "panes": [
+        {
+          "id": 1,
+          "rect": {
+            "x": 8,
+            "y": 8,
+            "width": 1264,
+            "height": 784
+          },
+          "page": {
+            "x": 8,
+            "y": 8,
+            "width": 1264,
+            "height": 784
+          },
+          "devtools": null,
+          "splitId": null,
+          "index": 0
+        }
+      ],
+      "fullscreen": false
+    }
+  },
+  {
+    "ok": true,
+    "label": "dark/252 pinned sidebar shows native lights"
+  },
+  {
+    "ok": true,
+    "label": "dark/252 pinned header reserves native lights (also at minimum width)",
+    "detail": {
+      "reserve": {
+        "x": 10,
+        "y": 0,
+        "right": 84,
+        "bottom": 46
+      },
+      "nav": {
+        "x": 126,
+        "y": 0,
+        "right": 244,
+        "bottom": 46
+      },
+      "first": {
+        "x": 10,
+        "y": 92,
+        "right": 244,
+        "bottom": 128
+      },
+      "top": {
+        "x": 10,
+        "y": 0,
+        "right": 244,
+        "bottom": 46
+      }
+    }
+  },
+  {
+    "ok": true,
+    "label": "dark/252 hidden lights absent and page retains full card bounds",
+    "detail": {
+      "hidden": true,
+      "overlay": null,
+      "lights": false,
+      "history": [
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false
+      ],
+      "panes": [
+        {
+          "id": 1,
+          "rect": {
+            "x": 8,
+            "y": 8,
+            "width": 1264,
+            "height": 784
+          },
+          "page": {
+            "x": 8,
+            "y": 8,
+            "width": 1264,
+            "height": 784
+          },
+          "devtools": null,
+          "splitId": null,
+          "index": 0
+        }
+      ],
+      "fullscreen": false
+    }
+  },
+  {
+    "ok": true,
+    "label": "dark/252 very top-left edge reveals sidebar + native lights",
+    "detail": {
+      "hidden": true,
+      "overlay": "peek",
+      "lights": true,
+      "history": [
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true
+      ],
+      "panes": [
+        {
+          "id": 1,
+          "rect": {
+            "x": 8,
+            "y": 8,
+            "width": 1264,
+            "height": 784
+          },
+          "page": {
+            "x": 8,
+            "y": 8,
+            "width": 1264,
+            "height": 784
+          },
+          "devtools": null,
+          "splitId": null,
+          "index": 0
+        }
+      ],
+      "fullscreen": false
+    }
+  },
+  {
+    "ok": true,
+    "label": "dark/252 no top/left inset gap in hover envelope",
+    "detail": {
+      "x": 0,
+      "y": 0,
+      "bottom": 800
+    }
+  },
+  {
+    "ok": true,
+    "label": "dark/252 pointer (50,1) does not collapse header",
+    "detail": {
+      "hidden": true,
+      "overlay": "peek",
+      "lights": true,
+      "history": [
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true
+      ],
+      "panes": [
+        {
+          "id": 1,
+          "rect": {
+            "x": 8,
+            "y": 8,
+            "width": 1264,
+            "height": 784
+          },
+          "page": {
+            "x": 8,
+            "y": 8,
+            "width": 1264,
+            "height": 784
+          },
+          "devtools": null,
+          "splitId": null,
+          "index": 0
+        }
+      ],
+      "fullscreen": false
+    }
+  },
+  {
+    "ok": true,
+    "label": "dark/252 pointer (100,1) does not collapse header",
+    "detail": {
+      "hidden": true,
+      "overlay": "peek",
+      "lights": true,
+      "history": [
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true
+      ],
+      "panes": [
+        {
+          "id": 1,
+          "rect": {
+            "x": 8,
+            "y": 8,
+            "width": 1264,
+            "height": 784
+          },
+          "page": {
+            "x": 8,
+            "y": 8,
+            "width": 1264,
+            "height": 784
+          },
+          "devtools": null,
+          "splitId": null,
+          "index": 0
+        }
+      ],
+      "fullscreen": false
+    }
+  },
+  {
+    "ok": true,
+    "label": "dark/252 pointer (100,24) does not collapse header",
+    "detail": {
+      "hidden": true,
+      "overlay": "peek",
+      "lights": true,
+      "history": [
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true
+      ],
+      "panes": [
+        {
+          "id": 1,
+          "rect": {
+            "x": 8,
+            "y": 8,
+            "width": 1264,
+            "height": 784
+          },
+          "page": {
+            "x": 8,
+            "y": 8,
+            "width": 1264,
+            "height": 784
+          },
+          "devtools": null,
+          "splitId": null,
+          "index": 0
+        }
+      ],
+      "fullscreen": false
+    }
+  },
+  {
+    "ok": true,
+    "label": "dark/252 pointer (50,25) does not collapse header",
+    "detail": {
+      "hidden": true,
+      "overlay": "peek",
+      "lights": true,
+      "history": [
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true
+      ],
+      "panes": [
+        {
+          "id": 1,
+          "rect": {
+            "x": 8,
+            "y": 8,
+            "width": 1264,
+            "height": 784
+          },
+          "page": {
+            "x": 8,
+            "y": 8,
+            "width": 1264,
+            "height": 784
+          },
+          "devtools": null,
+          "splitId": null,
+          "index": 0
+        }
+      ],
+      "fullscreen": false
+    }
+  },
+  {
+    "ok": true,
+    "label": "dark/252 pointer (242,24) does not collapse header",
+    "detail": {
+      "hidden": true,
+      "overlay": "peek",
+      "lights": true,
+      "history": [
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true
+      ],
+      "panes": [
+        {
+          "id": 1,
+          "rect": {
+            "x": 8,
+            "y": 8,
+            "width": 1264,
+            "height": 784
+          },
+          "page": {
+            "x": 8,
+            "y": 8,
+            "width": 1264,
+            "height": 784
+          },
+          "devtools": null,
+          "splitId": null,
+          "index": 0
+        }
+      ],
+      "fullscreen": false
+    }
+  },
+  {
+    "ok": true,
+    "label": "dark/252 pointer (12,44) does not collapse header",
+    "detail": {
+      "hidden": true,
+      "overlay": "peek",
+      "lights": true,
+      "history": [
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true
+      ],
+      "panes": [
+        {
+          "id": 1,
+          "rect": {
+            "x": 8,
+            "y": 8,
+            "width": 1264,
+            "height": 784
+          },
+          "page": {
+            "x": 8,
+            "y": 8,
+            "width": 1264,
+            "height": 784
+          },
+          "devtools": null,
+          "splitId": null,
+          "index": 0
+        }
+      ],
+      "fullscreen": false
+    }
+  },
+  {
+    "ok": true,
+    "label": "dark/252 peek keeps full reserve and header receives pointer events",
+    "detail": {
+      "reserve": {
+        "x": 10,
+        "y": 0,
+        "right": 84,
+        "bottom": 46
+      },
+      "nav": {
+        "x": 126,
+        "y": 0,
+        "right": 244,
+        "bottom": 46
+      },
+      "first": {
+        "x": 10,
+        "y": 92,
+        "right": 244,
+        "bottom": 128
+      },
+      "region": "no-drag"
+    }
+  },
+  {
+    "ok": true,
+    "label": "dark/252 short page crossing cancels delayed collapse"
+  },
+  {
+    "ok": true,
+    "label": "dark/252 deliberate page crossing hides sidebar + native lights",
+    "detail": {
+      "hidden": true,
+      "overlay": null,
+      "lights": false,
+      "history": [
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false
+      ],
+      "panes": [
+        {
+          "id": 1,
+          "rect": {
+            "x": 8,
+            "y": 8,
+            "width": 1264,
+            "height": 784
+          },
+          "page": {
+            "x": 8,
+            "y": 8,
+            "width": 1264,
+            "height": 784
+          },
+          "devtools": null,
+          "splitId": null,
+          "index": 0
+        }
+      ],
+      "fullscreen": false
+    }
+  },
+  {
+    "ok": true,
+    "label": "dark/252 left edge reopens after collapse"
+  },
+  {
+    "ok": true,
+    "label": "dark/252 escape hides sidebar and native lights",
+    "detail": {
+      "hidden": true,
+      "overlay": null,
+      "lights": false,
+      "history": [
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false
+      ],
+      "panes": [
+        {
+          "id": 1,
+          "rect": {
+            "x": 8,
+            "y": 8,
+            "width": 1264,
+            "height": 784
+          },
+          "page": {
+            "x": 8,
+            "y": 8,
+            "width": 1264,
+            "height": 784
+          },
+          "devtools": null,
+          "splitId": null,
+          "index": 0
+        }
+      ],
+      "fullscreen": false
+    }
+  },
+  {
+    "ok": true,
+    "label": "dark/252 hidden-sidebar palette does not expose lights or activate peek",
+    "detail": {
+      "hidden": true,
+      "overlay": "palette",
+      "lights": false,
+      "history": [
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false
+      ],
+      "panes": [
+        {
+          "id": 1,
+          "rect": {
+            "x": 8,
+            "y": 8,
+            "width": 1264,
+            "height": 784
+          },
+          "page": {
+            "x": 8,
+            "y": 8,
+            "width": 1264,
+            "height": 784
+          },
+          "devtools": null,
+          "splitId": null,
+          "index": 0
+        }
+      ],
+      "fullscreen": false
+    }
+  },
+  {
+    "ok": true,
+    "label": "dark/180 pinned sidebar shows native lights"
+  },
+  {
+    "ok": true,
+    "label": "dark/180 pinned header reserves native lights (also at minimum width)",
+    "detail": {
+      "reserve": {
+        "x": 10,
+        "y": 0,
+        "right": 84,
+        "bottom": 46
+      },
+      "nav": {
+        "x": 54,
+        "y": 46,
+        "right": 172,
+        "bottom": 92
+      },
+      "first": {
+        "x": 10,
+        "y": 138,
+        "right": 172,
+        "bottom": 174
+      },
+      "top": {
+        "x": 10,
+        "y": 0,
+        "right": 172,
+        "bottom": 92
+      }
+    }
+  },
+  {
+    "ok": true,
+    "label": "dark/180 hidden lights absent and page retains full card bounds",
+    "detail": {
+      "hidden": true,
+      "overlay": null,
+      "lights": false,
+      "history": [
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false
+      ],
+      "panes": [
+        {
+          "id": 1,
+          "rect": {
+            "x": 8,
+            "y": 8,
+            "width": 1264,
+            "height": 784
+          },
+          "page": {
+            "x": 8,
+            "y": 8,
+            "width": 1264,
+            "height": 784
+          },
+          "devtools": null,
+          "splitId": null,
+          "index": 0
+        }
+      ],
+      "fullscreen": false
+    }
+  },
+  {
+    "ok": true,
+    "label": "dark/180 very top-left edge reveals sidebar + native lights",
+    "detail": {
+      "hidden": true,
+      "overlay": "peek",
+      "lights": true,
+      "history": [
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true
+      ],
+      "panes": [
+        {
+          "id": 1,
+          "rect": {
+            "x": 8,
+            "y": 8,
+            "width": 1264,
+            "height": 784
+          },
+          "page": {
+            "x": 8,
+            "y": 8,
+            "width": 1264,
+            "height": 784
+          },
+          "devtools": null,
+          "splitId": null,
+          "index": 0
+        }
+      ],
+      "fullscreen": false
+    }
+  },
+  {
+    "ok": true,
+    "label": "dark/180 no top/left inset gap in hover envelope",
+    "detail": {
+      "x": 0,
+      "y": 0,
+      "bottom": 800
+    }
+  },
+  {
+    "ok": true,
+    "label": "dark/180 pointer (50,1) does not collapse header",
+    "detail": {
+      "hidden": true,
+      "overlay": "peek",
+      "lights": true,
+      "history": [
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true
+      ],
+      "panes": [
+        {
+          "id": 1,
+          "rect": {
+            "x": 8,
+            "y": 8,
+            "width": 1264,
+            "height": 784
+          },
+          "page": {
+            "x": 8,
+            "y": 8,
+            "width": 1264,
+            "height": 784
+          },
+          "devtools": null,
+          "splitId": null,
+          "index": 0
+        }
+      ],
+      "fullscreen": false
+    }
+  },
+  {
+    "ok": true,
+    "label": "dark/180 pointer (100,1) does not collapse header",
+    "detail": {
+      "hidden": true,
+      "overlay": "peek",
+      "lights": true,
+      "history": [
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true
+      ],
+      "panes": [
+        {
+          "id": 1,
+          "rect": {
+            "x": 8,
+            "y": 8,
+            "width": 1264,
+            "height": 784
+          },
+          "page": {
+            "x": 8,
+            "y": 8,
+            "width": 1264,
+            "height": 784
+          },
+          "devtools": null,
+          "splitId": null,
+          "index": 0
+        }
+      ],
+      "fullscreen": false
+    }
+  },
+  {
+    "ok": true,
+    "label": "dark/180 pointer (100,24) does not collapse header",
+    "detail": {
+      "hidden": true,
+      "overlay": "peek",
+      "lights": true,
+      "history": [
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true
+      ],
+      "panes": [
+        {
+          "id": 1,
+          "rect": {
+            "x": 8,
+            "y": 8,
+            "width": 1264,
+            "height": 784
+          },
+          "page": {
+            "x": 8,
+            "y": 8,
+            "width": 1264,
+            "height": 784
+          },
+          "devtools": null,
+          "splitId": null,
+          "index": 0
+        }
+      ],
+      "fullscreen": false
+    }
+  },
+  {
+    "ok": true,
+    "label": "dark/180 pointer (50,25) does not collapse header",
+    "detail": {
+      "hidden": true,
+      "overlay": "peek",
+      "lights": true,
+      "history": [
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true
+      ],
+      "panes": [
+        {
+          "id": 1,
+          "rect": {
+            "x": 8,
+            "y": 8,
+            "width": 1264,
+            "height": 784
+          },
+          "page": {
+            "x": 8,
+            "y": 8,
+            "width": 1264,
+            "height": 784
+          },
+          "devtools": null,
+          "splitId": null,
+          "index": 0
+        }
+      ],
+      "fullscreen": false
+    }
+  },
+  {
+    "ok": true,
+    "label": "dark/180 pointer (170,24) does not collapse header",
+    "detail": {
+      "hidden": true,
+      "overlay": "peek",
+      "lights": true,
+      "history": [
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true
+      ],
+      "panes": [
+        {
+          "id": 1,
+          "rect": {
+            "x": 8,
+            "y": 8,
+            "width": 1264,
+            "height": 784
+          },
+          "page": {
+            "x": 8,
+            "y": 8,
+            "width": 1264,
+            "height": 784
+          },
+          "devtools": null,
+          "splitId": null,
+          "index": 0
+        }
+      ],
+      "fullscreen": false
+    }
+  },
+  {
+    "ok": true,
+    "label": "dark/180 pointer (12,44) does not collapse header",
+    "detail": {
+      "hidden": true,
+      "overlay": "peek",
+      "lights": true,
+      "history": [
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true
+      ],
+      "panes": [
+        {
+          "id": 1,
+          "rect": {
+            "x": 8,
+            "y": 8,
+            "width": 1264,
+            "height": 784
+          },
+          "page": {
+            "x": 8,
+            "y": 8,
+            "width": 1264,
+            "height": 784
+          },
+          "devtools": null,
+          "splitId": null,
+          "index": 0
+        }
+      ],
+      "fullscreen": false
+    }
+  },
+  {
+    "ok": true,
+    "label": "dark/180 peek keeps full reserve and header receives pointer events",
+    "detail": {
+      "reserve": {
+        "x": 10,
+        "y": 0,
+        "right": 84,
+        "bottom": 46
+      },
+      "nav": {
+        "x": 54,
+        "y": 46,
+        "right": 172,
+        "bottom": 92
+      },
+      "first": {
+        "x": 10,
+        "y": 138,
+        "right": 172,
+        "bottom": 174
+      },
+      "region": "no-drag"
+    }
+  },
+  {
+    "ok": true,
+    "label": "dark/180 short page crossing cancels delayed collapse"
+  },
+  {
+    "ok": true,
+    "label": "dark/180 deliberate page crossing hides sidebar + native lights",
+    "detail": {
+      "hidden": true,
+      "overlay": null,
+      "lights": false,
+      "history": [
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false
+      ],
+      "panes": [
+        {
+          "id": 1,
+          "rect": {
+            "x": 8,
+            "y": 8,
+            "width": 1264,
+            "height": 784
+          },
+          "page": {
+            "x": 8,
+            "y": 8,
+            "width": 1264,
+            "height": 784
+          },
+          "devtools": null,
+          "splitId": null,
+          "index": 0
+        }
+      ],
+      "fullscreen": false
+    }
+  },
+  {
+    "ok": true,
+    "label": "dark/180 left edge reopens after collapse"
+  },
+  {
+    "ok": true,
+    "label": "dark/180 escape hides sidebar and native lights",
+    "detail": {
+      "hidden": true,
+      "overlay": null,
+      "lights": false,
+      "history": [
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false
+      ],
+      "panes": [
+        {
+          "id": 1,
+          "rect": {
+            "x": 8,
+            "y": 8,
+            "width": 1264,
+            "height": 784
+          },
+          "page": {
+            "x": 8,
+            "y": 8,
+            "width": 1264,
+            "height": 784
+          },
+          "devtools": null,
+          "splitId": null,
+          "index": 0
+        }
+      ],
+      "fullscreen": false
+    }
+  },
+  {
+    "ok": true,
+    "label": "dark/180 hidden-sidebar palette does not expose lights or activate peek",
+    "detail": {
+      "hidden": true,
+      "overlay": "palette",
+      "lights": false,
+      "history": [
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false
+      ],
+      "panes": [
+        {
+          "id": 1,
+          "rect": {
+            "x": 8,
+            "y": 8,
+            "width": 1264,
+            "height": 784
+          },
+          "page": {
+            "x": 8,
+            "y": 8,
+            "width": 1264,
+            "height": 784
+          },
+          "devtools": null,
+          "splitId": null,
+          "index": 0
+        }
+      ],
+      "fullscreen": false
+    }
+  },
+  {
+    "ok": true,
+    "label": "html fullscreen disables lights and hover reveal",
+    "detail": {
+      "hidden": true,
+      "overlay": null,
+      "lights": false,
+      "history": [
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false
+      ],
+      "panes": [],
+      "fullscreen": false
+    }
+  },
+  {
+    "ok": true,
+    "label": "native fullscreen suppresses custom inset native lights"
+  },
+  {
+    "ok": true,
+    "label": "leaving native fullscreen restores visible-sidebar native lights"
+  },
+  {
+    "ok": true,
+    "label": "actual native setWindowButtonVisibility called for both states",
+    "detail": [
+      true,
+      false,
+      true,
+      false,
+      true,
+      false,
+      true,
+      false,
+      true,
+      false,
+      true,
+      false,
+      true,
+      false,
+      true,
+      false,
+      true,
+      false,
+      true,
+      false,
+      true,
+      false,
+      true,
+      false,
+      true,
+      false,
+      false,
+      true
+    ]
+  }
+]

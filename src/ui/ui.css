@@ -148,26 +148,33 @@ kbd {
 body.sidebar-hidden #sidebar { transform: translateX(-110%); }
 body.sidebar-hidden.peek #sidebar {
   transform: none;
-  top: 8px; bottom: 8px; left: 8px;
+  top: 0; bottom: 0; left: 0;
   border-radius: 12px;
   background: linear-gradient(165deg, var(--bg1), var(--bg2) 60%, var(--bg3));
   backdrop-filter: blur(30px);
   box-shadow: 0 10px 40px rgba(0,0,0,.25), 0 0 0 .5px rgba(0,0,0,.1);
   transition: transform .18s ease;
 }
-body.sidebar-hidden.peek #sidebar .traffic-space { width: 4px; }
+/* A peek has the same native button reserve as a pinned sidebar. The window
+   buttons do not move with a transformed DOM sidebar. Its header/spacer must
+   also receive pointer events: macOS drag regions swallow hover transitions. */
+body.sidebar-hidden.peek #sidebar .drag { -webkit-app-region: no-drag; }
+body.html-fullscreen #sidebar, body.html-fullscreen #peek-zone { display: none; }
 #peek-zone { position: fixed; left: 0; top: 0; bottom: 0; width: 8px; z-index: 5; display: none; -webkit-app-region: no-drag; }
 body.sidebar-hidden #peek-zone { display: block; }
 
 .topbar {
-  height: 46px;
+  min-height: 46px;
   flex: none;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
 }
-.traffic-space { width: 74px; flex: none; }
+/* Reserve the native header from the first paint, even before state arrives.
+   Narrow sidebars wrap navigation below it rather than overlapping buttons. */
+.traffic-space { width: 74px; height: 46px; flex: none; }
 body.fullscreen .traffic-space { width: 0; }
-.nav-buttons { display: flex; gap: 2px; margin-left: auto; }
+.nav-buttons { display: flex; flex: none; align-items: center; height: 46px; gap: 2px; margin-left: auto; }
 button.icon {
   width: 28px; height: 28px;
   border-radius: 7px;

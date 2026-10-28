@@ -91,6 +91,7 @@ class Manager {
     this.history = new History(path.join(ud, 'history.json'));
     this.ledger = new (require('../core/ledger').Ledger)(path.join(ud, 'activity.json'));
     this.ledgerUI = new (require('./ledger-review').LedgerUI)(this);
+    this.siteTime = new (require('./site-time').SiteTimeController)(this);
     this.shortcuts = new (require('./shortcuts').Shortcuts)(this);
     this.profileControls = new (require('./profile-controls').ProfileControls)(this);
   }
@@ -113,6 +114,7 @@ class Manager {
     if (this.downloads.some(d => ['progressing','paused'].includes(d.state))) throw new Error('Finish or cancel your downloads before switching profiles.');
     if (this.arcImportBusy || this.onboarding?.busy || this.permissions.osRequests.size || this.permissions.pending.size || this.permissions.pickers.size) throw new Error('Finish the current setup or permission request before switching profiles.');
     this.switchingProfile = true;
+    this.siteTime?.pause();
     try {
       this.saveNow(); this.history.flush(); this.perms.flush(); this.ledgerUI.close(); this.ledger.close(); this.shortcuts.flush();
       await this.session.cookies.flushStore();
@@ -129,11 +131,12 @@ class Manager {
       this.history=new History(path.join(ud,'history.json'));
       this.downloads=[];this._session=null;this.permissions.privateChoices={};
       this.ledger=new (require('../core/ledger').Ledger)(path.join(ud,'activity.json'));
+      this.siteTime?.reload();
       this.shortcuts.reload();this.onboarding?.reload();
       await this.extensions.load(this.session);
       this.restore();buildMenu(this);this.broadcast();this.writeAgentFile();
       await this.onboarding?.maybeRun?.();
-    } finally { this.quitting=false;this.switchingProfile=false; }
+    } finally { this.quitting=false;this.switchingProfile=false;this.siteTime?.refresh(); }
   }
 
   privateSession(id) {
@@ -197,6 +200,7 @@ class Manager {
   newWindow({ private: isPrivate = false, url = null, state = null } = {}) {
     const w = new OliveWindow(this, { private: isPrivate, state });
     this.windows.push(w);
+    this.siteTime?.attachWindow(w);
     if (url) w.createTab({ url: toUrl(url) });
     this.saveSoon();
     return w;
@@ -474,6 +478,7 @@ app.on('before-quit', () => {
   mgr.quitting = true;
   mgr.history.flush();
   mgr.perms.flush();
+  mgr.siteTime?.dispose();
   mgr.ledgerUI.dispose(); mgr.ledger.close(); mgr.shortcuts.flush(); mgr.onboarding?.close();
   try { mgr.session.cookies.flushStore(); } catch {}
 });

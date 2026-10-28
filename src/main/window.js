@@ -6,6 +6,7 @@ const { TabMRU } = require('./tab-mru');
 const { COMMANDS } = require('./shortcuts');
 const { matchesInput, holdForInput, holdReleased } = require('./shortcut-input');
 const { toUrl, displayHost, SEARCH } = require('../core/url');
+const { commandSuggestions, isAppCommand } = require('../core/app-commands');
 
 const UI_HTML = path.join(__dirname, '..', 'ui', 'index.html');
 const UI_PRELOAD = path.join(__dirname, '..', 'ui', 'preload.js');
@@ -117,6 +118,7 @@ class OliveWindow {
     this.ui.webContents.loadFile(UI_HTML, { query: { private: this.isPrivate ? '1' : '' } });
     this.ui.webContents.on('did-finish-load', () => {
       this.uiReady = true;
+      this.syncWindowButtons();
       this.sendState();
       if (this.tabs.size === 0 && !this.inlinePage) this.openPalette('new');
     });
@@ -127,8 +129,12 @@ class OliveWindow {
     this.ui.webContents.on('will-navigate', (e) => e.preventDefault());
 
     this.win.on('resize', () => this.layout());
-    this.win.on('enter-full-screen', () => { this.layout(); this.sendState(); });
-    this.win.on('leave-full-screen', () => { this.layout(); this.sendState(); });
+    // macOS may restore its titlebar buttons during a full-screen transition.
+    // Suppress them for the transition, then reapply our sidebar-only policy.
+    this.win.on('will-enter-full-screen', () => { this.fullscreenTransition = true; this.syncWindowButtons(); });
+    this.win.on('will-leave-full-screen', () => { this.fullscreenTransition = true; this.syncWindowButtons(); });
+    this.win.on('enter-full-screen', () => { this.fullscreenTransition = false; this.syncWindowButtons(true); this.layout(); this.sendState(); });
+    this.win.on('leave-full-screen', () => { this.fullscreenTransition = false; this.syncWindowButtons(true); this.layout(); this.sendState(); });
     this.win.on('focus', () => { mgr.focused = this; });
     this.win.on('blur', () => this.finishTabWalk());
     this.win.on('move', () => this.mgr.saveSoon());
@@ -324,6 +330,7 @@ class OliveWindow {
     wc.on('audio-state-changed', (e) => { tab.audible = e.audible; this.changed(); });
     wc.on('enter-html-full-screen', () => {
       this.htmlFullscreenId = tab.id;
+      if (this.overlay) this.setOverlay(null);
       this.wasFullScreen = this.win.isFullScreen();
       if (!this.wasFullScreen) this.win.setFullScreen(true);
       this.layout();
@@ -701,7 +708,9 @@ class OliveWindow {
   }
 
   setOverlay(kind) {
+    if (kind === 'peek' && (!this.sidebarHidden || this.htmlFullscreenId)) return;
     this.overlay = kind;
+    this.syncWindowButtons();
     const top = !!kind;
     if (top !== this.uiOnTop) {
       this.uiOnTop = top;
@@ -715,6 +724,7 @@ class OliveWindow {
     this.mgr.permissions.layout(this);
     this.inlinePage?.layout();
     this.appPanel?.layout();
+    this.mgr.siteTime?.refresh();
     this.sendState();
   }
 
@@ -732,10 +742,24 @@ class OliveWindow {
     this.mgr.saveSoon();
   }
 
+  // Native traffic lights belong to the sidebar, never to the page below it.
+  // Leave macOS full-screen titlebar presentation to the system; keeping our
+  // inset buttons hidden there also avoids a second set over the page.
+  syncWindowButtons(force = false) {
+    if (process.platform !== 'darwin' || this.destroyed || this.win.isDestroyed()) return;
+    const visible = this.uiReady && !this.htmlFullscreenId && !this.fullscreenTransition && !this.win.isFullScreen()
+      && (!this.sidebarHidden || this.overlay === 'peek');
+    if (force || visible !== this.windowButtonsVisible) {
+      this.win.setWindowButtonVisibility(visible);
+      this.windowButtonsVisible = visible;
+    }
+  }
+
   // ---------- layout ----------
 
   layout() {
     if (this.destroyed || this.win.isDestroyed()) return;
+    this.syncWindowButtons();
     const { width: w, height: h } = this.win.getContentBounds();
     this.ui.setBounds({ x: 0, y: 0, width: w, height: h });
     const visible = this.visibleIds();
@@ -791,11 +815,13 @@ class OliveWindow {
     this.mgr.permissions.layout(this);
     this.inlinePage?.layout();
     this.appPanel?.layout();
+    this.mgr.siteTime?.refresh();
   }
 
   // ---------- state to ui ----------
 
   changed() {
+    this.mgr.siteTime?.refresh();
     this.mgr.saveSoon();
     if (this.stateTimer) return;
     this.stateTimer = setTimeout(() => {
@@ -828,7 +854,7 @@ class OliveWindow {
       panes: this.panes,
       find: this.find,
       htmlFullscreen: !!this.htmlFullscreenId,
-      appPage: this.inlinePage?.kind==='settings' ? {title:this.inlinePage.options.title||'Settings'} : null,
+      appPage: ['settings','activities'].includes(this.inlinePage?.kind) ? {title:this.inlinePage.options.title||'Settings'} : null,
       onboarding: !this.isPrivate && this.mgr.onboarding?.eligible() && !this.mgr.onboarding.saved.completed ? {active:this.inlinePage?.kind==='setup', step:this.mgr.onboarding.saved.step, remaining:Math.max(0,4-['welcome','calls','screen','import','done'].indexOf(this.mgr.onboarding.saved.step))} : null,
       active: !this.inlinePage && active
         ? {
@@ -948,6 +974,8 @@ class OliveWindow {
       case 'onboarding': return this.mgr.onboarding?.show();
       case 'onboardingLater': return this.mgr.onboarding?.command('later');
       case 'shortcuts': return this.mgr.shortcuts?.showSettings(this);
+      case 'activities': return this.mgr.siteTime?.show(this);
+      case 'settings': return this.mgr.shortcuts?.showSettings(this);
       case 'ledger': return this.mgr.ledgerUI ? this.mgr.ledgerUI.show(this) : require('./ledger-review').show(this);
       case 'ublock': return this.mgr.extensions?.open(this);
       case 'sitePermissions': return this.mgr.permissions.showSettings(this);
@@ -1018,6 +1046,10 @@ class OliveWindow {
 
   submit({ mode, input, item, split: inSplit }) {
     this.setOverlay(null);
+    if (item?.kind === 'command') {
+      if (isAppCommand(item.commandId)) return this.cmd(item.commandId);
+      return;
+    }
     if (item && item.kind === 'tab') {
       const w = this.mgr.windows.find((x) => x.tabs.has(item.tabId));
       if (w) {
@@ -1084,7 +1116,7 @@ class OliveWindow {
 
   suggest(query) {
     const q = (query || '').trim();
-    const out = [];
+    const out = commandSuggestions(q);
     if (q) {
       const url = toUrl(q);
       const isSearch = url.startsWith(SEARCH);

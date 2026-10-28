@@ -26,7 +26,9 @@ installed app, not `npm start`).
 - pinned tabs unload on ⌘W instead of disappearing (like arc)
 - ⌘T opens a command bar: search, urls, open tabs ("switch to tab"), history,
   inline host completion; ⇧↵ opens the result in split view
-- ⌘L edits the current url in the same bar
+- ⌘L edits the current url in the same bar. Type `shortcuts` / `settings` to
+  remap keys, or `activities` / `site time` to see time spent per site; app commands
+  appear ahead of web search and do not navigate the current tab.
 - split view: ⌃⇧= (split with a new tab), ⌘-click a tab, drag a tab onto the page,
   or right-click → open in split view. drag the divider to resize. up to 4 panes.
 - devtools docked inside the window next to the page (⌥⌘I, right-click → inspect).
@@ -36,7 +38,8 @@ installed app, not `npm start`).
 - history (used by the command bar), downloads (sidebar, dock bounce), find in
   page (⌘F / ⌘G), zoom (⌘+/⌘-/⌘0, pinch), reopen closed tab (⌘⇧T)
 - private windows (⌘⇧N): in-memory session, no history
-- sidebar toggle ⌘S, hover the left edge to peek it
+- sidebar toggle ⌘S, hover the left edge to peek it; native window controls live
+  in its reserved header, and disappear when the sidebar is hidden.
 - permission prompts (camera, mic, location, notifications, …) remembered per site
 - chrome UA generally; honest Electron UA for Google sign-in (measured through the password step, no passwords entered)
 
@@ -63,7 +66,7 @@ passwords / autofill (chromium's password manager isn't in electron: plan is
 keychain + our own fill), extensions (electron has partial chrome.* support),
 bookmarks ui (pinned tabs cover it for now), Safari/Firefox import, auto-update,
 and notarization. Local profiles, configurable shortcuts and Chromium cookie import
-are implemented; the current inline setup/settings revision is not installed yet.
+are implemented, with setup and settings embedded in the browser's page pane.
 
 ## import your Arc session
 
@@ -156,3 +159,18 @@ renderer diagnostics, **not** native-window screenshots. Actual CUA full-window
 shots and a blind visual review are required before visual sign-off. Metrics
 alone do not establish native feel. The private installed-app review capture is
 kept outside the repo under `/tmp/olive-private-review`.
+
+### activities / site time
+
+**Olive → Activities — Site Time…**, the sidebar Activity button, or ⌘L then
+`activities` opens the same inline page. Today / 7 Days / All Time show total,
+site count, average per calendar day, a seven-day chart, and ranked site shares.
+Counting starts with this release; old history is not treated as elapsed time.
+
+Only the active page in the focused, visible window counts. Background/minimized
+windows, private windows, app/settings pages, overlays, sleep and screen lock do
+not count. Split view counts its selected page once, not every pane. Only local
+day, hostname and seconds are stored, separately per profile (`site-time.json`,
+0600). No telemetry or favicon network requests. Reset Site Time asks in a native
+confirmation sheet and does not delete cookies, history, tabs, or the event log.
+The existing **Activity Event Log…** remains separate from time totals.

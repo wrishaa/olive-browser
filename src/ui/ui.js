@@ -10,6 +10,7 @@ let drag = null; // tab drag in progress
 let pressing = null; // pointer down on a tab, maybe becoming a drag
 
 const ICON = {
+  command: '<svg viewBox="0 0 16 16"><path d="M5 6H3.5a1.5 1.5 0 1 1 1.5-1.5V11.5a1.5 1.5 0 1 1-1.5-1.5h9a1.5 1.5 0 1 1-1.5 1.5V4.5A1.5 1.5 0 1 1 12.5 6Z" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>',
   close: '<svg viewBox="0 0 16 16"><path d="m4 4 8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>',
   audio: '<svg viewBox="0 0 16 16"><path d="M2.5 6h2.5l3.5-3v10l-3.5-3H2.5z" fill="currentColor"/><path d="M11 5.5a3.5 3.5 0 0 1 0 5M12.8 3.6a6 6 0 0 1 0 8.8" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>',
   muted: '<svg viewBox="0 0 16 16"><path d="M2.5 6h2.5l3.5-3v10l-3.5-3H2.5z" fill="currentColor"/><path d="m11 6 3.5 4M14.5 6 11 10" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>',
@@ -450,15 +451,33 @@ $('#sidebar-resize').addEventListener('pointerdown', (e) => {
 
 // ---------- peek sidebar when hidden ----------
 
+let peekCloseTimer = null;
+const keepPeek = () => { clearTimeout(peekCloseTimer); peekCloseTimer = null; };
+const leavePeek = () => {
+  if (peekCloseTimer || drag || S?.overlay !== 'peek') return;
+  // A short crossing grace prevents oscillation at the native titlebar/DOM
+  // boundary and lets the pointer return from the page without a flicker.
+  peekCloseTimer = setTimeout(() => {
+    peekCloseTimer = null;
+    if (!drag && S?.overlay === 'peek') olive.cmd('overlay', { kind: null });
+  }, 160);
+};
 $('#peek-zone').addEventListener('mouseenter', () => {
-  if (S?.sidebarHidden && S.overlay !== 'palette') olive.cmd('overlay', { kind: 'peek' });
+  keepPeek();
+  if (S?.sidebarHidden && !S.htmlFullscreen && !S.overlay) olive.cmd('overlay', { kind: 'peek' });
 });
+$('#sidebar').addEventListener('mouseenter', keepPeek);
 $('#sidebar').addEventListener('mouseleave', (e) => {
-  if (S?.overlay === 'peek' && !drag && e.clientX > 20) olive.cmd('overlay', { kind: null });
+  // Native window buttons are not DOM children. Moving into them must not
+  // collapse the sidebar they belong to. The whole top/left envelope is safe.
+  if (e.clientX > S?.sidebarWidth + 24 || e.clientX < 0 || e.clientY < 0 || e.clientY >= innerHeight) leavePeek();
 });
 document.addEventListener('mousemove', (e) => {
-  if (S?.overlay === 'peek' && !drag && e.clientX > S.sidebarWidth + 30) olive.cmd('overlay', { kind: null });
+  if (S?.overlay !== 'peek') { keepPeek(); return; }
+  if (e.clientX >= 0 && e.clientX <= S.sidebarWidth + 24 && e.clientY >= 0 && e.clientY < innerHeight) keepPeek();
+  else leavePeek();
 });
+window.addEventListener('blur', keepPeek);
 
 // ---------- find ----------
 
@@ -483,7 +502,7 @@ function openPalette(mode, value) {
   pal.completion = null;
   $('#palette-scrim').hidden = false;
   $('#palette-mode').textContent = mode === 'split' ? 'Split View' : mode === 'edit' ? '' : '';
-  palInput.placeholder = mode === 'edit' ? 'Search or enter URL…' : mode === 'split' ? 'Open in split view…' : 'Search or enter URL…';
+  palInput.placeholder = mode === 'split' ? 'Open in split view…' : 'Search, enter URL, or find a command…';
   palInput.value = value || '';
   pal.lastValue = palInput.value;
   palInput.focus();
@@ -509,7 +528,7 @@ async function suggest(q, { typed = false } = {}) {
   pal.items = items || [];
   pal.completion = null;
   // inline completion: "git" -> "github.com" when a history host starts with what was typed
-  if (typed && q && !/\s/.test(q) && palInput.selectionStart === palInput.value.length) {
+  if (pal.items[0]?.kind !== 'command' && typed && q && !/\s/.test(q) && palInput.selectionStart === palInput.value.length) {
     const ql = q.toLowerCase();
     for (const it of pal.items) {
       if (it.kind !== 'history' && it.kind !== 'tab') continue;
@@ -533,7 +552,7 @@ function renderSuggestions() {
   box.innerHTML = pal.items.map((it, i) => {
     let icon;
     if (it.favicon && !brokenFavs.has(it.favicon)) icon = `<img class="fav" src="${esc(it.favicon)}" data-fav="${esc(it.favicon)}" data-letter="${esc((it.title || '?')[0].toUpperCase())}" data-hue="${hue(it.url)}">`;
-    else icon = `<span class="fav">${it.kind === 'search' ? ICON.search : it.kind === 'tab' ? ICON.tab : it.kind === 'history' ? ICON.clock : ICON.globe}</span>`;
+    else icon = `<span class="fav">${it.kind === 'search' ? ICON.search : it.kind === 'tab' ? ICON.tab : it.kind === 'history' ? ICON.clock : it.kind === 'command' ? ICON.command : ICON.globe}</span>`;
     return `<div class="sug${i === pal.sel ? ' sel' : ''}" data-i="${i}">${icon}<span class="t">${esc(it.title)}</span><span class="s">${esc(it.sub || '')}</span></div>`;
   }).join('');
   wireFavicons(box);
@@ -624,4 +643,4 @@ window.addEventListener('keydown', (e) => {
   if (e.key === 'Escape' && !pal.open && S?.overlay === 'peek') olive.cmd('overlay', { kind: null });
 });
 
-$('#btn-ledger').onclick = () => olive.cmd('ledger');
+$('#btn-ledger').onclick = () => olive.cmd('activities');
