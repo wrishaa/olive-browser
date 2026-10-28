@@ -143,8 +143,12 @@ class OliveWindow {
 
     if (s.tabs) this.restore(s);
     this.layout();
-    this.win.show();
-    mgr.focused = this;
+    // agent-opened windows appear without activating olive or taking focus
+    if (opts.inactive) this.win.showInactive();
+    else {
+      this.win.show();
+      mgr.focused = this;
+    }
   }
 
   // Only metadata, and never private windows. The manager owns the profile ledger.
@@ -196,7 +200,7 @@ class OliveWindow {
     return [...this.pinned, ...this.unpinned];
   }
 
-  createTab({ url = '', activate = true, afterId = null, index = null, pinned = false, webContents = null, webPreferences = null, title = '' } = {}) {
+  createTab({ url = '', activate = true, focusPage = true, afterId = null, index = null, pinned = false, webContents = null, webPreferences = null, title = '' } = {}) {
     const tab = new Tab(this, { url, pinned, title });
     this.tabs.set(tab.id, tab);
     const list = pinned ? this.pinned : this.unpinned;
@@ -216,7 +220,7 @@ class OliveWindow {
     list.splice(at, 0, tab.id);
     this.recordActivity('tab-open', { tabId: tab.id, url });
     this.ensureView(tab, { webContents, webPreferences });
-    if (activate) this.activate(tab.id);
+    if (activate) this.activate(tab.id, { focusPage });
     else this.changed();
     return tab;
   }
@@ -376,12 +380,15 @@ class OliveWindow {
     wc.on('close', () => {}); // window.close() from page: 'destroyed' handles cleanup
   }
 
-  activate(id, { mruPreview = false } = {}) {
+  // focusPage: false selects the tab without moving keyboard focus into it (agent
+  // api: never touch focus in a window the user isn't in).
+  activate(id, { mruPreview = false, focusPage = true } = {}) {
     const tab = this.tabs.get(id);
     if (!tab) return;
     this.inlinePage?.close();
     if (!mruPreview) this.finishTabWalk();
     this.ensureView(tab);
+    this.mgr.agentWake?.sleep(tab); // shown for real now: drop agent size/focus overrides
     if (tab.crashed) tab.wc.reload();
     if (this.find.open && id !== this.activeId) this.closeFind(false);
     if (this.activeId !== id) this.recordActivity('tab-activate', { tabId: tab.id, url: tab.url });
@@ -390,7 +397,7 @@ class OliveWindow {
     // load other members of the split too
     if (tab.splitId) for (const sid of this.splits.get(tab.splitId).ids) this.ensureView(this.tabs.get(sid));
     this.layout();
-    if (this.overlay !== 'palette') tab.wc.focus();
+    if (focusPage && this.overlay !== 'palette') tab.wc.focus();
     this.changed();
   }
 
@@ -756,6 +763,15 @@ class OliveWindow {
   }
 
   // ---------- layout ----------
+
+  // the rect a single unsplit tab would get on screen. hidden tabs the agent works
+  // in are emulated at this size during a step (agent-wake.js).
+  hiddenPaneRect() {
+    if (this.destroyed || this.win.isDestroyed()) return null;
+    const { width: w, height: h } = this.win.getContentBounds();
+    const left = this.sidebarHidden ? M : this.sidebarWidth;
+    return roundRect({ x: left, y: M, width: Math.max(100, w - left - M), height: Math.max(100, h - M - M) });
+  }
 
   layout() {
     if (this.destroyed || this.win.isDestroyed()) return;

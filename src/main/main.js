@@ -197,11 +197,11 @@ class Manager {
 
   // ---------- windows ----------
 
-  newWindow({ private: isPrivate = false, url = null, state = null } = {}) {
-    const w = new OliveWindow(this, { private: isPrivate, state });
+  newWindow({ private: isPrivate = false, url = null, state = null, inactive = false } = {}) {
+    const w = new OliveWindow(this, { private: isPrivate, state, inactive });
     this.windows.push(w);
     this.siteTime?.attachWindow(w);
-    if (url) w.createTab({ url: toUrl(url) });
+    if (url) w.createTab({ url: toUrl(url), activate: true, focusPage: !inactive });
     this.saveSoon();
     return w;
   }

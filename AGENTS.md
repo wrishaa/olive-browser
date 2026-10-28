@@ -38,18 +38,32 @@ to rotate the token: quit olive, delete `agent-token`, relaunch.
 | call | does |
 |---|---|
 | `GET /tabs` | all tabs: id, windowId, title, url, active, visible, pinned, splitId, loaded, targetId, webSocketDebuggerUrl |
-| `POST /tabs {url, background?, split?, windowId?}` | open a tab, waits for load. `split: true` puts it next to the active tab |
+| `POST /tabs {url, activate?, split?, windowId?}` | open a tab in the background (in the sidebar, not selected), waits for load. `activate: true` also selects it. `split: true` puts it next to the active tab |
 | `POST /tabs/:id/navigate {url}` | load url or search text, waits for load |
-| `POST /tabs/:id/activate` `/back` `/forward` `/reload` `/close` | |
+| `POST /tabs/:id/activate` | select the tab inside its window. never focuses the window or brings olive forward |
+| `POST /tabs/:id/back` `/forward` `/reload` `/close` | |
 | `POST /tabs/:id/eval {expression}` | run js in the page, awaits promises, returns `{result}` |
 | `GET /tabs/:id/text` | `document.body.innerText` |
-| `GET /tabs/:id/screenshot` | png |
-| `POST /tabs/:id/cdp {method, params}` | any CDP command on that tab, no websocket needed |
+| `GET /tabs/:id/screenshot` | png, works for background tabs without waking them |
+| `POST /tabs/:id/cdp {method, params, timeout?}` | any CDP command on that tab, no websocket needed. 504 after `timeout` ms (default 15000) |
 | `POST /tabs/:id/devtools` | toggle docked devtools |
 | `POST /tabs/:id/split {with}` | show the tab next to tab `with` |
 | `GET /windows`, `POST /windows {private?, url?}` | |
 | `GET /history?q=&limit=` | browsing history |
 | `GET /downloads` | |
+
+### working in the background
+
+agents never take the foreground: no api call focuses a window, activates olive
+or (unless you pass `activate: true` / call `/activate`) changes the selected
+tab. background tabs stay throttled like any hidden tab. while an api call runs
+on one (eval, cdp, navigate, back/forward/reload, text, screenshot) olive gives
+it the size it would have on screen, and for everything but text/screenshot
+emulates focus (`document.hasFocus()` true, `visibilityState` visible, timers
+at full speed). ~1.5s after the last call that's undone and the tab is
+throttled again. rAF/compositor frames stay slow in hidden tabs; select the tab
+if you need real animation frames. don't toggle `Emulation.setFocusEmulationEnabled`
+yourself through `/cdp`: olive turns it off after each step.
 
 ```sh
 T="Authorization: Bearer $(cat "$HOME/Library/Application Support/Olive/agent-token")"

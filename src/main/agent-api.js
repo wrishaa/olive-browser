@@ -9,6 +9,12 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const { AgentWake, withTimeout } = require('./agent-wake');
+
+// agents work in the background: no call here may focus a window, activate the
+// app, or (unless asked) change the tab the user is looking at.
+const CDP_TIMEOUT_MS = 15000;
+const SCREENSHOT_TIMEOUT_MS = 10000;
 
 // load or create the token file. always 0600; regenerated if missing, short, or
 // readable by group/others.
@@ -37,8 +43,9 @@ function tokenOk(req, token) {
 function startAgentApi(mgr, port, dir) {
   const { token, file } = loadToken(dir);
   mgr.agentTokenFile = file;
+  mgr.agentWake = mgr.agentWake || new AgentWake();
   const server = http.createServer((req, res) => {
-    handle(mgr, req, res, token).catch((err) => send(res, 500, { error: String(err?.message || err) }));
+    handle(mgr, req, res, token).catch((err) => send(res, err?.code === 'ETIMEDOUT' ? 504 : 500, { error: String(err?.message || err) }));
   });
   return new Promise((resolve) => {
     server.once('error', (err) => {
@@ -76,14 +83,14 @@ const HELP = {
   routes: {
     'GET /': 'this help + endpoints',
     'GET /tabs': 'list tabs in all windows',
-    'POST /tabs {url, background?, windowId?, split?}': 'open a tab (split: true opens it next to the active tab)',
+    'POST /tabs {url, activate?, windowId?, split?}': 'open a tab in the background (shows in the sidebar, not selected). activate: true (or background: false) also selects it, still without focusing the window. split: true opens it next to the active tab',
     'GET /tabs/:id': 'one tab',
-    'POST /tabs/:id/activate': 'select it',
+    'POST /tabs/:id/activate': 'select it inside its window. never focuses the window or brings olive forward',
     'POST /tabs/:id/navigate {url}': 'load a url or search text, waits for load',
     'POST /tabs/:id/back | /forward | /reload | /close': '',
     'POST /tabs/:id/eval {expression}': 'run js in the page (awaits promises), returns {result}',
-    'POST /tabs/:id/cdp {method, params}': 'send any CDP command to this tab via the built-in debugger',
-    'GET /tabs/:id/screenshot': 'png of the visible page',
+    'POST /tabs/:id/cdp {method, params, timeout?}': 'send any CDP command to this tab via the built-in debugger (times out after `timeout` ms, default 15000, with 504)',
+    'GET /tabs/:id/screenshot': 'png of the page, works for background tabs without waking them',
     'GET /tabs/:id/text': 'document.body.innerText',
     'POST /tabs/:id/devtools': 'toggle docked devtools',
     'POST /tabs/:id/split {with}': 'show tab :id next to tab `with`',
@@ -111,15 +118,16 @@ async function handle(mgr, req, res, token) {
       if (m === 'GET') return send(res, 200, await Promise.all(mgr.allTabs().map(({ tab, win }) => describe(mgr, win, tab))));
       if (m === 'POST') {
         const b = await readJson(req);
-        const win = (b.windowId && mgr.windows.find((w) => w.id === b.windowId)) || mgr.focusedWindow() || mgr.newWindow({});
+        const win = (b.windowId && mgr.windows.find((w) => w.id === b.windowId)) || mgr.focusedWindow() || mgr.newWindow({ inactive: true });
+        const activate = b.activate === true || b.background === false;
         let tab;
         if (b.split) {
           const base = win.tabs.get(win.activeId);
           tab = win.createTab({ url: require('../core/url').toUrl(b.url || 'about:blank'), activate: false, afterId: base?.id });
           if (base) win.split(base.id, tab.id);
-          else win.activate(tab.id);
-        } else tab = win.createTab({ url: require('../core/url').toUrl(b.url || 'about:blank'), activate: !b.background });
-        if (win.overlay === 'palette') win.setOverlay(null);
+          else win.activate(tab.id, { focusPage: false });
+        } else tab = win.createTab({ url: require('../core/url').toUrl(b.url || 'about:blank'), activate, focusPage: false });
+        if (activate && win.overlay === 'palette') win.setOverlay(null);
         await waitLoad(tab, b.timeout);
         return send(res, 200, await describe(mgr, win, tab));
       }
@@ -130,52 +138,53 @@ async function handle(mgr, req, res, token) {
     const action = parts[2] || '';
     if (m === 'GET' && !action) return send(res, 200, await describe(mgr, win, tab));
     if (m === 'GET' && action === 'screenshot') {
-      win.ensureView(tab);
-      const img = await tab.wc.capturePage();
+      // stayHidden: capture without flipping the page to visible (which unthrottles it)
+      const img = await mgr.agentWake.step(win, tab, () => withTimeout(tab.wc.capturePage(undefined, { stayHidden: true }), SCREENSHOT_TIMEOUT_MS, 'screenshot'), { focus: false });
+      if (img.isEmpty()) return send(res, 500, { error: 'empty screenshot' });
       return send(res, 200, img.toPNG(), 'image/png');
     }
     if (m === 'GET' && action === 'text') {
-      win.ensureView(tab);
-      await waitLoad(tab);
-      const text = await tab.wc.executeJavaScript('document.body ? document.body.innerText : ""', true);
+      const text = await mgr.agentWake.step(win, tab, async () => {
+        await waitLoad(tab);
+        return tab.wc.executeJavaScript('document.body ? document.body.innerText : ""', true);
+      }, { focus: false });
       return send(res, 200, text, 'text/plain; charset=utf-8');
     }
     if (m !== 'POST') return send(res, 405, { error: 'method not allowed' });
     const b = await readJson(req);
     switch (action) {
       case 'activate':
-        win.win.focus();
-        win.activate(tab.id);
+        // select inside the window only. no win.focus()/app activation: that pulled
+        // olive in front of whatever the user was doing.
+        win.activate(tab.id, { focusPage: win.win.isFocused() });
         return send(res, 200, await describe(mgr, win, tab));
       case 'navigate':
-        win.navigate(tab, b.url);
-        await waitLoad(tab, b.timeout);
+        await mgr.agentWake.step(win, tab, async () => { win.navigate(tab, b.url); await waitLoad(tab, b.timeout); });
         return send(res, 200, await describe(mgr, win, tab));
       case 'back':
-        tab.wc?.navigationHistory.goBack();
-        await waitLoad(tab, b.timeout);
+        await mgr.agentWake.step(win, tab, async () => { tab.wc?.navigationHistory.goBack(); await waitLoad(tab, b.timeout); });
         return send(res, 200, await describe(mgr, win, tab));
       case 'forward':
-        tab.wc?.navigationHistory.goForward();
-        await waitLoad(tab, b.timeout);
+        await mgr.agentWake.step(win, tab, async () => { tab.wc?.navigationHistory.goForward(); await waitLoad(tab, b.timeout); });
         return send(res, 200, await describe(mgr, win, tab));
       case 'reload':
-        win.reload(tab);
-        await waitLoad(tab, b.timeout);
+        await mgr.agentWake.step(win, tab, async () => { win.reload(tab); await waitLoad(tab, b.timeout); });
         return send(res, 200, await describe(mgr, win, tab));
       case 'close':
         win.closeTab(tab.id, { force: true }); // agents close for real, pinned or not
         return send(res, 200, { ok: true });
       case 'eval': {
-        win.ensureView(tab);
-        const result = await tab.wc.executeJavaScript(String(b.expression ?? ''), true);
+        const result = await mgr.agentWake.step(win, tab, () => tab.wc.executeJavaScript(String(b.expression ?? ''), true));
         return send(res, 200, { result: result === undefined ? null : result });
       }
       case 'cdp': {
-        win.ensureView(tab);
-        const dbg = tab.wc.debugger;
-        if (!dbg.isAttached()) dbg.attach('1.3');
-        const result = await dbg.sendCommand(String(b.method), b.params || {});
+        const timeout = Number(b.timeout) > 0 ? Number(b.timeout) : CDP_TIMEOUT_MS;
+        tab.agentCdp = true; // the agent owns this debugger session now: keep it attached
+        const result = await mgr.agentWake.step(win, tab, () => {
+          const dbg = tab.wc.debugger;
+          if (!dbg.isAttached()) dbg.attach('1.3');
+          return withTimeout(dbg.sendCommand(String(b.method), b.params || {}), timeout, `cdp ${b.method}`);
+        });
         return send(res, 200, { result });
       }
       case 'devtools':
@@ -195,7 +204,7 @@ async function handle(mgr, req, res, token) {
     if (m === 'GET') return send(res, 200, mgr.windows.map((w) => ({ id: w.id, private: w.isPrivate, activeTabId: w.activeId, tabIds: w.allIds(), focused: mgr.focused === w })));
     if (m === 'POST') {
       const b = await readJson(req);
-      const w = mgr.newWindow({ private: !!b.private, url: b.url });
+      const w = mgr.newWindow({ private: !!b.private, url: b.url, inactive: true });
       return send(res, 200, { id: w.id, private: w.isPrivate });
     }
   }
