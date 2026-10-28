@@ -68,7 +68,7 @@ padding. the whole css is `notes/tab-groups-proto/groups.css` (~110 lines).
 | rename field | the name becomes a field in place: height 22, radius 5, `--card` fill, 13/600 `--text` (same face and weight as the name, so nothing thins on entry), `0 0 0 1px var(--line), 0 0 0 3.5px color-mix(--accent 38%)`, margin-left −5 and padding 4 so the text does not move. all text selected on entry |
 | empty group | expanded header + one dimmed member row `+ New Tab` (the existing `.newtab-row`, padded 35) |
 | narrow (<210px) | `body.narrow`: favicon stacks off; a header with a status line also drops its count (the status carries one word at 180, the count is dim redundancy). nothing else changes |
-| agent section | a third sidebar section **below `#tablist`** (so outside its scroll), above the uBO pill: `.divider.agent-divider` (the existing 1px `--line` hairline, margin `0 4px 8px`, no button) then `#agent.list`. `max-height:50%` of the sidebar, scrolls inside itself beyond that (scrollbar width 0 like the tab list), `padding-bottom:8px` so the last row clears the pill. groups inside follow the same rhythm as the list (2px between collapsed groups). the whole section is hidden (`body.no-agent`) when there is no agent group, so a sidebar without agents is pixel-identical to today. while the section exists, `#tablist` gets a 28px bottom mask fade (macOS scroll-edge effect, never cutting a row mid-glyph) so a half-scrolled row never butts against the hairline; `#agent` gets the same fade while it overflows (the renderer sets `.overflows` when `scrollHeight > clientHeight` after each render, so a fourth group is hinted and a last row is never faded). both hairlines span the full row width (14 → w−12): the pinned divider's Clear button overlays its line (`position:absolute; right:0`, `--bg2` fill) instead of shortening it |
+| agent section | a third sidebar section **below `#tablist`** (so outside its scroll), above the uBO pill: `.divider.agent-divider` (the existing 1px `--line` hairline, margin `0 4px 8px`, no button) then `#agent.list`. `max-height:50%` of the sidebar, scrolls inside itself beyond that (scrollbar width 0 like the tab list), `padding-bottom:8px` so the last row clears the pill. groups inside follow the same rhythm as the list (2px between collapsed groups). the whole section is hidden (`body.no-agent`) when there is no agent group, so a sidebar without agents is pixel-identical to today. while the section exists, `#tablist` gets a 28px bottom mask fade (macOS scroll-edge effect, never cutting a row mid-glyph) so a half-scrolled row never butts against the hairline; `#agent` gets the same fade while it overflows (the renderer sets `.overflows` when `scrollHeight > clientHeight` after each render, so a fourth group is hinted and a last row is never faded). both hairlines end at the same x: the pinned divider is unchanged (its Clear button shortens the line, decision 7.9) and the agent divider reserves the same slot |
 
 two token changes in `ui.css` (the blind review measured the old values, sec 10): `--text-dim`
 `#4c584d` → `#3f4b40` light and `#a8b3a5` → `#b0bbad` dark, so 11px dim text holds ≥ 4.5:1 on
@@ -423,6 +423,12 @@ all at 2x, light and dark, `notes/test-shots/tab-groups/<scene>-<light|dark>-<25
    loose tabs with only a 10px chevron as its container cue; 600 is what keeps "Research"
    and "Design review notes" from reading as two tabs. the list reads a little heavier than
    Notes' folder list; accepted.
+
+9. **the pinned hairline stays as it is today** (user decision, 2026-10-28, on the build's one open
+   question): the agent hairline matches it rather than both being redrawn under the Clear
+   button. less churn; the two lines still end at the same x (the agent divider reserves the
+   Clear button's slot with an invisible twin, and Clear keeps its slot when it has nothing to
+   do; checked in the native test "both hairlines span the same width").
 
 ---
 

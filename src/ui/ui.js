@@ -66,7 +66,7 @@ let selAnchor = null; // last clicked tab, for ⇧-click ranges
 let renaming = null; // { id } while a group's name is a field
 
 function allTabs() {
-  return [...S.pinned, ...S.unpinned, ...S.agent];
+  return [...S.pinned, ...S.unpinned, ...S.agentTabs];
 }
 
 function findTab(id) {
@@ -151,7 +151,7 @@ function listHtml(tabs) {
 function agentHtml() {
   return (S.agentOrder || []).map((gid) => {
     const g = S.groups[gid];
-    return g ? groupHtml(g, S.agent.filter((t) => t.groupId === g.id)) : '';
+    return g ? groupHtml(g, S.agentTabs.filter((t) => t.groupId === g.id)) : '';
   }).join('');
 }
 
@@ -232,7 +232,7 @@ function render() {
   $('#btn-ledger').hidden = S.private;
   $('#btn-ublock').textContent = S.extension?.enabled ? 'uBO Lite · on' : 'uBO Lite · off';
   $('#btn-ublock').onclick = () => olive.cmd('ublock');
-  $('#btn-clear').hidden = !S.looseCount; // Clear closes the loose tabs only; groups stay
+  $('#btn-clear').classList.toggle('none', !S.looseCount); // Clear closes the loose tabs only; groups stay (keeps its slot: the hairline never jumps)
 
   // a selection only holds tabs that still exist
   const live = new Set(allTabs().map((t) => t.id));

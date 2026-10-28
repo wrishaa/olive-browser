@@ -1,0 +1,765 @@
+[
+  {
+    "ok": true,
+    "label": "the new group opens with its rename field (from main's rename-group message)"
+  },
+  {
+    "ok": true,
+    "label": "a new group is a contiguous run where its first tab was",
+    "detail": [
+      null,
+      null,
+      null,
+      1,
+      1,
+      1,
+      1
+    ]
+  },
+  {
+    "ok": true,
+    "label": "a user rename marks the group as the user's"
+  },
+  {
+    "ok": true,
+    "label": "sidebar renders the group as an outline node (bold name, members indented 35px)",
+    "detail": {
+      "groups": 1,
+      "members": 4,
+      "title": "Research",
+      "pad": "35px",
+      "weight": "600",
+      "noAgent": true,
+      "clear": false
+    }
+  },
+  {
+    "ok": true,
+    "label": "no agent section without agent groups (sidebar pixel-identical to today)",
+    "detail": {
+      "groups": 1,
+      "members": 4,
+      "title": "Research",
+      "pad": "35px",
+      "weight": "600",
+      "noAgent": true,
+      "clear": false
+    }
+  },
+  {
+    "ok": true,
+    "label": "Clear shows while there are loose tabs",
+    "detail": {
+      "groups": 1,
+      "members": 4,
+      "title": "Research",
+      "pad": "35px",
+      "weight": "600",
+      "noAgent": true,
+      "clear": false
+    }
+  },
+  {
+    "ok": true,
+    "label": "POST /groups makes a collapsed working agent group",
+    "detail": {
+      "id": 2,
+      "name": "Flights to Lisbon",
+      "agent": true,
+      "section": "agent",
+      "working": true,
+      "status": "comparing 3 fares",
+      "collapsed": true,
+      "tabIds": [],
+      "windowId": 1
+    }
+  },
+  {
+    "ok": true,
+    "label": "POST /tabs {group} opens f1 in the group, in the background",
+    "detail": {
+      "id": 11,
+      "windowId": 1,
+      "private": false,
+      "title": "Lisbon flights · Nov 12–16",
+      "url": "http://127.0.0.1:63772/f1",
+      "active": false,
+      "visible": false,
+      "pinned": false,
+      "splitId": null,
+      "groupId": 2,
+      "loading": false,
+      "loaded": true,
+      "targetId": "5A25870E05BCC6FAB6566BFF5B825AD8",
+      "webSocketDebuggerUrl": null
+    }
+  },
+  {
+    "ok": true,
+    "label": "POST /tabs {group} opens f2 in the group, in the background",
+    "detail": {
+      "id": 12,
+      "windowId": 1,
+      "private": false,
+      "title": "SFO → LIS · 2 adults",
+      "url": "http://127.0.0.1:63772/f2",
+      "active": false,
+      "visible": false,
+      "pinned": false,
+      "splitId": null,
+      "groupId": 2,
+      "loading": false,
+      "loaded": true,
+      "targetId": "0CD16A393025F768EB11DC2614AF23B5",
+      "webSocketDebuggerUrl": null
+    }
+  },
+  {
+    "ok": true,
+    "label": "POST /tabs {group} opens f3 in the group, in the background",
+    "detail": {
+      "id": 13,
+      "windowId": 1,
+      "private": false,
+      "title": "Fare rules",
+      "url": "http://127.0.0.1:63772/f3",
+      "active": false,
+      "visible": false,
+      "pinned": false,
+      "splitId": null,
+      "groupId": 2,
+      "loading": false,
+      "loaded": true,
+      "targetId": "1BD7816DD6C674243CA7E5BF7F624779",
+      "webSocketDebuggerUrl": null
+    }
+  },
+  {
+    "ok": true,
+    "label": "POST /tabs {group} opens f4 in the group, in the background",
+    "detail": {
+      "id": 14,
+      "windowId": 1,
+      "private": false,
+      "title": "Hotel near Alfama",
+      "url": "http://127.0.0.1:63772/f4",
+      "active": false,
+      "visible": false,
+      "pinned": false,
+      "splitId": null,
+      "groupId": 2,
+      "loading": false,
+      "loaded": true,
+      "targetId": "D60AB988A02BAA618BEEE03B44359BBC",
+      "webSocketDebuggerUrl": null
+    }
+  },
+  {
+    "ok": true,
+    "label": "POST /tabs {group} opens f5 in the group, in the background",
+    "detail": {
+      "id": 15,
+      "windowId": 1,
+      "private": false,
+      "title": "Lisbon in November",
+      "url": "http://127.0.0.1:63772/f5",
+      "active": false,
+      "visible": false,
+      "pinned": false,
+      "splitId": null,
+      "groupId": 2,
+      "loading": false,
+      "loaded": true,
+      "targetId": "1881BBB861F60494F6353E8D570084CC",
+      "webSocketDebuggerUrl": null
+    }
+  },
+  {
+    "ok": true,
+    "label": "agent tabs live in the agent list; the user's active tab and list are untouched",
+    "detail": {
+      "active": 5,
+      "agent": [
+        11,
+        12,
+        13,
+        14,
+        15
+      ],
+      "unpinned": 7,
+      "order": [
+        2
+      ]
+    }
+  },
+  {
+    "ok": true,
+    "label": "agent header: sparkle, name over status, breathing dot, count, no favicons with a status",
+    "detail": {
+      "noAgent": false,
+      "collapsed": true,
+      "title": "Flights to Lisbon",
+      "status": "comparing 3 fares",
+      "pulse": true,
+      "count": "5",
+      "favs": "none",
+      "belowList": true,
+      "aboveUbo": true,
+      "inSidebar": true,
+      "hairline": 226,
+      "sparkle": true
+    }
+  },
+  {
+    "ok": true,
+    "label": "agent section sits below the tab list and above the uBO pill",
+    "detail": {
+      "noAgent": false,
+      "collapsed": true,
+      "title": "Flights to Lisbon",
+      "status": "comparing 3 fares",
+      "pulse": true,
+      "count": "5",
+      "favs": "none",
+      "belowList": true,
+      "aboveUbo": true,
+      "inSidebar": true,
+      "hairline": 226,
+      "sparkle": true
+    }
+  },
+  {
+    "ok": true,
+    "label": "no hover × on a working agent group (the count stays)",
+    "detail": {
+      "close": "none",
+      "count": "block",
+      "hovered": true
+    }
+  },
+  {
+    "ok": true,
+    "label": "click on the header collapses: three favicons, count, active style and ring because the active tab is inside",
+    "detail": {
+      "collapsed": true,
+      "favs": 3,
+      "count": "4",
+      "active": true,
+      "ring": true,
+      "bodyShown": "none",
+      "h": 36
+    }
+  },
+  {
+    "ok": true,
+    "label": "collapse state lives in main (persists)",
+    "detail": true
+  },
+  {
+    "ok": true,
+    "label": "click again expands"
+  },
+  {
+    "ok": true,
+    "label": "⌥-click on a header collapses all groups"
+  },
+  {
+    "ok": true,
+    "label": "⌥-click again expands all groups"
+  },
+  {
+    "ok": true,
+    "label": "activating a member of a collapsed group expands it (decision 7.4)"
+  },
+  {
+    "ok": true,
+    "label": "⌘-click toggles two tabs into the selection without activating",
+    "detail": {
+      "d": [
+        10,
+        8
+      ],
+      "st": {
+        "sel": [
+          8,
+          10
+        ],
+        "active": 7
+      }
+    }
+  },
+  {
+    "ok": true,
+    "label": "tab menu verbs count the selection",
+    "detail": [
+      "Move 2 Tabs to Group",
+      "Remove from Group",
+      "-",
+      "Pin 2 Tabs",
+      "Duplicate Tabs",
+      "Copy Links",
+      "Reload",
+      "Mute",
+      "-",
+      "Unload (Free Memory)",
+      "Close 2 Tabs",
+      "Close Other Tabs"
+    ]
+  },
+  {
+    "ok": true,
+    "label": "Move to Group submenu: New Group, then every group (agent ones with the sparkle)",
+    "detail": [
+      {
+        "l": "New Group with 2 Tabs",
+        "e": true,
+        "c": false
+      },
+      {
+        "l": "-",
+        "e": true,
+        "c": false
+      },
+      {
+        "l": "Research",
+        "e": true,
+        "c": false
+      },
+      {
+        "l": "✦ Flights to Lisbon",
+        "e": true,
+        "c": false
+      }
+    ]
+  },
+  {
+    "ok": true,
+    "label": "the group every selected tab is already in is checked and disabled",
+    "detail": [
+      {
+        "l": "New Group with 2 Tabs",
+        "e": true,
+        "c": false
+      },
+      {
+        "l": "-",
+        "e": true,
+        "c": false
+      },
+      {
+        "l": "Research",
+        "e": false,
+        "c": true
+      },
+      {
+        "l": "✦ Flights to Lisbon",
+        "e": true,
+        "c": false
+      }
+    ]
+  },
+  {
+    "ok": true,
+    "label": "Remove from Group is disabled for loose tabs"
+  },
+  {
+    "ok": true,
+    "label": "group header menu is exactly the spec's",
+    "detail": [
+      "New Tab in Group",
+      "Rename",
+      "-",
+      "Collapse",
+      "Collapse Other Groups",
+      "-",
+      "Copy All Links",
+      "Ungroup (Keep Tabs)",
+      "-",
+      "Close Group"
+    ]
+  },
+  {
+    "ok": true,
+    "label": "a plain click clears the selection"
+  },
+  {
+    "ok": true,
+    "label": "⇧-click selects the visible range from the anchor",
+    "detail": [
+      9,
+      8,
+      7,
+      6,
+      5,
+      4
+    ]
+  },
+  {
+    "ok": true,
+    "label": "a range skips a collapsed group it is not anchored in",
+    "detail": [
+      10,
+      9,
+      8
+    ]
+  },
+  {
+    "ok": true,
+    "label": "esc clears the selection"
+  },
+  {
+    "ok": true,
+    "label": "dragging over a header shows the drop-target style, no ×",
+    "detail": {
+      "into": true,
+      "ghost": true,
+      "close": "none"
+    }
+  },
+  {
+    "ok": true,
+    "label": "dropped on the header: the tab joins at the end of the group",
+    "detail": {
+      "g": 1,
+      "last": 9
+    }
+  },
+  {
+    "ok": true,
+    "label": "between members: the indented insertion line",
+    "detail": {
+      "mark": true,
+      "left": "33px"
+    }
+  },
+  {
+    "ok": true,
+    "label": "dropped before a member: inserted right before it, still in the group",
+    "detail": {
+      "m": [
+        7,
+        6,
+        5,
+        9,
+        4
+      ],
+      "ok": true
+    }
+  },
+  {
+    "ok": true,
+    "label": "a member dragged left of the indent reads \"Move out of Research\"",
+    "detail": {
+      "text": "Move out of Research",
+      "mark": true
+    }
+  },
+  {
+    "ok": true,
+    "label": "dropped at list level: the tab left the group",
+    "detail": {
+      "g": null,
+      "n": 4,
+      "loose": 3
+    }
+  },
+  {
+    "ok": true,
+    "label": "dragging a header: ghost = name + count badge, drop between top-level items",
+    "detail": {
+      "ghost": "Research",
+      "badge": "4",
+      "after": true
+    }
+  },
+  {
+    "ok": true,
+    "label": "the whole group moved below the loose tabs",
+    "detail": "lllgggg"
+  },
+  {
+    "ok": true,
+    "label": "Move to Group onto an agent group: the tab leaves the user's list for the agent section",
+    "detail": {
+      "g": 2,
+      "list": true,
+      "unp": false
+    }
+  },
+  {
+    "ok": true,
+    "label": "Remove from Group on an agent member: to the end of the loose tabs",
+    "detail": {
+      "g": null,
+      "last": 8
+    }
+  },
+  {
+    "ok": true,
+    "label": "double-click opens the in-place rename field, text selected, same weight",
+    "detail": {
+      "field": true,
+      "focused": true,
+      "selected": true,
+      "weight": "600",
+      "h": 22
+    }
+  },
+  {
+    "ok": true,
+    "label": "return commits the rename"
+  },
+  {
+    "ok": true,
+    "label": "esc reverts"
+  },
+  {
+    "ok": true,
+    "label": "⌃⌘N: Untitled Group, expanded, rename field open with the text selected",
+    "detail": {
+      "field": true,
+      "value": "Untitled Group",
+      "focused": true
+    }
+  },
+  {
+    "ok": true,
+    "label": "the new group holds the two selected tabs, where the first of them was",
+    "detail": {
+      "name": "Reading",
+      "n": 2,
+      "pos": 4
+    }
+  },
+  {
+    "ok": true,
+    "label": "closing the last member removes a user group"
+  },
+  {
+    "ok": true,
+    "label": "Close Group closes its tabs and leaves one closed-stack entry",
+    "detail": {
+      "groups": 1,
+      "top": {
+        "kind": "group",
+        "name": "Research",
+        "tabs": 4
+      }
+    }
+  },
+  {
+    "ok": true,
+    "label": "⇧⌘T brings the group back: name, order, place",
+    "detail": {
+      "name": "Research",
+      "urls": [
+        "http://127.0.0.1:63772/retries",
+        "http://127.0.0.1:63772/readme",
+        "http://127.0.0.1:63772/idempotent",
+        "http://127.0.0.1:63772/webhooks"
+      ],
+      "pos": 0,
+      "active": true
+    }
+  },
+  {
+    "ok": true,
+    "label": "Clear closes the loose tabs only and hides when there are none",
+    "detail": {
+      "st": {
+        "loose": 0,
+        "groups": 2,
+        "clear": null
+      },
+      "d": true
+    }
+  },
+  {
+    "ok": true,
+    "label": "an agent emptying its working group keeps the group (header, status, no count)",
+    "detail": {
+      "st": {
+        "has": true,
+        "working": true,
+        "agent": 0
+      },
+      "d": {
+        "shown": true,
+        "status": "comparing 3 fares",
+        "count": null
+      }
+    }
+  },
+  {
+    "ok": true,
+    "label": "and can open into it again"
+  },
+  {
+    "ok": true,
+    "label": "PATCH working:false ends the pulse and keeps the status",
+    "detail": {
+      "p": {
+        "id": 2,
+        "name": "Flights to Lisbon",
+        "agent": true,
+        "section": "agent",
+        "working": false,
+        "status": "done · cheapest $612",
+        "collapsed": true,
+        "tabIds": [
+          20
+        ],
+        "windowId": 1
+      },
+      "d": {
+        "pulse": false,
+        "status": "done · cheapest $612"
+      }
+    }
+  },
+  {
+    "ok": true,
+    "label": "once done, the hover × returns in the count's slot",
+    "detail": {
+      "close": "grid",
+      "count": "none",
+      "title": "Close Group (1 tab)"
+    }
+  },
+  {
+    "ok": true,
+    "label": "an agent rename after a user rename is refused (409)",
+    "detail": {
+      "status": 409,
+      "body": {
+        "error": "the user renamed this group; its name is theirs now"
+      }
+    }
+  },
+  {
+    "ok": true,
+    "label": "a user closing the last agent tab removes the group and the section",
+    "detail": true
+  },
+  {
+    "ok": true,
+    "label": "an agent group still empty 2 minutes after its last call is removed"
+  },
+  {
+    "ok": true,
+    "label": "working ends by itself 2 minutes after the last api call; the group stays",
+    "detail": {
+      "has": true,
+      "working": false
+    }
+  },
+  {
+    "ok": true,
+    "label": "two agent groups stack at the bottom, newest last, 38px rhythm",
+    "detail": [
+      {
+        "name": "Stripe webhooks",
+        "working": false,
+        "top": 638
+      },
+      {
+        "name": "Flights to Lisbon",
+        "working": true,
+        "top": 676
+      }
+    ]
+  },
+  {
+    "ok": true,
+    "label": "rows keep the 38px rhythm; the group name starts where tab titles start; member favicons sit under the name",
+    "detail": {
+      "diffs": [
+        38,
+        38,
+        38
+      ],
+      "name": 45,
+      "title": 45,
+      "memberFav": 45,
+      "hair": [
+        [
+          14,
+          192
+        ],
+        [
+          14,
+          192
+        ]
+      ]
+    }
+  },
+  {
+    "ok": true,
+    "label": "both hairlines span the same width (the Clear button overlays the pinned one)",
+    "detail": {
+      "diffs": [
+        38,
+        38,
+        38
+      ],
+      "name": 45,
+      "title": 45,
+      "memberFav": 45,
+      "hair": [
+        [
+          14,
+          192
+        ],
+        [
+          14,
+          192
+        ]
+      ]
+    }
+  },
+  {
+    "ok": true,
+    "label": "180px: narrow mode drops favicons and the count under a status; nothing clips the sidebar",
+    "detail": {
+      "narrow": true,
+      "favs": "none",
+      "over": 0,
+      "count": "none",
+      "nameClipped": true
+    }
+  },
+  {
+    "ok": true,
+    "label": "session state round-trips groups: names, membership, agent section, status; the pulse does not survive a restart",
+    "detail": {
+      "groups": [
+        {
+          "name": "Research",
+          "agent": false,
+          "working": false,
+          "status": "",
+          "collapsed": false,
+          "n": 4
+        },
+        {
+          "name": "Stripe webhooks",
+          "agent": true,
+          "working": false,
+          "status": "done · 2 docs, 1 example",
+          "collapsed": true,
+          "n": 3
+        },
+        {
+          "name": "Flights to Lisbon",
+          "agent": true,
+          "working": false,
+          "status": "comparing 3 fares",
+          "collapsed": true,
+          "n": 5
+        }
+      ],
+      "agent": 8,
+      "order": 2
+    }
+  }
+]

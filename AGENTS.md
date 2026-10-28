@@ -49,8 +49,27 @@ to rotate the token: quit olive, delete `agent-token`, relaunch.
 | `POST /tabs/:id/devtools` | toggle docked devtools |
 | `POST /tabs/:id/split {with}` | show the tab next to tab `with` |
 | `GET /windows`, `POST /windows {private?, url?}` | |
+| `POST /groups {name, status?}` | make a **tab group** for your work: it sits collapsed at the bottom of the sidebar with a sparkle, your name (1-60 chars, a task noun phrase: "Flights to Lisbon") and a one-line status. returns `{id, …}` |
+| `POST /tabs {url, group: <id>}` | open a tab inside your group, always in the background (`activate` is ignored there). `group: {name, status?}` makes the group on the way |
+| `PATCH /groups/:id {status?, name?, working?, collapsed?}` | update the status line (≤ 40 chars, present tense, no period: "comparing 3 fares", then "done · cheapest $612"). `working:false` stops the pulse when you are finished. a rename after the user renamed it gets 409 |
+| `GET /groups`, `POST /groups/:id/close` | list groups (`tabIds`, `working`, `section`); close yours (all its tabs go) |
 | `GET /history?q=&limit=` | browsing history |
 | `GET /downloads` | |
+
+### tab groups
+
+put related tabs in a group so the user sees one tidy row ("✦ Flights to Lisbon · comparing 3 fares · 5")
+instead of five tabs appearing in their list. the group lives in its own section at the bottom of
+the sidebar; the user's tabs never move because of it. closing your own tabs inside a working group
+keeps the group for 2 minutes (open → read → close → open is fine); the pulse also stops by itself
+2 minutes after your last call. the user may rename, collapse, move tabs out of or close your group
+at any time; a closed group's id is gone (404), make a new one.
+
+```sh
+G=$(curl -s -H "$T" -X POST localhost:9333/groups -d '{"name":"Flights to Lisbon","status":"searching"}' | jq .id)
+curl -s -H "$T" -X POST localhost:9333/tabs -d "{\"url\":\"kayak.com\",\"group\":$G}"
+curl -s -H "$T" -X PATCH localhost:9333/groups/$G -d '{"status":"done · cheapest $612","working":false}'
+```
 
 ### working in the background
 
