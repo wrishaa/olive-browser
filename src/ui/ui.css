@@ -569,3 +569,4 @@ body:not(.no-agent) #tablist, #agent.overflows {
   user-select: text; cursor: text;
 }
 .group-head .rename::selection { background: color-mix(in srgb, var(--accent) 32%, transparent); }
+.group-head:has(.rename) .close, .group-head:has(.rename) .count { display: none !important; } /* nothing else on the row while naming */

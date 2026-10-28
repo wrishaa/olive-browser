@@ -53,7 +53,7 @@ const call = async (method, p, body) => {
 const W = (fn, arg) => app.evaluate(({ nativeTheme }, { src, arg }) => { const w = global.olive.focusedWindow(); return (new Function('w', 'arg', 'nativeTheme', 'TG', `return (${src})(w, arg, nativeTheme, TG)`))(w, arg, nativeTheme, process.mainModule.require(process.cwd() + '/src/core/tab-groups')); }, { src: fn.toString(), arg });
 const settle = () => pause(120);
 const dom = (fn, arg) => ui.evaluate(fn, arg);
-const open = async (slug, opts = {}) => W((w, { u, opts }) => w.createTab({ url: u, ...opts }).id, { u: url(slug), opts });
+const open = async (slug, opts = {}) => W((w, { u, opts }) => w.createTab({ url: u, index: 1e9, ...opts }).id, { u: url(slug), opts }); // index: append, so the fixture reads top-down like the mockup
 
 try {
   app = await _electron.launch({ executablePath: path.join(repo, 'node_modules/electron/dist/Electron.app/Contents/MacOS/Electron'), args: [repo], cwd: repo, env: { ...process.env, OLIVE_USER_DATA_DIR: root, OLIVE_PROFILE: 'tab-groups-fixture', OLIVE_CDP: '0', OLIVE_API_PORT: '0' }, timeout: 30000 });
@@ -360,6 +360,8 @@ try {
     const shoot = async (name, w, { full = false, theme }) => {
       await dom(({ bg }) => { let s = document.getElementById('shot-style'); if (!s) { s = document.createElement('style'); s.id = 'shot-style'; document.head.appendChild(s); } s.textContent = `html{background:${bg}} .group-head .pulse{animation:none!important} #urlbar .progress{display:none}`; document.body.classList.add('shot'); }, { bg: desktop[theme] });
       await pause(120);
+      await app.evaluate((_, h) => { global.olive.focusedWindow().win.setContentSize(1280, h); }, full ? 800 : SIDEBAR_H);
+      await pause(150);
       const file = path.join(outDir, `${name}-${theme}-${w}${full ? '-window' : ''}.png`);
       await ui.screenshot({ path: file, clip: full ? { x: 0, y: 0, width: 1280, height: 800 } : { x: 0, y: 0, width: w + 56, height: SIDEBAR_H } });
       made.push(path.basename(file));
@@ -421,6 +423,7 @@ try {
       }
     }
     await dom(() => { document.getElementById('shot-style')?.remove(); document.body.classList.remove('shot'); });
+    await app.evaluate(() => { global.olive.focusedWindow().win.setContentSize(1280, 800); });
     fs.writeFileSync(path.join(outDir, 'SHOTS.json'), JSON.stringify({ made, mockDir: path.relative(repo, mockDir), note: 'built sidebar shots from the disposable fixture; pair-*.png and contact-sheet-*.png put each next to its prototype mockup' }, null, 2));
     await contactSheet(made);
   }
@@ -436,34 +439,8 @@ try {
 console.log(`${results.filter((r) => r.ok).length}/${results.length} passed`);
 if (results.some((r) => !r.ok)) process.exitCode = 1;
 
-// mockup | built, one pair per shot, plus one contact sheet per theme. rendered with the
-// cached playwright chromium headless shell (no install), like the prototype's shoot.mjs.
+// mockup | built pairs and contact sheets: scripts/tab-groups-contact-sheet.mjs
 async function contactSheet(made) {
-  const base = path.join(os.homedir(), 'Library/Caches/ms-playwright');
-  const dirs = fs.readdirSync(base).filter((d) => d.startsWith('chromium_headless_shell-')).sort().reverse();
-  let shell = null;
-  for (const d of dirs) { const p = path.join(base, d, 'chrome-headless-shell-mac-arm64/chrome-headless-shell'); if (fs.existsSync(p)) { shell = p; break; } }
-  if (!shell) return console.log('no cached headless shell: no contact sheet');
-  const browser = await chromium.launch({ executablePath: shell });
-  const page = await browser.newPage({ deviceScaleFactor: 1, viewport: { width: 1400, height: 900 } });
-  const pairs = made.filter((f) => fs.existsSync(path.join(mockDir, f))).map((f) => ({ name: f.replace(/\.png$/, ''), mock: 'file://' + path.join(mockDir, f), built: 'file://' + path.join(outDir, f) }));
-  const cell = (p) => `<figure><div class="pair"><div><img src="${p.mock}"><figcaption>mockup</figcaption></div><div><img src="${p.built}"><figcaption>built</figcaption></div></div><h3>${p.name}</h3></figure>`;
-  const css = `body{margin:0;background:#15171a;color:#ddd;font:12px -apple-system,system-ui;padding:16px}h2{font-size:14px;margin:0 0 12px;color:#fff}figure{margin:0 0 18px;display:inline-block;vertical-align:top;margin-right:18px}.pair{display:flex;gap:8px}.pair img{display:block;height:380px;width:auto;border-radius:6px;box-shadow:0 2px 10px rgba(0,0,0,.5)}.pair div{display:flex;flex-direction:column;gap:4px}figcaption{color:#9aa;font-size:11px}h3{font-size:12px;font-weight:500;margin:6px 0 0;color:#cfd}`;
-  for (const p of pairs) {
-    await page.setContent(`<style>${css}</style>${cell(p)}`);
-    await page.waitForLoadState('load');
-    await pause(80);
-    const fig = await page.locator('figure').boundingBox();
-    await page.screenshot({ path: path.join(outDir, `pair-${p.name}.png`), clip: { x: 0, y: 0, width: Math.ceil(fig.x + fig.width + 16), height: Math.ceil(fig.y + fig.height + 16) } });
-  }
-  for (const theme of ['light', 'dark']) {
-    const mine = pairs.filter((p) => p.name.includes(`-${theme}-`));
-    await page.setViewportSize({ width: 2400, height: 900 });
-    await page.setContent(`<style>${css}</style><h2>tab groups · ${theme} · mockup | built (${mine.length} pairs)</h2>${mine.map(cell).join('')}`);
-    await page.waitForLoadState('load');
-    await pause(120);
-    await page.screenshot({ path: path.join(outDir, `contact-sheet-${theme}.png`), fullPage: true });
-  }
-  await browser.close();
-  console.log(`contact sheets: ${pairs.length} pairs`);
+  const { contactSheet: sheet } = await import('./tab-groups-contact-sheet.mjs');
+  await sheet(made);
 }
