@@ -7,6 +7,7 @@ const { COMMANDS } = require('./shortcuts');
 const { matchesInput, holdForInput, holdReleased } = require('./shortcut-input');
 const { toUrl, displayHost, SEARCH } = require('../core/url');
 const { commandSuggestions, isAppCommand } = require('../core/app-commands');
+const TG = require('../core/tab-groups');
 
 const UI_HTML = path.join(__dirname, '..', 'ui', 'index.html');
 const UI_PRELOAD = path.join(__dirname, '..', 'ui', 'preload.js');
@@ -36,6 +37,7 @@ class Tab {
     this.devtools = null; // WebContentsView hosting devtools
     this.devtoolsRatio = 0.42;
     this.splitId = null;
+    this.groupId = null; // tab group (notes/tab-groups-mac-design.md); null = loose
     this.targetId = null;
     this.errorFor = null;
     this.lastActive = d.lastActive || 0;
@@ -59,6 +61,7 @@ class Tab {
       muted: wc ? wc.isAudioMuted() : this.muted,
       pinned: this.pinned,
       splitId: this.splitId,
+      groupId: this.groupId,
       crashed: this.crashed,
       unloaded: !wc,
       devtools: !!this.devtools,
@@ -79,6 +82,10 @@ class OliveWindow {
     this.pinned = []; // tab ids
     this.unpinned = []; // tab ids
     this.splits = new Map(); // splitId -> {ids, ratios}
+    this.groups = new Map(); // groupId -> {id, name, agent, working, status, collapsed, renamedByUser, lastAgentCall}
+    this.agent = []; // tab ids of the agents' groups: the section at the bottom of the sidebar
+    this.agentOrder = []; // group ids in that section's order (an empty agent group keeps its place)
+    this.selection = []; // the sidebar's multi-selection, mirrored from the ui for menu-bar verbs
     this.activeId = null;
     this.tabMRU = new TabMRU();
     this.closedStack = [];
@@ -142,6 +149,7 @@ class OliveWindow {
     this.win.on('closed', () => this.destroy());
 
     if (s.tabs) this.restore(s);
+    this.groupTimer = setInterval(() => this.expireGroups(), 15000);
     this.layout();
     // agent-opened windows appear without activating olive or taking focus
     if (opts.inactive) this.win.showInactive();
@@ -160,12 +168,27 @@ class OliveWindow {
 
   restore(s) {
     const byKey = new Map();
+    const groupByKey = new Map();
+    for (const g of s.groups || []) {
+      // an agent that was working when olive quit is gone: keep its group, status and
+      // provenance, drop the pulse
+      const group = TG.makeGroup({ name: g.name, agent: !!g.agent, status: g.status || '', collapsed: g.collapsed !== false, working: false });
+      group.collapsed = !!g.collapsed;
+      group.renamedByUser = !!g.renamedByUser;
+      this.groups.set(group.id, group);
+      groupByKey.set(g.key, group);
+      if (group.agent) this.agentOrder.push(group.id);
+    }
     for (const t of s.tabs) {
       const tab = new Tab(this, t);
       this.tabs.set(tab.id, tab);
       byKey.set(t.key, tab);
-      (tab.pinned ? this.pinned : this.unpinned).push(tab.id);
+      const g = !tab.pinned && t.groupKey != null ? groupByKey.get(t.groupKey) : null;
+      tab.groupId = g ? g.id : null;
+      TG.listOf(this, tab).push(tab.id);
     }
+    for (const g of this.groups.values()) TG.fixContiguity(this, g.id);
+    TG.prune(this, { by: 'user' });
     for (const sp of s.splits || []) {
       const ids = sp.keys.map((k) => byKey.get(k)).filter(Boolean).map((t) => t.id);
       if (ids.length < 2) continue;
@@ -180,44 +203,58 @@ class OliveWindow {
 
   serialize() {
     const tabs = [];
-    for (const id of [...this.pinned, ...this.unpinned]) {
+    for (const id of this.allIds()) {
       const t = this.tabs.get(id);
       if (!t || !t.url) continue;
-      tabs.push({ key: t.id, url: t.url, title: t.title, favicon: t.favicon, pinned: t.pinned, lastActive: t.lastActive });
+      tabs.push({ key: t.id, url: t.url, title: t.title, favicon: t.favicon, pinned: t.pinned, lastActive: t.lastActive, groupKey: t.groupId });
     }
     const splits = [...this.splits.values()].map((sp) => ({ keys: sp.ids, ratios: sp.ratios }));
+    const groups = [...this.groups.values()].map((g) => ({ key: g.id, name: g.name, agent: g.agent, status: g.status, collapsed: g.collapsed, renamedByUser: g.renamedByUser }));
     return {
       bounds: this.win.isDestroyed() ? undefined : this.win.getNormalBounds(),
       sidebarWidth: this.sidebarWidth,
       sidebarHidden: this.sidebarHidden,
       tabs,
       splits,
+      groups,
       activeKey: this.activeId,
     };
   }
 
   allIds() {
-    return [...this.pinned, ...this.unpinned];
+    return [...this.pinned, ...this.unpinned, ...(this.agent || [])]; // agent may be unset on a bare prototype (tests)
   }
 
-  createTab({ url = '', activate = true, focusPage = true, afterId = null, index = null, pinned = false, webContents = null, webPreferences = null, title = '' } = {}) {
+  // the sidebar list a tab lives in: pinned, the user's list, or the agent section
+  listOf(tab) {
+    return TG.listOf(this, tab);
+  }
+
+  // groupId: open inside that group (appended; agent groups force activate:false). a tab
+  // opened from a grouped tab (afterId) lands in the opener's group, like a split.
+  createTab({ url = '', activate = true, focusPage = true, afterId = null, index = null, pinned = false, groupId = null, webContents = null, webPreferences = null, title = '' } = {}) {
     const tab = new Tab(this, { url, pinned, title });
     this.tabs.set(tab.id, tab);
-    const list = pinned ? this.pinned : this.unpinned;
+    const opener = afterId != null ? this.tabs.get(afterId) : null;
+    if (!pinned && groupId == null && opener && !opener.pinned && opener.groupId != null) groupId = opener.groupId;
+    const group = !pinned && groupId != null ? this.groups.get(groupId) : null;
+    if (group?.agent) activate = false; // the agent section never takes the user's place
+    tab.groupId = group ? group.id : null;
+    const list = this.listOf(tab);
     let at = 0;
     if (index != null) at = clamp(index, 0, list.length);
-    else if (afterId != null) {
+    else if (opener && list.includes(opener.id)) {
       const i = list.indexOf(afterId);
-      at = i >= 0 ? i + 1 : 0;
+      at = i + 1;
       // keep opener's split group contiguous
-      const opener = this.tabs.get(afterId);
-      if (i >= 0 && opener && opener.splitId) {
+      if (opener.splitId) {
         let j = i;
         while (j + 1 < list.length && this.tabs.get(list[j + 1])?.splitId === opener.splitId) j++;
         at = j + 1;
       }
-    }
+    } else if (group) at = TG.appendIndex(this, group.id).index;
     list.splice(at, 0, tab.id);
+    if (group) TG.fixContiguity(this, group.id);
     this.recordActivity('tab-open', { tabId: tab.id, url });
     this.ensureView(tab, { webContents, webPreferences });
     if (activate) this.activate(tab.id, { focusPage });
@@ -393,6 +430,10 @@ class OliveWindow {
     if (this.find.open && id !== this.activeId) this.closeFind(false);
     if (this.activeId !== id) this.recordActivity('tab-activate', { tabId: tab.id, url: tab.url });
     this.activeId = id;
+    // landing in a collapsed group (⌃Tab, ⌘1-9, a click from the palette) expands it and
+    // it stays expanded (decision 7.4). agents never get here: they open in the background.
+    const group = tab.groupId != null ? this.groups.get(tab.groupId) : null;
+    if (group?.collapsed) group.collapsed = false;
     if (!mruPreview) { this.tabMRU.touch(id); tab.lastActive = Date.now(); }
     // load other members of the split too
     if (tab.splitId) for (const sid of this.splits.get(tab.splitId).ids) this.ensureView(this.tabs.get(sid));
@@ -401,7 +442,10 @@ class OliveWindow {
     this.changed();
   }
 
-  closeTab(id, { fromPage = false, force = false } = {}) {
+  // by: 'user' | 'agent'. an agent closing the last tab of its own working group keeps the
+  // group for the grace window (it opens, reads, closes, opens); a user close removes it.
+  // skipStack: the caller already pushed one closed-stack entry (closeGroup).
+  closeTab(id, { fromPage = false, force = false, by = 'user', skipStack = false } = {}) {
     const tab = this.tabs.get(id);
     if (!tab) return;
     this.finishTabWalk();
@@ -415,23 +459,22 @@ class OliveWindow {
       this.changed();
       return;
     }
-    if (tab.url && !tab.errorFor) {
-      const list = tab.pinned ? this.pinned : this.unpinned;
-      this.closedStack.push({ url: tab.url, title: tab.title, favicon: tab.favicon, index: list.indexOf(id) });
-      if (this.closedStack.length > 50) this.closedStack.shift();
-    } else if (tab.errorFor) {
-      this.closedStack.push({ url: tab.errorFor, title: tab.title, favicon: '', index: this.unpinned.indexOf(id) });
+    const list = this.listOf(tab);
+    if (!skipStack) {
+      if (tab.url && !tab.errorFor) this.pushClosed({ kind: 'tab', url: tab.url, title: tab.title, favicon: tab.favicon, index: list.indexOf(id), groupId: tab.groupId });
+      else if (tab.errorFor) this.pushClosed({ kind: 'tab', url: tab.errorFor, title: tab.title, favicon: '', index: list.indexOf(id), groupId: tab.groupId });
     }
     const wasActive = this.activeId === id;
     const split = tab.splitId ? this.splits.get(tab.splitId) : null;
     const siblings = split ? split.ids.filter((x) => x !== id) : [];
     this.removeFromSplit(id);
-    const list = tab.pinned ? this.pinned : this.unpinned;
     const idx = list.indexOf(id);
     if (idx >= 0) list.splice(idx, 1);
     this.unload(tab);
     this.tabs.delete(id);
     this.tabMRU.remove(id);
+    this.selection = this.selection.filter((x) => x !== id);
+    if (tab.groupId != null) TG.prune(this, { by });
     if (wasActive) {
       this.activeId = null;
       if (siblings.length) this.activate(siblings[0]);
@@ -440,6 +483,15 @@ class OliveWindow {
     this.layout();
     this.changed();
     if (this.tabs.size === 0 && !this.destroyed) this.openPalette('new');
+  }
+
+  pushClosed(entry) {
+    this.closedStack.push(entry);
+    if (this.closedStack.length > 50) this.closedStack.shift();
+  }
+
+  closeTabs(ids, opts = {}) {
+    for (const id of ids) this.closeTab(id, opts);
   }
 
   pickNextActive(_closedId, list = this.unpinned, idx = 0) {
@@ -466,34 +518,70 @@ class OliveWindow {
     }
   }
 
+  // ⇧⌘T: the last closed tab, or the last closed group as a whole (name, order, collapse)
   reopenClosed() {
     const c = this.closedStack.pop();
     if (!c) return;
-    this.createTab({ url: c.url, title: c.title, index: c.index });
+    if (c.kind === 'group') {
+      const group = TG.makeGroup({ name: c.name, agent: c.agent, status: c.status, collapsed: c.collapsed, working: false });
+      group.collapsed = !!c.collapsed;
+      this.groups.set(group.id, group);
+      if (group.agent) this.agentOrder.push(group.id);
+      let first = null;
+      c.tabs.forEach((t, i) => {
+        const tab = this.createTab({ url: t.url, title: t.title, activate: false, groupId: group.id, index: group.agent ? undefined : c.index + i });
+        if (!first) first = tab;
+      });
+      if (first && !group.agent) this.activate(first.id);
+      else this.changed();
+      return;
+    }
+    const groupId = c.groupId != null && this.groups.has(c.groupId) ? c.groupId : null;
+    this.createTab({ url: c.url, title: c.title, index: c.index, groupId });
+  }
+
+  // drop from the sidebar: ids (whole splits included by the ui) go to `list` at `index`
+  // (counted without the moved tabs), into `groupId` or loose. dragging into the pinned
+  // strip ungroups (decision 7.1).
+  moveTabs(ids, list, index, groupId = null) {
+    const tabs = ids.map((id) => this.tabs.get(id)).filter(Boolean);
+    if (!tabs.length) return;
+    const all = new Set();
+    for (const t of tabs) for (const x of (t.splitId ? this.splits.get(t.splitId).ids : [t.id])) all.add(x);
+    const moving = this.allIds().filter((id) => all.has(id)); // keep their current relative order
+    const touched = new Set(tabs.map((t) => t.groupId).filter((g) => g != null));
+    TG.place(this, moving, { list: list === 'pinned' ? 'pinned' : list === 'agent' ? 'agent' : 'unpinned', index, groupId: list === 'pinned' ? null : groupId });
+    for (const g of touched) TG.fixContiguity(this, g);
+    TG.prune(this, { by: 'user' });
+    this.changed();
   }
 
   moveTab(id, list, index) {
-    const tab = this.tabs.get(id);
-    if (!tab) return;
-    const group = tab.splitId ? [...this.splits.get(tab.splitId).ids] : [id];
-    const src = tab.pinned ? this.pinned : this.unpinned;
-    const dstPinned = list === 'pinned';
-    const dst = dstPinned ? this.pinned : this.unpinned;
-    // index is computed by the ui against dst without the dragged items
-    for (const g of group) {
-      const i = src.indexOf(g);
-      if (i >= 0) src.splice(i, 1);
-    }
-    const at = clamp(index, 0, dst.length);
-    dst.splice(at, 0, ...group);
-    for (const g of group) this.tabs.get(g).pinned = dstPinned;
+    this.moveTabs([id], list, index, null);
+  }
+
+  // a whole group block moves between top-level items of its own list; agent groups
+  // stay in the agent section (2.5)
+  moveGroup(groupId, index) {
+    const g = this.groups.get(groupId);
+    if (!g) return;
+    const mem = TG.members(this, groupId);
+    if (g.agent) {
+      // index counts groups in the section, without this one
+      const order = this.agentOrder.filter((x) => x !== groupId);
+      order.splice(clamp(index, 0, order.length), 0, groupId);
+      this.agentOrder = order;
+      const ids = [];
+      for (const gid of order) ids.push(...TG.members(this, gid));
+      this.agent = ids;
+    } else TG.place(this, mem, { list: 'unpinned', index, groupId });
     this.changed();
   }
 
   setPinned(id, pinned) {
     const tab = this.tabs.get(id);
     if (!tab || tab.pinned === pinned) return;
-    this.moveTab(id, pinned ? 'pinned' : 'unpinned', pinned ? this.pinned.length : 0);
+    this.moveTabs([id], pinned ? 'pinned' : 'unpinned', pinned ? this.pinned.length : 0, null);
   }
 
   duplicate(id) {
@@ -502,12 +590,182 @@ class OliveWindow {
     this.createTab({ url: tab.url, afterId: tab.pinned ? null : id });
   }
 
+  // "Clear" closes the loose unpinned tabs only; groups, the user's and the agents', stay (decision 7.6)
   clearUnpinned() {
-    for (const id of [...this.unpinned]) this.closeTab(id);
+    for (const id of [...this.unpinned]) if (this.tabs.get(id)?.groupId == null) this.closeTab(id);
   }
 
-  closeOthers(id) {
-    for (const x of [...this.unpinned]) if (x !== id) this.closeTab(x);
+  looseCount() {
+    return this.unpinned.filter((id) => this.tabs.get(id)?.groupId == null).length;
+  }
+
+  closeOthers(ids) {
+    const keep = new Set(Array.isArray(ids) ? ids : [ids]);
+    for (const x of [...this.unpinned]) if (!keep.has(x)) this.closeTab(x);
+  }
+
+  // ---------- tab groups (notes/tab-groups-mac-design.md) ----------
+
+  group(id) {
+    return this.groups.get(id) || null;
+  }
+
+  // ⌃⌘N: the selection (or the active tab) becomes a group where its first tab was,
+  // "Untitled Group", expanded, rename field open
+  newGroup(ids = null) {
+    let tabs = (ids && ids.length ? ids : this.selection.length ? this.selection : [this.activeId])
+      .map((id) => this.tabs.get(id)).filter((t) => t && !t.pinned);
+    if (!tabs.length) return null;
+    const group = TG.makeGroup({ name: TG.DEFAULT_NAME, agent: false, collapsed: false });
+    this.groups.set(group.id, group);
+    const all = new Set();
+    for (const t of tabs) for (const x of (t.splitId ? this.splits.get(t.splitId).ids : [t.id])) all.add(x);
+    const moving = this.allIds().filter((id) => all.has(id));
+    const firstIdx = Math.min(...moving.map((id) => this.unpinned.indexOf(id)).filter((i) => i >= 0), this.unpinned.length);
+    const before = this.unpinned.slice(0, firstIdx).filter((id) => !all.has(id)).length;
+    const touched = new Set(tabs.map((t) => t.groupId).filter((g) => g != null));
+    TG.place(this, moving, { list: 'unpinned', index: before, groupId: group.id });
+    for (const g of touched) TG.fixContiguity(this, g);
+    TG.prune(this, { by: 'user' });
+    this.selection = [];
+    this.sendState();
+    this.send('rename-group', { id: group.id });
+    this.changed();
+    return group;
+  }
+
+  // Move to Group ▸: append to an existing group (groupId) or leave the group (null)
+  moveToGroup(ids, groupId) {
+    const tabs = ids.map((id) => this.tabs.get(id)).filter((t) => t && !t.pinned);
+    if (!tabs.length) return;
+    if (groupId == null) {
+      TG.removeFromGroup(this, tabs.map((t) => t.id));
+      return this.changed();
+    }
+    const g = this.groups.get(groupId);
+    if (!g) return;
+    const all = new Set();
+    for (const t of tabs) for (const x of (t.splitId ? this.splits.get(t.splitId).ids : [t.id])) all.add(x);
+    const moving = this.allIds().filter((id) => all.has(id) && this.tabs.get(id).groupId !== groupId);
+    if (!moving.length) return;
+    const touched = new Set(tabs.map((t) => t.groupId).filter((x) => x != null && x !== groupId));
+    const at = TG.appendIndex(this, groupId);
+    TG.place(this, moving, { list: at.list, index: at.index, groupId });
+    for (const x of touched) TG.fixContiguity(this, x);
+    TG.prune(this, { by: 'user' });
+    this.changed();
+  }
+
+  renameGroup(id, name, { by = 'user' } = {}) {
+    const g = this.groups.get(id);
+    const clean = TG.cleanName(name);
+    if (!g || !clean) return false;
+    if (by === 'agent' && g.renamedByUser) return false;
+    g.name = clean;
+    if (by === 'user') g.renamedByUser = true;
+    this.changed();
+    return true;
+  }
+
+  setGroupCollapsed(id, collapsed) {
+    const g = this.groups.get(id);
+    if (!g) return;
+    g.collapsed = collapsed == null ? !g.collapsed : !!collapsed;
+    this.changed();
+  }
+
+  // ⌥-click a header: every group follows (NSOutlineView)
+  collapseAll(collapsed) {
+    for (const g of this.groups.values()) g.collapsed = !!collapsed;
+    this.changed();
+  }
+
+  collapseOthers(id) {
+    for (const g of this.groups.values()) if (g.id !== id) g.collapsed = true;
+    this.changed();
+  }
+
+  // header × / Close Group: every member closes and ⇧⌘T brings the group back as one
+  closeGroup(id, { by = 'user' } = {}) {
+    const g = this.groups.get(id);
+    if (!g) return;
+    const mem = TG.members(this, id);
+    const list = g.agent ? this.agent : this.unpinned;
+    const entry = {
+      kind: 'group', name: g.name, agent: g.agent, status: g.status, collapsed: g.collapsed,
+      index: mem.length ? list.indexOf(mem[0]) : this.unpinned.length,
+      tabs: mem.map((x) => this.tabs.get(x)).filter((t) => t.url).map((t) => ({ url: t.errorFor || t.url, title: t.title, favicon: t.favicon })),
+    };
+    if (entry.tabs.length) this.pushClosed(entry);
+    this.recordActivity('group-close', { groupId: id, tabs: mem.length, by });
+    for (const x of mem) this.closeTab(x, { force: true, by, skipStack: true });
+    TG.dropGroup(this, id);
+    this.changed();
+  }
+
+  // Ungroup (Keep Tabs)
+  ungroup(id) {
+    TG.ungroup(this, id);
+    this.changed();
+  }
+
+  newTabInGroup(id) {
+    const g = this.groups.get(id);
+    if (!g) return;
+    g.collapsed = false;
+    this.pendingGroup = id; // the palette's next submit lands in this group
+    this.openPalette('new');
+  }
+
+  setSelection(ids) {
+    this.selection = (Array.isArray(ids) ? ids : []).filter((id) => this.tabs.has(id));
+  }
+
+  // every 15s: a working agent group goes quiet 2 minutes after its last api call, and
+  // an agent group still empty by then disappears
+  expireGroups(now = Date.now()) {
+    if (this.destroyed) return;
+    if (TG.expire(this, now)) this.changed();
+  }
+
+  // --- agent api hooks (agent-api.js); every api call that touches a group is a `touch` ---
+
+  createAgentGroup({ name, status = '', collapsed = true } = {}) {
+    const group = TG.makeGroup({ name: name || TG.agentDefaultName(this), agent: true, status, collapsed: collapsed !== false, working: true });
+    if (!group.name) group.name = TG.agentDefaultName(this);
+    this.groups.set(group.id, group);
+    this.agentOrder.push(group.id);
+    this.changed();
+    return group;
+  }
+
+  touchGroup(id) {
+    TG.touch(this, id);
+    this.changed();
+  }
+
+  // PATCH /groups/:id; returns {ok} or {error, code}
+  patchGroup(id, { name, status, working, collapsed } = {}) {
+    const g = this.groups.get(id);
+    if (!g) return { error: 'no such group', code: 404 };
+    if (name !== undefined) {
+      if (!TG.cleanName(name)) return { error: 'name must be 1-60 characters', code: 400 };
+      if (!this.renameGroup(id, name, { by: 'agent' })) return { error: 'the user renamed this group; its name is theirs now', code: 409 };
+    }
+    if (status !== undefined) g.status = TG.cleanStatus(status == null ? '' : String(status));
+    if (collapsed !== undefined) g.collapsed = !!collapsed;
+    if (working !== undefined) {
+      g.working = !!working;
+      if (g.working) g.lastAgentCall = Date.now();
+      else TG.prune(this, { by: 'user' }); // an empty group ends with its run
+    } else if (g.agent) TG.touch(this, id);
+    this.changed();
+    return { ok: true, group: this.groups.get(id) || null };
+  }
+
+  groupInfo(g) {
+    const tabIds = TG.members(this, g.id);
+    return { id: g.id, name: g.name, agent: g.agent, section: g.agent ? 'agent' : 'list', working: g.working, status: g.status, collapsed: g.collapsed, tabIds, windowId: this.id };
   }
 
   // ---------- split view ----------
@@ -538,16 +796,17 @@ class OliveWindow {
       this.splits.set(sid, sp);
       a.splitId = b.splitId = sid;
     }
-    // keep the group contiguous in a's list, where a's group was
-    const list = a.pinned ? this.pinned : this.unpinned;
+    // keep the split contiguous in a's list, where a's split was; b joins a's tab group (2.8)
+    const list = this.listOf(a);
     const group = new Set(sp.ids);
     const firstIdx = list.findIndex((id) => group.has(id) && id !== bId);
     const insertAt = list.slice(0, Math.max(0, firstIdx)).filter((id) => !group.has(id)).length;
-    for (const l of [this.pinned, this.unpinned]) {
-      for (let i = l.length - 1; i >= 0; i--) if (group.has(l[i])) l.splice(i, 1);
-    }
+    const bGroup = b.groupId;
+    TG.removeFromLists(this, sp.ids);
     list.splice(insertAt, 0, ...sp.ids);
-    for (const id of sp.ids) this.tabs.get(id).pinned = a.pinned;
+    for (const id of sp.ids) { this.tabs.get(id).pinned = a.pinned; this.tabs.get(id).groupId = a.pinned ? null : a.groupId; }
+    if (a.groupId != null) TG.fixContiguity(this, a.groupId);
+    if (bGroup != null && bGroup !== a.groupId) TG.prune(this, { by: 'user' });
     this.ensureView(b);
     this.activate(bId);
   }
@@ -866,6 +1125,10 @@ class OliveWindow {
       visibleIds: this.visibleIds(),
       pinned: this.pinned.map(t),
       unpinned: this.unpinned.map(t),
+      agent: this.agent.map(t),
+      agentOrder: this.agentOrder,
+      groups: Object.fromEntries([...this.groups.values()].map((g) => [g.id, { id: g.id, name: g.name, agent: g.agent, working: g.working, status: TG.statusShown(this, g), collapsed: g.collapsed }])),
+      looseCount: this.looseCount(),
       splits: Object.fromEntries([...this.splits].map(([k, v]) => [k, v])),
       panes: this.panes,
       find: this.find,
@@ -948,28 +1211,86 @@ class OliveWindow {
     Menu.buildFromTemplate(t).popup({ window: this.win, frame: p.frame });
   }
 
-  tabMenu(id) {
+  // context menu on a tab row. ids: the selection when the row is part of it (verbs read
+  // "Pin 3 Tabs"), else just this tab. the template is built by tabMenuTemplate so the
+  // unit tests can read it without electron.
+  tabMenu(id, ids = null) {
+    const t = this.tabMenuTemplate(id, ids);
+    if (t) Menu.buildFromTemplate(t).popup({ window: this.win });
+  }
+
+  tabMenuTemplate(id, ids = null) {
     const tab = this.tabs.get(id);
-    if (!tab) return;
+    if (!tab) return null;
+    const sel = (ids && ids.includes(id) ? ids : [id]).map((x) => this.tabs.get(x)).filter(Boolean);
+    const selIds = sel.map((x) => x.id);
+    const n = sel.length;
+    const tabsWord = n === 1 ? 'Tab' : `${n} Tabs`;
     const active = this.tabs.get(this.activeId);
     const sep = { type: 'separator' };
-    const t = [
-      { label: tab.pinned ? 'Unpin Tab' : 'Pin Tab', click: () => this.setPinned(id, !tab.pinned) },
-      { label: 'Duplicate', click: () => this.duplicate(id) },
-      { label: 'Copy Link', enabled: !!tab.url, click: () => clipboard.writeText(tab.url) },
-      { label: 'Reload', click: () => this.reload(tab) },
-      { label: tab.wc?.isAudioMuted() ? 'Unmute' : 'Mute', enabled: !!tab.wc, click: () => this.toggleMute(id) },
-      sep,
-    ];
-    if (active && active.id !== id && !(tab.splitId && tab.splitId === active.splitId)) {
-      t.push({ label: 'Open in Split View with Current Tab', click: () => this.split(active.id, id) });
+    const t = [];
+    const groupable = sel.filter((x) => !x.pinned);
+    if (groupable.length) {
+      const inGroups = new Set(groupable.map((x) => x.groupId).filter((g) => g != null));
+      const allIn = (gid) => groupable.every((x) => x.groupId === gid);
+      const groupItems = [...this.groups.values()].map((g) => ({
+        label: (g.agent ? '✦ ' : '') + g.name, type: allIn(g.id) ? 'checkbox' : 'normal', checked: allIn(g.id), enabled: !allIn(g.id),
+        click: () => this.moveToGroup(selIds, g.id),
+      }));
+      t.push({
+        label: `Move ${tabsWord} to Group`,
+        submenu: [{ label: `New Group with ${tabsWord}`, accelerator: 'Ctrl+Cmd+N', click: () => this.newGroup(selIds) }, ...(groupItems.length ? [sep, ...groupItems] : [])],
+      });
+      t.push({ label: 'Remove from Group', enabled: inGroups.size > 0, click: () => this.moveToGroup(selIds, null) }, sep);
     }
-    if (tab.splitId) t.push({ label: 'Separate Split View', click: () => this.unsplit(id) }, { label: 'Remove from Split View', click: () => { this.removeFromSplit(id); this.activate(id); } });
-    t.push(sep, { label: 'Open in New Window', enabled: !!tab.url, click: () => { const url = tab.url; this.closeTab(id); this.mgr.newWindow({ url, private: this.isPrivate }); } });
-    t.push(sep);
-    if (tab.pinned) t.push({ label: 'Unload', enabled: !!tab.wc, click: () => this.closeTab(id) }, { label: 'Remove Pinned Tab', click: () => { tab.pinned = false; this.pinned = this.pinned.filter((x) => x !== id); this.unpinned.unshift(id); this.closeTab(id); } });
-    else t.push({ label: 'Unload (Free Memory)', enabled: !!tab.wc && !this.visibleIds().includes(id), click: () => { this.unload(tab); this.changed(); } }, { label: 'Close Tab', click: () => this.closeTab(id) }, { label: 'Close Other Tabs', click: () => this.closeOthers(id) });
-    Menu.buildFromTemplate(t).popup({ window: this.win });
+    const allPinned = sel.every((x) => x.pinned);
+    t.push(
+      { label: allPinned ? `Unpin ${tabsWord}` : `Pin ${tabsWord}`, click: () => { for (const x of sel) this.setPinned(x.id, !allPinned); } },
+      { label: n === 1 ? 'Duplicate' : 'Duplicate Tabs', click: () => { for (const x of sel) this.duplicate(x.id); } },
+      { label: n === 1 ? 'Copy Link' : 'Copy Links', enabled: sel.some((x) => x.url), click: () => clipboard.writeText(sel.map((x) => x.url).filter(Boolean).join('\n')) },
+      { label: 'Reload', click: () => { for (const x of sel) this.reload(x); } },
+      { label: tab.wc?.isAudioMuted() ? 'Unmute' : 'Mute', enabled: sel.some((x) => x.wc), click: () => { for (const x of sel) this.toggleMute(x.id); } },
+      sep,
+    );
+    if (n === 1) {
+      if (active && active.id !== id && !(tab.splitId && tab.splitId === active.splitId)) {
+        t.push({ label: 'Open in Split View with Current Tab', click: () => this.split(active.id, id) });
+      } else t.push({ label: 'Open in Split View with Current Tab', enabled: false });
+      if (tab.splitId) t.push({ label: 'Separate Split View', click: () => this.unsplit(id) }, { label: 'Remove from Split View', click: () => { this.removeFromSplit(id); this.activate(id); } });
+      t.push(sep, { label: 'Open in New Window', enabled: !!tab.url, click: () => { const url = tab.url; this.closeTab(id); this.mgr.newWindow({ url, private: this.isPrivate }); } });
+      t.push(sep);
+    }
+    if (allPinned) t.push({ label: n === 1 ? 'Unload' : `Unload ${tabsWord}`, enabled: sel.some((x) => x.wc), click: () => this.closeTabs(selIds) }, { label: n === 1 ? 'Remove Pinned Tab' : `Remove ${tabsWord}`, click: () => { for (const x of sel) { this.setPinned(x.id, false); this.closeTab(x.id); } } });
+    else t.push(
+      { label: 'Unload (Free Memory)', enabled: sel.some((x) => x.wc && !this.visibleIds().includes(x.id)), click: () => { for (const x of sel) if (!this.visibleIds().includes(x.id)) this.unload(x); this.changed(); } },
+      { label: `Close ${tabsWord}`, click: () => this.closeTabs(selIds) },
+      { label: 'Close Other Tabs', click: () => this.closeOthers(selIds) },
+    );
+    return t;
+  }
+
+  groupMenu(id) {
+    const t = this.groupMenuTemplate(id);
+    if (t) Menu.buildFromTemplate(t).popup({ window: this.win });
+  }
+
+  groupMenuTemplate(id) {
+    const g = this.groups.get(id);
+    if (!g) return null;
+    const sep = { type: 'separator' };
+    const mem = TG.members(this, id);
+    return [
+      { label: 'New Tab in Group', click: () => this.newTabInGroup(id) },
+      { label: 'Rename', click: () => { this.send('rename-group', { id }); } },
+      sep,
+      { label: g.collapsed ? 'Expand' : 'Collapse', click: () => this.setGroupCollapsed(id) },
+      { label: 'Collapse Other Groups', enabled: this.groups.size > 1, click: () => this.collapseOthers(id) },
+      sep,
+      { label: 'Copy All Links', enabled: mem.length > 0, click: () => clipboard.writeText(mem.map((x) => this.tabs.get(x)?.url).filter(Boolean).join('\n')) },
+      { label: 'Ungroup (Keep Tabs)', click: () => this.ungroup(id) },
+      sep,
+      { label: 'Close Group', click: () => this.closeGroup(id) },
+    ];
   }
 
   toggleMute(id) {
@@ -1040,8 +1361,21 @@ class OliveWindow {
       case 'split': return this.split(a.a ?? this.activeId, a.b);
       case 'splitRatios': return this.setSplitRatios(a.splitId, a.ratios);
       case 'devtoolsRatio': return this.setDevtoolsRatio(a.id, a.ratio);
-      case 'move': return this.moveTab(a.id, a.list, a.index);
-      case 'tabMenu': return this.tabMenu(a.id);
+      case 'move': return this.moveTabs(a.ids || [a.id], a.list, a.index, a.groupId ?? null);
+      case 'moveGroup': return this.moveGroup(a.id, a.index);
+      case 'tabMenu': return this.tabMenu(a.id, a.ids || null);
+      case 'groupMenu': return this.groupMenu(a.id);
+      case 'closeTabs': return this.closeTabs(a.ids || []);
+      case 'selection': return this.setSelection(a.ids);
+      case 'newGroup': return this.newGroup(a.ids || null);
+      case 'moveToGroup': return this.moveToGroup(a.ids || [], a.groupId ?? null);
+      case 'renameGroup': return this.renameGroup(a.id, a.name);
+      case 'toggleGroup': return this.setGroupCollapsed(a.id, a.collapsed);
+      case 'collapseAll': return this.collapseAll(a.collapsed);
+      case 'collapseOthers': return this.collapseOthers(a.id);
+      case 'closeGroup': return this.closeGroup(a.id);
+      case 'ungroup': return this.ungroup(a.id);
+      case 'newTabInGroup': return this.newTabInGroup(a.id);
       case 'mute': return this.toggleMute(a.id);
       case 'clearUnpinned': return this.clearUnpinned();
       case 'overlay': return this.setOverlay(a.kind || null);
@@ -1062,6 +1396,8 @@ class OliveWindow {
 
   submit({ mode, input, item, split: inSplit }) {
     this.setOverlay(null);
+    const pendingGroup = this.pendingGroup;
+    this.pendingGroup = null;
     if (item?.kind === 'command') {
       if (isAppCommand(item.commandId)) return this.cmd(item.commandId);
       return;
@@ -1081,6 +1417,7 @@ class OliveWindow {
     const active = this.tabs.get(this.activeId);
     if (inSplit || mode === 'split') return this.openInSplit(url, active);
     if (mode === 'edit' && active) return this.navigate(active, url);
+    if (pendingGroup != null && this.groups.has(pendingGroup)) return this.createTab({ url, groupId: pendingGroup });
     this.createTab({ url });
   }
 
@@ -1168,6 +1505,7 @@ class OliveWindow {
   destroy() {
     if (this.destroyed) return;
     this.destroyed = true;
+    clearInterval(this.groupTimer);
     for (const tab of this.tabs.values()) {
       if (tab.devtools?.webContents && !tab.devtools.webContents.isDestroyed()) tab.devtools.webContents.close();
       if (tab.view?.webContents && !tab.view.webContents.isDestroyed()) tab.view.webContents.close();

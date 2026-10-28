@@ -39,11 +39,16 @@
       <div id="settings-row" class="row active" hidden><span class="fav settings-glyph">⚙</span><span class="title"></span><span id="settings-close" class="close" title="Close settings">×</span></div>
       <div id="setup-row" class="row" hidden><span class="fav setup-glyph"></span><span class="title">Set Up Olive</span><span id="setup-left"></span><span id="setup-close" class="close" title="Set Up Later" aria-label="Set Up Later">×</span></div>
       <div id="pinned" class="list" data-list="pinned"></div>
-      <div class="divider" id="divider"><span class="line"></span><button id="btn-clear" title="Close all unpinned tabs">Clear</button></div>
+      <div class="divider" id="divider"><span class="line"></span><button id="btn-clear" title="Close loose tabs">Clear</button></div>
       <button id="newtab" class="row newtab-row"><span class="plus">+</span><span class="title">New Tab</span></button>
       <div id="unpinned" class="list" data-list="unpinned"></div>
       <div class="list-spacer drag"></div>
     </div>
+
+    <!-- agent section: tab groups opened by agents sit at the bottom of the sidebar, outside
+         the scrolling tab list, so they stay in view however long the user's list gets -->
+    <div class="divider agent-divider no-drag"><span class="line"></span></div>
+    <div id="agent" class="list no-drag" data-list="agent"></div>
 
     <button id="btn-ublock" class="no-drag" title="uBO Lite basic network rules">uBO Lite</button>
 

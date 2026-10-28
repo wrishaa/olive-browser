@@ -15,6 +15,7 @@ const COMMANDS = [
   ['nextTab','Next Tab (Sidebar Order)','Cmd+Alt+Down'], ['prevTab','Previous Tab (Sidebar Order)','Cmd+Alt+Up'],
   ['togglePin','Pin / Unpin Tab','Cmd+D'], ['duplicate','Duplicate Tab','Cmd+Shift+D'],
   ['splitNew','Split View with New Tab','Ctrl+Shift+='], ['unsplit','Separate Split View','Ctrl+Shift+-'],
+  ['newGroup','New Group with Selection','Ctrl+Cmd+N'],
   ['back','Back','Cmd+['], ['forward','Forward','Cmd+]'],
   ['devtools','Developer Tools','Cmd+Alt+I'], ['console','JavaScript Console','Cmd+Alt+J'],
   ['settings','Keyboard Shortcuts','Cmd+,'],

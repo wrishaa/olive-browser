@@ -83,7 +83,11 @@ const HELP = {
   routes: {
     'GET /': 'this help + endpoints',
     'GET /tabs': 'list tabs in all windows',
-    'POST /tabs {url, activate?, windowId?, split?}': 'open a tab in the background (shows in the sidebar, not selected). activate: true (or background: false) also selects it, still without focusing the window. split: true opens it next to the active tab',
+    'POST /tabs {url, activate?, windowId?, split?, group?}': 'open a tab in the background (shows in the sidebar, not selected). activate: true (or background: false) also selects it, still without focusing the window. split: true opens it next to the active tab. group: <group id> or {name, status?} opens it inside that agent tab group (created from {name}), collapsed at the bottom of the sidebar, always in the background',
+    'GET /groups': 'tab groups in all windows: id, name, agent, section ("agent" for api-made, "list" for the user\'s), working, status, collapsed, tabIds',
+    'POST /groups {name, status?, collapsed?, windowId?}': 'make an agent tab group (name 1-60 chars, a task noun phrase: "Flights to Lisbon"). it sits collapsed at the bottom of the sidebar; open tabs into it with POST /tabs {group: id}',
+    'PATCH /groups/:id {name?, status?, working?, collapsed?}': 'rename (409 once the user renamed it), set the one-line status under the name (≤ 40 chars, present tense: "comparing 3 fares"), end the run with working:false (the pulse stops; an empty group is removed)',
+    'POST /groups/:id/close': 'close every tab in the group and remove it',
     'GET /tabs/:id': 'one tab',
     'POST /tabs/:id/activate': 'select it inside its window. never focuses the window or brings olive forward',
     'POST /tabs/:id/navigate {url}': 'load a url or search text, waits for load',
@@ -121,6 +125,15 @@ async function handle(mgr, req, res, token) {
         const win = (b.windowId && mgr.windows.find((w) => w.id === b.windowId)) || mgr.focusedWindow() || mgr.newWindow({ inactive: true });
         const activate = b.activate === true || b.background === false;
         let tab;
+        if (b.group != null) {
+          // tab group hook: open inside an agent group, always in the background (3.1)
+          const g = resolveGroup(mgr, win, b.group);
+          if (g.error) return send(res, g.code, { error: g.error });
+          tab = g.win.createTab({ url: require('../core/url').toUrl(b.url || 'about:blank'), activate: false, focusPage: false, groupId: g.group.id });
+          g.win.touchGroup(g.group.id);
+          await waitLoad(tab, b.timeout);
+          return send(res, 200, await describe(mgr, g.win, tab));
+        }
         if (b.split) {
           const base = win.tabs.get(win.activeId);
           tab = win.createTab({ url: require('../core/url').toUrl(b.url || 'about:blank'), activate: false, afterId: base?.id });
@@ -152,6 +165,8 @@ async function handle(mgr, req, res, token) {
     }
     if (m !== 'POST') return send(res, 405, { error: 'method not allowed' });
     const b = await readJson(req);
+    // tab group hook: any api step on a grouped tab means its agent is working
+    if (tab.groupId != null && win.groups.get(tab.groupId)?.agent && action !== 'close') win.touchGroup(tab.groupId);
     switch (action) {
       case 'activate':
         // select inside the window only. no win.focus()/app activation: that pulled
@@ -171,7 +186,10 @@ async function handle(mgr, req, res, token) {
         await mgr.agentWake.step(win, tab, async () => { win.reload(tab); await waitLoad(tab, b.timeout); });
         return send(res, 200, await describe(mgr, win, tab));
       case 'close':
-        win.closeTab(tab.id, { force: true }); // agents close for real, pinned or not
+        // agents close for real, pinned or not. by:'agent' is the tab group hook: an agent
+        // emptying its own working group keeps the group for the grace window (2.6)
+        if (tab.groupId != null) win.touchGroup(tab.groupId);
+        win.closeTab(tab.id, { force: true, by: 'agent' });
         return send(res, 200, { ok: true });
       case 'eval': {
         const result = await mgr.agentWake.step(win, tab, () => tab.wc.executeJavaScript(String(b.expression ?? ''), true));
@@ -200,6 +218,36 @@ async function handle(mgr, req, res, token) {
         return send(res, 404, { error: 'unknown action' });
     }
   }
+  if (parts[0] === 'groups') {
+    // tab groups (notes/tab-groups-mac-design.md 3.3)
+    if (parts.length === 1) {
+      if (m === 'GET') return send(res, 200, mgr.windows.flatMap((w) => [...w.groups.values()].map((g) => w.groupInfo(g))));
+      if (m === 'POST') {
+        const b = await readJson(req);
+        const win = (b.windowId && mgr.windows.find((w) => w.id === b.windowId)) || mgr.focusedWindow() || mgr.newWindow({ inactive: true });
+        if (b.name != null && !require('../core/tab-groups').cleanName(String(b.name))) return send(res, 400, { error: 'name must be 1-60 characters' });
+        const g = win.createAgentGroup({ name: b.name != null ? String(b.name) : '', status: b.status != null ? String(b.status) : '', collapsed: b.collapsed !== false });
+        return send(res, 200, win.groupInfo(g));
+      }
+      return send(res, 405, { error: 'method not allowed' });
+    }
+    const found = findGroup(mgr, Number(parts[1]));
+    if (!found) return send(res, 404, { error: 'no such group' });
+    const { group, win } = found;
+    const action = parts[2] || '';
+    if (m === 'GET' && !action) return send(res, 200, win.groupInfo(group));
+    if (m === 'PATCH' && !action) {
+      const b = await readJson(req);
+      const r = win.patchGroup(group.id, b);
+      if (r.error) return send(res, r.code, { error: r.error });
+      return send(res, 200, r.group ? win.groupInfo(r.group) : { ok: true, removed: true });
+    }
+    if (m === 'POST' && action === 'close') {
+      win.closeGroup(group.id, { by: 'agent' });
+      return send(res, 200, { ok: true });
+    }
+    return send(res, 404, { error: 'unknown action' });
+  }
   if (parts[0] === 'windows') {
     if (m === 'GET') return send(res, 200, mgr.windows.map((w) => ({ id: w.id, private: w.isPrivate, activeTabId: w.activeId, tabIds: w.allIds(), focused: mgr.focused === w })));
     if (m === 'POST') {
@@ -223,6 +271,29 @@ async function handle(mgr, req, res, token) {
     return send(res, 200, { processes: procs.length, workingSetMB: mb('workingSetSize'), privateMB: mb('privateBytes'), loadedTabs: mgr.allTabs().filter((x) => x.tab.wc).length, tabs: mgr.allTabs().length });
   }
   return send(res, 404, { error: 'not found', help: 'GET /' });
+}
+
+function findGroup(mgr, id) {
+  for (const win of mgr.windows) {
+    const group = win.groups?.get(id);
+    if (group) return { group, win };
+  }
+  return null;
+}
+
+// POST /tabs {group}: an existing group's id, or {name, status?} to make one in `win`
+function resolveGroup(mgr, win, spec) {
+  if (typeof spec === 'number' || (typeof spec === 'string' && /^\d+$/.test(spec))) {
+    const found = findGroup(mgr, Number(spec));
+    if (!found) return { error: 'no such group: make one with POST /groups or pass {name}', code: 404 };
+    return found;
+  }
+  if (spec && typeof spec === 'object') {
+    if (spec.name != null && !require('../core/tab-groups').cleanName(String(spec.name))) return { error: 'group.name must be 1-60 characters', code: 400 };
+    const group = win.createAgentGroup({ name: spec.name != null ? String(spec.name) : '', status: spec.status != null ? String(spec.status) : '', collapsed: spec.collapsed !== false });
+    return { group, win };
+  }
+  return { error: 'group must be an id or {name, status?}', code: 400 };
 }
 
 function waitLoad(tab, timeout = 30000) {
@@ -269,6 +340,7 @@ async function describe(mgr, win, tab) {
     visible: win.visibleIds().includes(tab.id),
     pinned: tab.pinned,
     splitId: tab.splitId,
+    groupId: tab.groupId ?? null,
     loading: tab.loading,
     loaded: !!tab.wc,
     targetId,

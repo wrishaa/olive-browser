@@ -3,7 +3,8 @@
   --bg2: rgba(170, 199, 172, 0.86);
   --bg3: rgba(150, 186, 180, 0.86);
   --text: #1d2a1f;
-  --text-dim: #4c584d;
+  --text-dim: #3f4b40;
+  --on-accent: #fff;
   --row-hover: rgba(255, 255, 255, 0.32);
   --row-active: rgba(255, 255, 255, 0.82);
   --row-active-shadow: 0 1px 2px rgba(30, 50, 30, 0.12), 0 0 0 0.5px rgba(30, 50, 30, 0.06);
@@ -25,7 +26,8 @@
     --bg2: rgba(30, 40, 36, 0.9);
     --bg3: rgba(28, 36, 40, 0.9);
     --text: #e6eee2;
-    --text-dim: #a8b3a5;
+    --text-dim: #b0bbad;
+    --on-accent: #1d2a1f;
     --row-hover: rgba(255, 255, 255, 0.07);
     --row-active: rgba(255, 255, 255, 0.15);
     --row-active-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
@@ -48,6 +50,7 @@ body.private {
   --bg3: rgba(30, 30, 46, 0.92);
   --text: #ece8f6;
   --text-dim: #b9b1c9;
+  --on-accent: #1f1a33;
   --row-hover: rgba(255, 255, 255, 0.07);
   --row-active: rgba(255, 255, 255, 0.16);
   --pill: rgba(255, 255, 255, 0.08);
@@ -307,9 +310,9 @@ body.loading #urlbar .progress { opacity: 1; animation: sweep 1.1s linear infini
 .split-group .row .close { display: none !important; }
 
 #pinned:empty { display: none; }
-.divider { display: flex; align-items: center; gap: 8px; height: 22px; margin: 6px 4px 4px; flex: none; }
-.divider .line { flex: 1; height: 1px; background: var(--line); }
-.divider button { font-size: 11px; color: var(--text-dim); padding: 2px 6px; border-radius: 5px; opacity: 0; }
+.divider { position: relative; display: flex; align-items: center; height: 22px; margin: 6px 4px 4px; flex: none; }
+.divider .line { flex: none; width: 100%; height: 1px; background: var(--line); }
+.divider button { position: absolute; right: 0; top: 50%; transform: translateY(-50%); font-size: 11px; color: var(--text-dim); padding: 2px 6px; border-radius: 5px; opacity: 0; background: var(--bg2); }
 .divider:hover button { opacity: 1; }
 .divider button:hover { background: var(--row-hover); color: var(--text); }
 body.no-pinned .divider .line { opacity: 0; }
@@ -448,3 +451,116 @@ body.ui-on-top.sidebar-hidden #bg { display: none; }
 .footer button.icon {width:28px;min-width:28px;flex:none;}
 .settings-glyph {color:var(--text);font-size:16px;}
 #settings-close {font-size:18px;}
+
+/* ---------- tab groups (notes/tab-groups-mac-design.md, sec 1) ----------
+   a group is an outline node like Notes/Mail: a header row (disclosure + name) and
+   indented member rows. no box, no tint, no rail. a collapsed group is one row and keeps
+   the list's 2px rhythm; only an expanded block gets 4px of air above and below. */
+.group { display: flex; flex-direction: column; gap: 2px; flex: none; position: relative; margin: 0; }
+.group:not(.collapsed) { margin: 4px 0; }
+.group:first-child { margin-top: 0; }
+.group:last-child { margin-bottom: 0; }
+.group-body { display: flex; flex-direction: column; gap: 2px; }
+.group.collapsed .group-body { display: none; }
+
+/* member rows: full-width fill, content indented so the favicon sits under the header's name (10 + 16 + 9 = 35) */
+.group-body > .row { padding-left: 35px; }
+.group-body > .split-group { padding-left: 25px; }
+.group-body > .row.drop-before::after, .group-body > .row.drop-after::after,
+.group-body > .split-group.drop-before::after, .group-body > .split-group.drop-after::after { left: 33px; }
+/* agent groups: the sparkle pushes the name to 51 (35 + 13 − 6 + 9); members follow it */
+.group.agent .group-body > .row, .group.agent .group-body .newtab-row { padding-left: 51px; }
+.group.agent .group-body > .split-group { padding-left: 41px; }
+.group.agent .group-body > .row.drop-before::after, .group.agent .group-body > .row.drop-after::after,
+.group.agent .group-body > .split-group.drop-before::after, .group.agent .group-body > .split-group.drop-after::after { left: 49px; }
+/* a whole group block as a drop neighbour (group reorder, "move out of") */
+.group.drop-before::after { content: ''; position: absolute; left: 8px; right: 8px; top: -2px; height: 2px; border-radius: 1px; background: var(--accent); z-index: 1; }
+.group.drop-after::after { content: ''; position: absolute; left: 8px; right: 8px; bottom: -2px; height: 2px; border-radius: 1px; background: var(--accent); z-index: 1; }
+
+/* header row */
+.group-head { gap: 9px; }
+.group-head .disc { width: 16px; height: 16px; flex: none; display: grid; place-items: center; color: var(--text-dim); border-radius: 4px; }
+.group-head .disc svg { width: 10px; height: 10px; transform: rotate(90deg); transition: transform .16s ease; }
+.group.collapsed .group-head .disc svg { transform: none; }
+.group-head:hover .disc { color: var(--text); }
+.group-head .title { font-weight: 600; }
+.group-head .count { flex: none; font-size: 11px; color: var(--text-dim); font-variant-numeric: tabular-nums; }
+/* agent status: one short line set by the agent. the header becomes two lines
+   (name 13/600 over status 11 dim) inside the same 36px so the name never truncates for it */
+.group-head .lines { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 1px; }
+.group-head .lines .title { flex: none; line-height: 15px; }
+.group-head .lines .status { flex: none; max-width: 100%; line-height: 13px; }
+.group-head .status { font-size: 11px; color: var(--text-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* collapsed: up to three member favicons, newest first, then the count. a status line replaces the favicons */
+.group-head .favs { display: none; flex: none; align-items: center; gap: 3px; }
+.group.collapsed .group-head .favs { display: flex; }
+.group.collapsed .group-head .lines ~ .favs { display: none; }
+.group-head .favs .fav { width: 14px; height: 14px; border-radius: 3.5px; font-size: 9px; margin: 0; }
+.group-head .favs .spinner { width: 12px; height: 12px; margin: 1px; }
+.group-head .favs .fav.is-active { box-shadow: 0 0 0 1.5px var(--accent); }
+/* under 210px there is no room for favicons: name and count only; with a status line, not even the count */
+body.narrow .group-head .favs { display: none !important; }
+body.narrow .group-head .lines ~ .count { display: none; }
+/* the hover × means Close Group; it takes only the count's slot. favicons and the dot stay
+   (mac rows add on hover, they do not remove) */
+.group-head:hover .count { display: none; }
+.group-head.drop-into .close { display: none !important; }
+
+/* agent section: the bottom of the sidebar. groups opened by agents never sit among the
+   user's tabs; they form a third section below the scrolling tab list, resting above the
+   uBO pill, at most half the sidebar, scrolling inside itself beyond that. one hairline
+   above, like the pinned divider; the whole section disappears with its last group. */
+#agent { flex: none; max-height: 50%; overflow-y: auto; overflow-x: hidden; margin: 0 -4px; padding: 0 4px 8px; }
+#agent::-webkit-scrollbar { width: 0; }
+.divider.agent-divider { height: 1px; margin: 0 4px 8px; }
+body.no-pinned .divider.agent-divider { height: 1px; margin: 0 4px 8px; }
+body.no-pinned .divider.agent-divider .line { opacity: 1; }
+body.no-agent .agent-divider, body.no-agent #agent { display: none; }
+/* when a list scrolls under the hairline, its last 28px fade out (macOS scroll-edge effect),
+   so a half-visible row never butts against the line. #agent gets the same only while it
+   overflows (the renderer sets .overflows after each render), else its last row would fade. */
+body:not(.no-agent) #tablist, #agent.overflows {
+  -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 28px), transparent);
+  mask-image: linear-gradient(to bottom, #000 calc(100% - 28px), transparent);
+}
+
+/* agent groups */
+.group-head .agent-glyph { width: 13px; height: 13px; flex: none; color: var(--accent); margin: 0 -3px; }
+.group-head .agent-glyph svg { width: 13px; height: 13px; display: block; }
+.group-head .pulse { width: 6px; height: 6px; flex: none; border-radius: 50%; background: var(--accent); margin: 0 4px 0 2px; animation: breathe 1.6s ease-in-out infinite; }
+@keyframes breathe { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
+@media (prefers-reduced-motion: reduce) { .group-head .pulse { animation: none; } }
+/* a working agent group has no hover ×: closing it kills the run and ⇧⌘T cannot bring
+   the run back (only the tabs). Close Group stays in its menu; the × returns once done. */
+.group.agent.working .group-head:hover .close { display: none; }
+.group.agent.working .group-head:hover .count { display: inline; }
+
+/* empty group: the dimmed New Tab row, indented like a member */
+.group-body .newtab-row { padding-left: 35px; }
+
+/* multi-selection */
+.row.selected { background: var(--palette-sel); }
+.row.selected:hover { background: var(--palette-sel); }
+/* the active tab inside a selection: the lifted row with a faint accent tint, no stroke
+   (macOS never outlines a selection) */
+.row.selected.active { background: color-mix(in srgb, var(--row-active), var(--accent) 10%); box-shadow: var(--row-active-shadow); }
+.row.selected .close { display: none; }
+
+/* drag */
+.group-head.drop-into { background: var(--palette-sel); box-shadow: inset 0 0 0 1.5px var(--accent); }
+.group-head.drop-into .count, .group-head.drop-into .favs { display: flex; }
+#drag-ghost .badge { flex: none; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: var(--accent); color: var(--on-accent); font-size: 11px; font-weight: 600; display: grid; place-items: center; margin-left: 2px; }
+#drag-ghost .disc { width: 16px; height: 16px; display: grid; place-items: center; color: var(--text-dim); }
+#drag-ghost .disc svg { width: 10px; height: 10px; }
+#drag-ghost .name { font-weight: 600; }
+
+/* inline rename: the header's title becomes a field; same face, same weight, the text does not move */
+.group-head .rename {
+  flex: 1; min-width: 0; height: 22px; margin: 0 0 0 -5px; padding: 0 4px;
+  border: 0; outline: 0; border-radius: 5px; background: var(--card); color: var(--text);
+  font: 13px/22px -apple-system, BlinkMacSystemFont, system-ui, sans-serif; font-weight: 600;
+  box-shadow: 0 0 0 1px var(--line), 0 0 0 3.5px color-mix(in srgb, var(--accent) 38%, transparent);
+  user-select: text; cursor: text;
+}
+.group-head .rename::selection { background: color-mix(in srgb, var(--accent) 32%, transparent); }

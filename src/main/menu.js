@@ -102,6 +102,8 @@ function buildMenu(mgr) {
         { label: 'Pin / Unpin Tab', accelerator: shortcut('togglePin'), click: w('togglePin') },
         { label: 'Duplicate Tab', accelerator: shortcut('duplicate'), click: w('duplicate') },
         { type: 'separator' },
+        { label: 'New Group with Selection', accelerator: shortcut('newGroup'), click: w('newGroup') },
+        { type: 'separator' },
         { label: 'Split View with New Tab', accelerator: shortcut('splitNew'), click: w('splitNew') },
         hidden('Ctrl+Shift+Plus', 'splitNew'),
         { label: 'Separate Split View', accelerator: shortcut('unsplit'), click: w('unsplit') },
