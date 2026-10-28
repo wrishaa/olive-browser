@@ -46,6 +46,7 @@ to rotate the token: quit olive, delete `agent-token`, relaunch.
 | `GET /tabs/:id/text` | `document.body.innerText` |
 | `GET /tabs/:id/screenshot` | png, works for background tabs without waking them |
 | `POST /tabs/:id/cdp {method, params, timeout?}` | any CDP command on that tab, no websocket needed. 504 after `timeout` ms (default 15000) |
+| `POST /tabs/:id/frames {on?, ms?}` | full frame rate (~60/s) for a background tab for `ms` (default 30000, max 600000); `on:false` ends it. off by default |
 | `POST /tabs/:id/devtools` | toggle docked devtools |
 | `POST /tabs/:id/split {with}` | show the tab next to tab `with` |
 | `GET /windows`, `POST /windows {private?, url?}` | |
@@ -80,9 +81,16 @@ on one (eval, cdp, navigate, back/forward/reload, text, screenshot) olive gives
 it the size it would have on screen, and for everything but text/screenshot
 emulates focus (`document.hasFocus()` true, `visibilityState` visible, timers
 at full speed). ~1.5s after the last call that's undone and the tab is
-throttled again. rAF/compositor frames stay slow in hidden tabs; select the tab
-if you need real animation frames. don't toggle `Emulation.setFocusEmulationEnabled`
-yourself through `/cdp`: olive turns it off after each step.
+throttled again. rAF/compositor frames stay slow (~1/s) in hidden tabs by default.
+to watch an animation or a video, opt in to full frame rate (~60/s):
+`frames: true` on eval/navigate/back/forward/reload/cdp does it for that call
+only, `POST /tabs/:id/frames {ms}` for a window (default 30s, max 10min,
+`{on:false}` ends it early). it costs gpu+cpu, so it ends by itself. a size you
+set with `Emulation.setDeviceMetricsOverride` through `/cdp` is kept (also
+between calls) until you send `Emulation.clearDeviceMetricsOverride`; cdp
+`Page.captureScreenshot` works on hidden static pages too. don't toggle
+`Emulation.setFocusEmulationEnabled` yourself through `/cdp`: olive turns it
+off after each step.
 
 ```sh
 T="Authorization: Bearer $(cat "$HOME/Library/Application Support/Olive/agent-token")"

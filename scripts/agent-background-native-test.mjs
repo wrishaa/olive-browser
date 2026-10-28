@@ -102,7 +102,39 @@ try {
   const afterCdp = await rates(id);
   check(afterCdp.raf === 0 && afterCdp.ticks <= 3, 'cdp step re-throttles too (session stays attached)', afterCdp);
 
-  // 7. activate selects inside the window only
+  // 7. full frame rate is opt-in: frames:true for one step, or a /frames window
+  const inStep = (frames) => call('POST', `/tabs/${id}/eval`, { frames, expression: `new Promise(r=>{const a={...__c};setTimeout(()=>r({raf:__c.raf-a.raf,ticks:__c.ticks-a.ticks}),1000)})` }).then((r) => r.body.result);
+  const plainStep = await inStep(undefined);
+  check(plainStep.raf <= 3 && plainStep.ticks >= 40, 'default step: timers full speed, rAF stays throttled (frames off)', plainStep);
+  const framesStep = await inStep(true);
+  check(framesStep.raf >= 40, 'frames:true step draws at full frame rate', framesStep);
+  const afterFrames = await rates(id);
+  check(afterFrames.raf === 0 && afterFrames.ticks <= 3, 'frames end with the step: back to background throttling', afterFrames);
+  const win0 = await call('POST', `/tabs/${id}/frames`, { ms: 6000 });
+  check(win0.status === 200 && win0.body.frames === true && !!win0.body.framesUntil, 'POST /frames opens a full-rate window', win0.body);
+  const inWin = await rates(id);
+  check(inWin.raf >= 40 && inWin.ticks >= 40, 'inside the frames window: full rate between steps', inWin);
+  check((await call('GET', `/tabs/${id}`)).body.frames === true, 'GET /tabs shows frames on');
+  await wait(2600);
+  const afterWin = await rates(id);
+  check(afterWin.raf === 0 && afterWin.ticks <= 3 && (await call('GET', `/tabs/${id}`)).body.frames === false, 'frames window ends by itself, throttled again', afterWin);
+  check(frontApp() === front0, 'frontmost app unchanged after frames', frontApp());
+
+  // 8. static page + the agent's own viewport (the hive screenshot scripts):
+  //    cdp captureScreenshot must not hang, the override survives between steps
+  const st = (await call('POST', '/tabs', { url: base + '/user?static' })).body.id;
+  await call('POST', `/tabs/${st}/cdp`, { method: 'Emulation.setDeviceMetricsOverride', params: { width: 1440, height: 810, deviceScaleFactor: 2, mobile: false } });
+  await wait(2500); // past the linger
+  const t1 = Date.now();
+  const cap2 = await call('POST', `/tabs/${st}/cdp`, { method: 'Page.captureScreenshot', params: { format: 'png' }, timeout: 8000 });
+  const png2 = cap2.body?.result?.data ? Buffer.from(cap2.body.result.data, 'base64') : Buffer.alloc(0);
+  check(cap2.status === 200 && png2.length > 24 && png2.readUInt32BE(16) === 2880, 'static hidden page: cdp capture at the agent viewport returns', { status: cap2.status, ms: Date.now() - t1, w: png2.length > 24 ? png2.readUInt32BE(16) : 0 });
+  await wait(2500);
+  const vw = (await call('POST', `/tabs/${st}/eval`, { expression: 'innerWidth' })).body.result;
+  check(vw === 1440, "agent's viewport kept between steps", vw);
+  await call('POST', `/tabs/${st}/close`);
+
+  // 9. activate selects inside the window only
   const act = await call('POST', `/tabs/${id}/activate`);
   s = await winState();
   check(act.status === 200 && s.activeId === id, 'activate selects the tab', s);
@@ -113,7 +145,7 @@ try {
   s = await winState();
   check(s.activeId === userTab && s.front === front0, 'selected the user tab back, still behind', s);
 
-  // 8. close own tab
+  // 10. close own tab
   const closed = await call('POST', `/tabs/${id}/close`);
   check(closed.body?.ok === true, 'closed own tab');
   check(frontApp() === front0, 'frontmost app unchanged at the end', frontApp());

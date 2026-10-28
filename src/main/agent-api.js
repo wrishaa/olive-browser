@@ -90,10 +90,11 @@ const HELP = {
     'POST /groups/:id/close': 'close every tab in the group and remove it',
     'GET /tabs/:id': 'one tab',
     'POST /tabs/:id/activate': 'select it inside its window. never focuses the window or brings olive forward',
-    'POST /tabs/:id/navigate {url}': 'load a url or search text, waits for load',
-    'POST /tabs/:id/back | /forward | /reload | /close': '',
-    'POST /tabs/:id/eval {expression}': 'run js in the page (awaits promises), returns {result}',
-    'POST /tabs/:id/cdp {method, params, timeout?}': 'send any CDP command to this tab via the built-in debugger (times out after `timeout` ms, default 15000, with 504)',
+    'POST /tabs/:id/navigate {url, frames?}': 'load a url or search text, waits for load',
+    'POST /tabs/:id/back | /forward | /reload | /close {frames?}': '',
+    'POST /tabs/:id/eval {expression, frames?}': 'run js in the page (awaits promises), returns {result}. a background tab runs timers at full speed during a step but draws ~1 frame/s; frames: true also draws at full frame rate (~60/s) for that step only',
+    'POST /tabs/:id/cdp {method, params, timeout?, frames?}': 'send any CDP command to this tab via the built-in debugger (times out after `timeout` ms, default 15000, with 504). a size set with Emulation.setDeviceMetricsOverride is kept until you clear it',
+    'POST /tabs/:id/frames {on?, ms?}': 'full frame rate for a background tab for `ms` (default 30000, max 600000), e.g. to watch an animation or video; on: false ends it now. off by default; ends by itself. returns {frames, framesUntil}',
     'GET /tabs/:id/screenshot': 'png of the page, works for background tabs without waking them',
     'GET /tabs/:id/text': 'document.body.innerText',
     'POST /tabs/:id/devtools': 'toggle docked devtools',
@@ -174,16 +175,16 @@ async function handle(mgr, req, res, token) {
         win.activate(tab.id, { focusPage: win.win.isFocused() });
         return send(res, 200, await describe(mgr, win, tab));
       case 'navigate':
-        await mgr.agentWake.step(win, tab, async () => { win.navigate(tab, b.url); await waitLoad(tab, b.timeout); });
+        await mgr.agentWake.step(win, tab, async () => { win.navigate(tab, b.url); await waitLoad(tab, b.timeout); }, { frames: b.frames === true });
         return send(res, 200, await describe(mgr, win, tab));
       case 'back':
-        await mgr.agentWake.step(win, tab, async () => { tab.wc?.navigationHistory.goBack(); await waitLoad(tab, b.timeout); });
+        await mgr.agentWake.step(win, tab, async () => { tab.wc?.navigationHistory.goBack(); await waitLoad(tab, b.timeout); }, { frames: b.frames === true });
         return send(res, 200, await describe(mgr, win, tab));
       case 'forward':
-        await mgr.agentWake.step(win, tab, async () => { tab.wc?.navigationHistory.goForward(); await waitLoad(tab, b.timeout); });
+        await mgr.agentWake.step(win, tab, async () => { tab.wc?.navigationHistory.goForward(); await waitLoad(tab, b.timeout); }, { frames: b.frames === true });
         return send(res, 200, await describe(mgr, win, tab));
       case 'reload':
-        await mgr.agentWake.step(win, tab, async () => { win.reload(tab); await waitLoad(tab, b.timeout); });
+        await mgr.agentWake.step(win, tab, async () => { win.reload(tab); await waitLoad(tab, b.timeout); }, { frames: b.frames === true });
         return send(res, 200, await describe(mgr, win, tab));
       case 'close':
         // agents close for real, pinned or not. by:'agent' is the tab group hook: an agent
@@ -192,19 +193,36 @@ async function handle(mgr, req, res, token) {
         win.closeTab(tab.id, { force: true, by: 'agent' });
         return send(res, 200, { ok: true });
       case 'eval': {
-        const result = await mgr.agentWake.step(win, tab, () => tab.wc.executeJavaScript(String(b.expression ?? ''), true));
+        const result = await mgr.agentWake.step(win, tab, () => tab.wc.executeJavaScript(String(b.expression ?? ''), true), { frames: b.frames === true });
         return send(res, 200, { result: result === undefined ? null : result });
       }
       case 'cdp': {
         const timeout = Number(b.timeout) > 0 ? Number(b.timeout) : CDP_TIMEOUT_MS;
         tab.agentCdp = true; // the agent owns this debugger session now: keep it attached
-        const result = await mgr.agentWake.step(win, tab, () => {
+        const method = String(b.method);
+        const result = await mgr.agentWake.step(win, tab, async () => {
           const dbg = tab.wc.debugger;
           if (!dbg.isAttached()) dbg.attach('1.3');
-          return withTimeout(dbg.sendCommand(String(b.method), b.params || {}), timeout, `cdp ${b.method}`);
-        });
+          const sent = dbg.sendCommand(method, b.params || {});
+          // a hidden view only draws when something asks for a frame: on a static
+          // page Page.captureScreenshot waits forever. a stayHidden capturePage
+          // makes the compositor draw without showing or unthrottling the page.
+          const stop = { done: false };
+          Promise.resolve(sent).then(() => { stop.done = true; }, () => { stop.done = true; });
+          const pump = method === 'Page.captureScreenshot' && !win.visibleIds().includes(tab.id) ? pumpFrames(tab.wc, stop) : null;
+          try {
+            const r = await withTimeout(sent, timeout, `cdp ${method}`);
+            mgr.agentWake.noteCdp(tab, method, b.params);
+            return r;
+          } finally {
+            stop.done = true;
+            await pump?.catch(() => {});
+          }
+        }, { frames: b.frames === true });
         return send(res, 200, { result });
       }
+      case 'frames':
+        return send(res, 200, { id: tab.id, ...(await mgr.agentWake.frames(win, tab, { on: b.on !== false, ms: b.ms })) });
       case 'devtools':
         win.toggleDevtools(tab);
         return send(res, 200, { ok: true, open: !!tab.devtools });
@@ -327,6 +345,16 @@ async function targetIdFor(tab) {
   return tab.targetId;
 }
 
+// keep the compositor of a hidden view drawing until stop.done (stayHidden
+// captures, one at a time, each asks for one frame)
+async function pumpFrames(wc, stop) {
+  await new Promise((r) => setTimeout(r, 50));
+  while (!stop.done && !wc.isDestroyed()) {
+    await withTimeout(wc.capturePage(undefined, { stayHidden: true }), 2000, 'frame').catch(() => {});
+    if (!stop.done) await new Promise((r) => setTimeout(r, 100));
+  }
+}
+
 async function describe(mgr, win, tab) {
   const targetId = await targetIdFor(tab);
   const cdp = mgr.cdpPort;
@@ -343,6 +371,7 @@ async function describe(mgr, win, tab) {
     groupId: tab.groupId ?? null,
     loading: tab.loading,
     loaded: !!tab.wc,
+    frames: mgr.agentWake?.describe(win, tab).frames ?? false,
     targetId,
     webSocketDebuggerUrl: targetId && cdp ? `ws://127.0.0.1:${cdp}/devtools/page/${targetId}` : null,
   };

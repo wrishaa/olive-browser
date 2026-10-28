@@ -38,6 +38,9 @@ function fakeTab(id, dbgOpts) {
     focus() { this.focusCalls++; },
     executeJavaScript: async (expr) => `ran:${expr}`,
     capturePage: async (rect, opts) => { tab.captureOpts.push(opts); return { isEmpty: () => false, toPNG: () => Buffer.from('PNG') }; },
+    frameSubs: 0, frameSubOn: false,
+    beginFrameSubscription(onlyDirty, cb) { this.frameSubs++; this.frameSubOn = true; this.frameSubArgs = [onlyDirty, typeof cb]; },
+    endFrameSubscription() { this.frameSubOn = false; },
     on() {}, off() {},
     navigationHistory: { goBack() {}, goForward() {} },
   };
@@ -209,6 +212,132 @@ test('selecting the tab for real drops the overrides at once', async () => {
   await wake.sleep(tab);
   assert.equal(wake.isAwake(tab), false);
   assert.equal(tab.wc.debugger.attached, false);
+});
+
+test('hidden tab: no full frame rate by default, frames:true only for that step', async (t) => {
+  const { mgr, t2 } = fakeMgr();
+  const call = await api(t, mgr);
+  await call('POST', '/tabs/2/eval', { expression: '1' });
+  assert.equal(t2.wc.frameSubs, 0, 'plain step: timers only, no frame subscription');
+  const r = await call('POST', '/tabs/2/eval', { expression: 'watch', frames: true });
+  assert.equal(r.body.result, 'ran:watch');
+  assert.equal(t2.wc.frameSubs, 1);
+  assert.deepEqual(t2.wc.frameSubArgs, [true, 'function']);
+  assert.equal(t2.wc.frameSubOn, false, 'frames end with the step');
+  assert.ok(mgr.agentWake.isAwake(t2), 'focus still lingers briefly');
+  await wait(80);
+  assert.equal(mgr.agentWake.isAwake(t2), false);
+  for (const action of ['navigate', 'reload']) {
+    await call('POST', `/tabs/2/${action}`, { url: 'https://example.com/', frames: true });
+  }
+  assert.equal(t2.wc.frameSubs, 3, 'navigate/reload take frames:true too');
+});
+
+test('frames:true during a step is on while the step runs', async () => {
+  const wake = new AgentWake({ lingerMs: 10 });
+  const tab = fakeTab(5);
+  const win = fakeWindow(1, [fakeTab(1), tab], 1);
+  let during;
+  await wake.step(win, tab, async () => { during = tab.wc.frameSubOn; }, { frames: true });
+  assert.equal(during, true);
+  assert.equal(tab.wc.frameSubOn, false);
+});
+
+test('POST /tabs/:id/frames keeps a window of full frame rate, then turns itself off', async (t) => {
+  const { mgr, t2 } = fakeMgr();
+  const call = await api(t, mgr);
+  let r = await call('POST', '/tabs/2/frames', { ms: 120 });
+  assert.equal(r.status, 200);
+  assert.equal(r.body.frames, true);
+  assert.ok(r.body.framesUntil);
+  assert.equal(t2.wc.frameSubOn, true);
+  await call('POST', '/tabs/2/eval', { expression: '1' });
+  assert.equal(t2.wc.frameSubOn, true, 'a plain step inside the window keeps frames on');
+  r = await call('GET', '/tabs/2');
+  assert.equal(r.body.frames, true);
+  await wait(60);
+  assert.equal(t2.wc.frameSubOn, true);
+  await wait(150);
+  assert.equal(t2.wc.frameSubOn, false, 'window over: frames off');
+  await wait(60);
+  assert.equal(mgr.agentWake.isAwake(t2), false, 'and back to background throttling');
+  r = await call('GET', '/tabs/2');
+  assert.equal(r.body.frames, false);
+});
+
+test('POST /tabs/:id/frames {on:false} ends it now; ms is capped; visible tab is a no-op', async (t) => {
+  const { mgr, t1, t2 } = fakeMgr();
+  const call = await api(t, mgr);
+  let r = await call('POST', '/tabs/2/frames', { ms: 10 * 60 * 1000 * 5 });
+  assert.ok(Date.parse(r.body.framesUntil) - Date.now() <= 10 * 60 * 1000 + 50, 'capped at 10 min');
+  r = await call('POST', '/tabs/2/frames', { on: false });
+  assert.equal(r.body.frames, false);
+  assert.equal(t2.wc.frameSubOn, false);
+  assert.equal(mgr.agentWake.isAwake(t2), false);
+  r = await call('POST', '/tabs/1/frames', {});
+  assert.equal(r.body.frames, true, 'on screen already draws every frame');
+  assert.equal(t1.wc.frameSubs, 0);
+  assert.equal(t1.wc.debugger.sent.length, 0);
+});
+
+test('selecting the tab for real ends a frames window', async () => {
+  const wake = new AgentWake({ lingerMs: 10 });
+  const tab = fakeTab(5);
+  const win = fakeWindow(1, [fakeTab(1), tab], 1);
+  await wake.frames(win, tab, { ms: 10000 });
+  assert.equal(tab.wc.frameSubOn, true);
+  await wake.sleep(tab);
+  assert.equal(tab.wc.frameSubOn, false);
+  assert.equal(wake.isAwake(tab), false);
+});
+
+test("/cdp keeps the agent's own size override instead of ours, also between steps", async (t) => {
+  const { mgr, t2 } = fakeMgr();
+  const call = await api(t, mgr);
+  const vp = { width: 1440, height: 810, deviceScaleFactor: 2, mobile: false };
+  await call('POST', '/tabs/2/cdp', { method: 'Emulation.setDeviceMetricsOverride', params: vp });
+  await wait(80);
+  const dbg = t2.wc.debugger;
+  assert.equal(dbg.sent.filter(([m]) => m === 'Emulation.clearDeviceMetricsOverride').length, 0, 'sleep leaves the agent override alone');
+  const n = dbg.sent.length;
+  await call('POST', '/tabs/2/eval', { expression: '1' });
+  assert.equal(dbg.sent.slice(n).filter(([m]) => m === 'Emulation.setDeviceMetricsOverride').length, 0, 'next step does not replace it with the pane size');
+  await call('POST', '/tabs/2/cdp', { method: 'Emulation.clearDeviceMetricsOverride' });
+  await wait(80);
+  const m = dbg.sent.length;
+  await call('POST', '/tabs/2/eval', { expression: '1' });
+  assert.deepEqual(dbg.sent.slice(m).find(([x]) => x === 'Emulation.setDeviceMetricsOverride')?.[1], { width: 1000, height: 700, deviceScaleFactor: 0, mobile: false }, 'cleared: pane size again');
+});
+
+test('/cdp Page.captureScreenshot on a hidden tab pumps stayHidden frames until it returns, and stops on timeout', async (t) => {
+  const { mgr, t2 } = fakeMgr();
+  let resolveShot;
+  const dbg = fakeDebugger();
+  const orig = dbg.sendCommand;
+  dbg.sendCommand = (method, params) => (method === 'Page.captureScreenshot' ? (dbg.sent.push([method, params]), new Promise((r) => { resolveShot = r; })) : orig(method, params));
+  t2.wc.debugger = dbg;
+  const call = await api(t, mgr);
+  const p = call('POST', '/tabs/2/cdp', { method: 'Page.captureScreenshot', params: { format: 'png' } });
+  await wait(400);
+  assert.ok(t2.captureOpts.length >= 2, 'pumped frames while waiting');
+  assert.ok(t2.captureOpts.every((o) => o.stayHidden === true));
+  resolveShot({ data: 'AAAA' });
+  const r = await p;
+  assert.equal(r.body.result.data, 'AAAA');
+  const k = t2.captureOpts.length;
+  await wait(300);
+  assert.equal(t2.captureOpts.length, k, 'pump stopped');
+  // a hang: pump stops with the timeout
+  t2.wc.debugger = fakeDebugger({ hang: new Set(['Page.captureScreenshot']) });
+  const r2 = await call('POST', '/tabs/2/cdp', { method: 'Page.captureScreenshot', timeout: 300 });
+  assert.equal(r2.status, 504);
+  const k2 = t2.captureOpts.length;
+  await wait(300);
+  assert.equal(t2.captureOpts.length, k2, 'no captures after the timeout');
+  // visible tab: no pump
+  const { t1 } = { t1: mgr.findTab(1).tab };
+  await call('POST', '/tabs/1/cdp', { method: 'Page.captureScreenshot' });
+  assert.equal(t1.captureOpts.length, 0);
 });
 
 test('withTimeout passes values through and rejects late ones', async () => {
