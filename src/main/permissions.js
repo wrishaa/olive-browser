@@ -3,10 +3,22 @@ const { AppPanel } = require('./app-panel');
 const { WebContentsView, ipcMain, systemPreferences, desktopCapturer, webContents, shell, app } = require('electron');
 const path = require('path');
 const labels = { media: 'camera / microphone', geolocation: 'your location', notifications: 'notifications', midiSysex: 'MIDI devices', 'clipboard-read': 'read your clipboard', 'clipboard-sanitized-write': 'write to your clipboard', 'display-capture': 'screen sharing', openExternal: 'open another app', 'idle-detection': 'idle detection', hid: 'HID devices', serial: 'serial devices', usb: 'USB devices', 'storage-access': 'cross-site storage', 'top-level-storage-access': 'cross-site storage', 'speaker-selection': 'audio output devices', keyboardLock: 'keyboard lock', 'window-management': 'window management', 'local-network-access': 'your local network' };
+// navigator.permissions.query names a page can see -> olive's stored per-origin keys.
+// Electron's check handler is boolean only, and false makes chromium report 'denied'
+// (so Meet & co. say "allow it in your browser settings" and never ask). The check stays
+// false until the user decides (no device labels / ids leak through enumerateDevices);
+// src/ui/site-permissions-preload.js shows these names to the page as 'prompt' instead.
+const queryKeys = { camera:'media:video', microphone:'media:audio', notifications:'notifications', push:'notifications', geolocation:'geolocation', 'clipboard-read':'clipboard-read', 'display-capture':'display-capture', 'speaker-selection':'speaker-selection', 'local-network-access':'local-network-access', 'window-management':'window-management', 'idle-detection':'idle-detection', 'storage-access':'storage-access', 'top-level-storage-access':'top-level-storage-access' };
 const settingsPermissions = [['media:audio','Microphone'],['media:video','Camera'],['display-capture','Screen sharing'],['notifications','Notifications'],['geolocation','Location'],['speaker-selection','Audio output devices'],['clipboard-read','Clipboard'],['local-network-access','Local network']];
 class Permissions {
   constructor(mgr) {
-    this.mgr = mgr; this.pending = new Map(); this.views = new Map(); this.seq = 0; this.privateChoices = {}; this.once = new WeakMap(); this.settings = new Map(); this.pickers = new Map(); this.osRequests = new Map(); this.screenSetupRequested = false;
+    this.mgr = mgr; this.pending = new Map(); this.views = new Map(); this.seq = 0; this.privateChoices = {}; this.once = new WeakMap(); this.settings = new Map(); this.pickers = new Map(); this.osRequests = new Map(); this.screenSetupRequested = false; this.sessionChoices = new WeakMap();
+    // Page frames (site-permissions preload) ask for their own origin's state; the origin comes
+    // from the frame main knows, never from the renderer.
+    ipcMain.on('olive:site-permission-state', e => {
+      let state = null; try { const choices = this.sessionChoices.get(e.sender.session); if (choices) state = this.siteState(choices, e.sender, e.senderFrame?.origin); } catch {}
+      e.returnValue = state;
+    });
     ipcMain.on('olive:permission', (e, id, allow, remember = true) => {
       const p = this.pending.get(id);
       if (p && this.views.get(p.win)?.view.webContents === e.sender && typeof allow === 'boolean' && typeof remember === 'boolean') this.finish(p, allow, remember);
@@ -20,6 +32,7 @@ class Permissions {
         this.once.get(entry.wc)?.delete(key);
         for (const p of [...this.pending.values()]) if (p.wc === entry.wc && p.keys.includes(key)) this.finish(p, false, false);
         if (!entry.win.isPrivate) this.mgr.perms.save();
+        this.broadcast();
       }
       if (action === 'system' && ['microphone','camera','screen'].includes(payload.kind)) {
         if (payload.kind === 'screen') {
@@ -59,6 +72,25 @@ class Permissions {
     }
     return this.once.get(wc);
   }
+  // What the page should see per query name: 'granted' (stored allow or allow once in this
+  // document, same rule as the check handler), 'denied' (stored block) or 'prompt'.
+  siteState(choices, wc, rawOrigin) {
+    const origin = this.origin(rawOrigin); if (!origin) return null;
+    const once = this.grants(wc), out = {};
+    for (const [name, perm] of Object.entries(queryKeys)) { const k = `${origin}|${perm}`; out[name] = choices[k] === true || (choices[k] !== false && once.has(k)) ? 'granted' : choices[k] === false ? 'denied' : 'prompt'; }
+    return out;
+  }
+  // Push fresh state to every page frame of olive's sessions (choices are per origin, so other
+  // tabs on the same site update too). Fires PermissionStatus change events in the page.
+  broadcast() {
+    let all = []; try { all = webContents.getAllWebContents?.() || []; } catch {}
+    for (const wc of all) {
+      try {
+        if (wc.isDestroyed()) continue; const choices = this.sessionChoices.get(wc.session); if (!choices) continue;
+        for (const frame of wc.mainFrame?.framesInSubtree || []) { const state = this.siteState(choices, wc, frame.origin); if (state) frame.send('olive:site-permission-state', state); }
+      } catch {}
+    }
+  }
   status(kind) { try { return process.platform === 'darwin' ? systemPreferences.getMediaAccessStatus(kind) : 'not-applicable'; } catch { return 'unknown'; } }
   async osMedia(types) {
     for (const type of types) {
@@ -75,6 +107,7 @@ class Permissions {
   }
   install(ses, persist) {
     const choices = persist ? this.mgr.perms.data : this.privateChoices;
+    this.sessionChoices.set(ses, choices);
     ses.setPermissionCheckHandler((wc, permission, rawOrigin, details = {}) => {
       const origin = this.origin(details.securityOrigin || rawOrigin); if (!origin) return false;
       if (permission === 'fullscreen' || permission === 'pointerLock') return true;
@@ -125,6 +158,7 @@ class Permissions {
       if (!granted) {
         // Site choice is still Allow; the OS denial is separate and resettable in macOS.
         if (remember) { for (const key of p.keys) p.choices[key] = true; if (p.persist) this.mgr.perms.save(); }
+        // the site may already read 'granted' now (stored allow); the OS still says no.
         allow = false; remember = false;
         p.win.send('toast', 'macOS blocked microphone/camera. Open Site settings → macOS settings, allow Olive, then reload.');
         this.showSettings(p.win, p.wc);
@@ -136,6 +170,7 @@ class Permissions {
     else if (allow) for (const key of p.keys) this.grants(p.wc).add(key);
     this.mgr.ledger?.record('permission', { origin:p.origin, permission:p.permission, allowed:!!allow, remember:!!remember, private:p.win.isPrivate });
     try { p.callback(allow); } catch {}
+    this.broadcast();
     this.refresh(p.win);
   }
   async registerScreenAccess() {
@@ -190,7 +225,7 @@ class Permissions {
     for (const p of [...this.pending.values()]) if (p.origin === origin) this.finish(p, false, false);
     const choices = win.isPrivate ? this.privateChoices : this.mgr.perms.data;
     for (const k of Object.keys(choices)) if (k.startsWith(origin + '|')) delete choices[k];
-    this.once.get(tab?.wc)?.clear(); if (!win.isPrivate) this.mgr.perms.save(); win.send('toast', `Permissions reset for ${origin}. Reload the page to ask again.`);
+    this.once.get(tab?.wc)?.clear(); if (!win.isPrivate) this.mgr.perms.save(); this.broadcast(); win.send('toast', `Permissions reset for ${origin}. Reload the page to ask again.`);
   }
   refresh(win) {
     if (win.destroyed || win.win.isDestroyed()) return;
@@ -215,4 +250,4 @@ class Permissions {
     e.view.setBounds({ x: 12, y: Math.max(0, height - h - 12), width: Math.min(390, width - 24), height: h }); e.view.setVisible(true); win.win.contentView.addChildView(e.view);
   }
 }
-module.exports = { Permissions };
+module.exports = { Permissions, queryKeys };
