@@ -14,7 +14,14 @@ import { fileURLToPath } from 'node:url';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const pkg = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'));
 const release = process.argv.includes('--release') || process.env.OLIVE_RELEASE === '1';
-const run = (cmd, args, opts = {}) => execFileSync(cmd, args, { stdio: 'inherit', ...opts });
+// codesign --timestamp depends on apple's timestamp server, which flakes ("The timestamp service is not available"): retry it.
+const run = (cmd, args, opts = {}) => {
+  const tries = cmd === '/usr/bin/codesign' && args.includes('--timestamp') ? 4 : 1;
+  for (let n = 1; ; n++) {
+    try { return execFileSync(cmd, args, { stdio: 'inherit', ...opts }); }
+    catch (error) { if (n >= tries) throw error; console.warn(`retrying ${path.basename(cmd)} (${n}/${tries - 1})`); execFileSync('/bin/sleep', [String(5 * n)]); }
+  }
+};
 
 // Use a certificate-backed identity, not an ad-hoc cdhash requirement that changes
 // with app.asar. Do not silently downgrade an installed app's privacy identity.
