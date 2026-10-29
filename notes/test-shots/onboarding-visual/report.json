@@ -121,8 +121,8 @@
             "id": "row-description",
             "text": "Tabs, history, imports and site choices are stored locally. No Olive account or cloud.",
             "reasons": [],
-            "contrast": 7.4723690065166055,
-            "foreground": "rgb(76, 88, 77)",
+            "contrast": 9.163038365890072,
+            "foreground": "rgb(63, 75, 64)",
             "background": [
               255,
               255,
@@ -133,7 +133,7 @@
           },
           {
             "id": "blocker-label",
-            "text": "Ads are blocked by default",
+            "text": "Ad blocking",
             "reasons": [],
             "contrast": 14.965646292385909,
             "foreground": "rgb(29, 42, 31)",
@@ -147,10 +147,10 @@
           },
           {
             "id": "blocker-description",
-            "text": "uBO Lite basic network blocking is on. Cosmetic filtering and per-site modes aren’t supported yet; turn blocking off from the shield button.",
+            "text": "uBO Lite is turned off in this profile. Turn it on from the shield button.",
             "reasons": [],
-            "contrast": 7.4723690065166055,
-            "foreground": "rgb(76, 88, 77)",
+            "contrast": 9.163038365890072,
+            "foreground": "rgb(63, 75, 64)",
             "background": [
               255,
               255,
@@ -177,8 +177,8 @@
             "id": "row-description",
             "text": "Olive asks macOS for the microphone, camera or screen only when you choose to set them up.",
             "reasons": [],
-            "contrast": 7.4723690065166055,
-            "foreground": "rgb(76, 88, 77)",
+            "contrast": 9.163038365890072,
+            "foreground": "rgb(63, 75, 64)",
             "background": [
               255,
               255,
@@ -191,8 +191,8 @@
             "id": "welcome-footnote",
             "text": "Sites and your search engine still see what you send them.",
             "reasons": [],
-            "contrast": 7.4723690065166055,
-            "foreground": "rgb(76, 88, 77)",
+            "contrast": 9.163038365890072,
+            "foreground": "rgb(63, 75, 64)",
             "background": [
               255,
               255,
@@ -230,7 +230,7 @@
             "disabled": false
           }
         ],
-        "uiText": "Welcome to Olive\n\nOlive keeps your browsing on this Mac. A few optional steps and you’re set.\n\nStays on this Mac\nTabs, history, imports and site choices are stored locally. No Olive account or cloud.\nAds are blocked by default\nuBO Lite basic network blocking is on. Cosmetic filtering and per-site modes aren’t supported yet; turn blocking off from the shield button.\nPermissions only when you need them\nOlive asks macOS for the microphone, camera or screen only when you choose to set them up.\n\nSites and your search engine still see what you send them.\n\nSet Up Later\nContinue",
+        "uiText": "Welcome to Olive\n\nOlive keeps your browsing on this Mac. A few optional steps and you’re set.\n\nStays on this Mac\nTabs, history, imports and site choices are stored locally. No Olive account or cloud.\nAd blocking\nuBO Lite is turned off in this profile. Turn it on from the shield button.\nPermissions only when you need them\nOlive asks macOS for the microphone, camera or screen only when you choose to set them up.\n\nSites and your search engine still see what you send them.\n\nSet Up Later\nContinue",
         "viewport": {
           "width": 1020,
           "height": 784
@@ -585,8 +585,8 @@
             "id": "mic-status",
             "text": "Not requested",
             "reasons": [],
-            "contrast": 7.4723690065166055,
-            "foreground": "rgb(76, 88, 77)",
+            "contrast": 9.163038365890072,
+            "foreground": "rgb(63, 75, 64)",
             "background": [
               255,
               255,
@@ -613,8 +613,8 @@
             "id": "camera-status",
             "text": "Not requested",
             "reasons": [],
-            "contrast": 7.4723690065166055,
-            "foreground": "rgb(76, 88, 77)",
+            "contrast": 9.163038365890072,
+            "foreground": "rgb(63, 75, 64)",
             "background": [
               255,
               255,
@@ -627,8 +627,8 @@
             "id": "calls-footnote",
             "text": "Next, macOS asks about your microphone, then your camera. Each site still asks you separately.",
             "reasons": [],
-            "contrast": 7.4723690065166055,
-            "foreground": "rgb(76, 88, 77)",
+            "contrast": 9.163038365890072,
+            "foreground": "rgb(63, 75, 64)",
             "background": [
               255,
               255,
@@ -1026,8 +1026,8 @@
             "id": "screen-status",
             "text": "Not allowed",
             "reasons": [],
-            "contrast": 7.4723690065166055,
-            "foreground": "rgb(76, 88, 77)",
+            "contrast": 9.163038365890072,
+            "foreground": "rgb(63, 75, 64)",
             "background": [
               255,
               255,
@@ -1040,8 +1040,8 @@
             "id": "screen-footnote",
             "text": "Next, macOS opens System Settings. Turn on Olive under Screen & System Audio Recording, then come back here. Olive has to quit and reopen once.",
             "reasons": [],
-            "contrast": 7.4723690065166055,
-            "foreground": "rgb(76, 88, 77)",
+            "contrast": 9.163038365890072,
+            "foreground": "rgb(63, 75, 64)",
             "background": [
               255,
               255,
@@ -1080,514 +1080,6 @@
           }
         ],
         "uiText": "Screen Sharing\n\nShare a window or your whole screen in calls. You choose what to share each time a site asks.\n\nScreen & System Audio Recording\nNot allowed\n\nNext, macOS opens System Settings. Turn on Olive under Screen & System Audio Recording, then come back here. Olive has to quit and reopen once.\n\nSkip\nContinue",
-        "viewport": {
-          "width": 1020,
-          "height": 784
-        },
-        "footnoteVisible": true,
-        "contentFooterOverlap": false,
-        "scroll": false
-      },
-      "sidebar": {
-        "interactive": [
-          {
-            "id": "btn-sidebar",
-            "rect": {
-              "x": 126,
-              "y": 9,
-              "width": 28,
-              "height": 28
-            },
-            "reasons": [],
-            "pointerEvents": "auto",
-            "disabled": false,
-            "styles": null
-          },
-          {
-            "id": "btn-back",
-            "rect": {
-              "x": 156,
-              "y": 9,
-              "width": 28,
-              "height": 28
-            },
-            "reasons": [],
-            "pointerEvents": "auto",
-            "disabled": true,
-            "styles": null
-          },
-          {
-            "id": "btn-forward",
-            "rect": {
-              "x": 186,
-              "y": 9,
-              "width": 28,
-              "height": 28
-            },
-            "reasons": [],
-            "pointerEvents": "auto",
-            "disabled": true,
-            "styles": null
-          },
-          {
-            "id": "btn-reload",
-            "rect": {
-              "x": 216,
-              "y": 9,
-              "width": 28,
-              "height": 28
-            },
-            "reasons": [],
-            "pointerEvents": "auto",
-            "disabled": false,
-            "styles": null
-          },
-          {
-            "id": "btn-site-settings",
-            "rect": {
-              "x": 21,
-              "y": 52,
-              "width": 24,
-              "height": 24
-            },
-            "reasons": [],
-            "pointerEvents": "auto",
-            "disabled": false,
-            "styles": null
-          },
-          {
-            "id": "setup-row",
-            "rect": {
-              "x": 10,
-              "y": 92,
-              "width": 234,
-              "height": 36
-            },
-            "reasons": [],
-            "pointerEvents": "auto",
-            "styles": null
-          },
-          {
-            "id": "newtab",
-            "rect": {
-              "x": 10,
-              "y": 132,
-              "width": 234,
-              "height": 36
-            },
-            "reasons": [],
-            "pointerEvents": "auto",
-            "disabled": false,
-            "styles": null
-          },
-          {
-            "id": "btn-ublock",
-            "rect": {
-              "x": 10,
-              "y": 723,
-              "width": 234,
-              "height": 30
-            },
-            "reasons": [],
-            "pointerEvents": "auto",
-            "disabled": false,
-            "styles": null
-          },
-          {
-            "id": "btn-ledger",
-            "rect": {
-              "x": 10,
-              "y": 767.546875,
-              "width": 53.1484375,
-              "height": 16.8984375
-            },
-            "reasons": [],
-            "pointerEvents": "auto",
-            "disabled": false,
-            "styles": null
-          },
-          {
-            "id": "btn-devtools",
-            "rect": {
-              "x": 156,
-              "y": 762,
-              "width": 28,
-              "height": 28
-            },
-            "reasons": [],
-            "pointerEvents": "auto",
-            "disabled": false,
-            "styles": null
-          },
-          {
-            "id": "btn-split",
-            "rect": {
-              "x": 186,
-              "y": 762,
-              "width": 28,
-              "height": 28
-            },
-            "reasons": [],
-            "pointerEvents": "auto",
-            "disabled": false,
-            "styles": null
-          },
-          {
-            "id": "btn-new",
-            "rect": {
-              "x": 216,
-              "y": 762,
-              "width": 28,
-              "height": 28
-            },
-            "reasons": [],
-            "pointerEvents": "auto",
-            "disabled": false,
-            "styles": null
-          }
-        ],
-        "text": [
-          {
-            "id": "host placeholder",
-            "text": "Search or enter URL",
-            "reasons": []
-          },
-          {
-            "id": "title",
-            "text": "Set Up Olive",
-            "reasons": []
-          },
-          {
-            "id": "setup-left",
-            "text": "2 left",
-            "reasons": []
-          },
-          {
-            "id": "plus",
-            "text": "+",
-            "reasons": []
-          },
-          {
-            "id": "title",
-            "text": "New Tab",
-            "reasons": []
-          },
-          {
-            "id": "fav letter",
-            "text": "F",
-            "reasons": []
-          },
-          {
-            "id": "title",
-            "text": "Fixture tab",
-            "reasons": []
-          },
-          {
-            "id": "btn-ublock",
-            "text": "uBO Lite · on",
-            "reasons": []
-          },
-          {
-            "id": "btn-ledger",
-            "text": "Activity",
-            "reasons": []
-          }
-        ],
-        "uiText": "Search or enter URL\nSet Up Olive\n2 left\n+\nNew Tab\nF\nFixture tab\nuBO Lite · on\nActivity",
-        "viewport": {
-          "width": 1280,
-          "height": 800
-        },
-        "footnoteVisible": true,
-        "contentFooterOverlap": false,
-        "scroll": false
-      },
-      "screenshots": [
-        "1280x800-light-screen-page.png",
-        "1280x800-light-screen-chrome.png"
-      ]
-    },
-    {
-      "label": "1280x800-light-import",
-      "state": {
-        "visibleWindows": [
-          {
-            "title": "Olive",
-            "bounds": {
-              "x": 160,
-              "y": 30,
-              "width": 1280,
-              "height": 800
-            }
-          }
-        ],
-        "expected": {
-          "x": 252,
-          "y": 8,
-          "width": 1020,
-          "height": 784
-        },
-        "actual": {
-          "x": 252,
-          "y": 8,
-          "width": 1020,
-          "height": 784
-        },
-        "pane": {
-          "x": 252,
-          "y": 8,
-          "width": 1020,
-          "height": 784
-        },
-        "embedded": true,
-        "setupOnTop": true,
-        "sidebarWidth": 252,
-        "frame": {
-          "width": 1280,
-          "height": 800
-        },
-        "hiddenTabs": true,
-        "normal": true,
-        "overlay": null
-      },
-      "page": {
-        "interactive": [
-          {
-            "id": "back",
-            "rect": {
-              "x": 14,
-              "y": 14,
-              "width": 28,
-              "height": 28
-            },
-            "reasons": [],
-            "pointerEvents": "auto",
-            "disabled": false,
-            "styles": null
-          },
-          {
-            "id": "<input type=\"checkbox\" aria-label=\"Google Chrome · Personal\">",
-            "rect": {
-              "x": 696,
-              "y": 262.1171875,
-              "width": 14,
-              "height": 14
-            },
-            "reasons": [],
-            "pointerEvents": "auto",
-            "disabled": false,
-            "styles": null
-          },
-          {
-            "id": "<input type=\"checkbox\" aria-label=\"Google Chrome · Work\">",
-            "rect": {
-              "x": 696,
-              "y": 298.1171875,
-              "width": 14,
-              "height": 14
-            },
-            "reasons": [],
-            "pointerEvents": "auto",
-            "disabled": false,
-            "styles": null
-          },
-          {
-            "id": "<input type=\"checkbox\" aria-label=\"Arc · Personal\">",
-            "rect": {
-              "x": 696,
-              "y": 334.1171875,
-              "width": 14,
-              "height": 14
-            },
-            "reasons": [],
-            "pointerEvents": "auto",
-            "disabled": false,
-            "styles": null
-          },
-          {
-            "id": "later",
-            "rect": {
-              "x": 812,
-              "y": 736,
-              "width": 88,
-              "height": 28
-            },
-            "reasons": [],
-            "pointerEvents": "auto",
-            "disabled": false,
-            "styles": null
-          },
-          {
-            "id": "next",
-            "rect": {
-              "x": 908,
-              "y": 736,
-              "width": 88,
-              "height": 28
-            },
-            "reasons": [],
-            "pointerEvents": "auto",
-            "disabled": true,
-            "styles": null
-          }
-        ],
-        "text": [
-          {
-            "id": "import-title",
-            "text": "Import from Another Browser",
-            "reasons": [],
-            "contrast": 14.965646292385909,
-            "foreground": "rgb(29, 42, 31)",
-            "background": [
-              255,
-              255,
-              255,
-              1
-            ],
-            "disabled": false
-          },
-          {
-            "id": "intro",
-            "text": "Copy signed-in sessions so you can start where you left off.",
-            "reasons": [],
-            "contrast": 14.965646292385909,
-            "foreground": "rgb(29, 42, 31)",
-            "background": [
-              255,
-              255,
-              255,
-              1
-            ],
-            "disabled": false
-          },
-          {
-            "id": "source-title",
-            "text": "Google Chrome",
-            "reasons": [],
-            "contrast": 14.965646292385909,
-            "foreground": "rgb(29, 42, 31)",
-            "background": [
-              255,
-              255,
-              255,
-              1
-            ],
-            "disabled": false
-          },
-          {
-            "id": "source-detail",
-            "text": "Personal",
-            "reasons": [],
-            "contrast": 7.4723690065166055,
-            "foreground": "rgb(76, 88, 77)",
-            "background": [
-              255,
-              255,
-              255,
-              1
-            ],
-            "disabled": false
-          },
-          {
-            "id": "source-title",
-            "text": "Google Chrome",
-            "reasons": [],
-            "contrast": 14.965646292385909,
-            "foreground": "rgb(29, 42, 31)",
-            "background": [
-              255,
-              255,
-              255,
-              1
-            ],
-            "disabled": false
-          },
-          {
-            "id": "source-detail",
-            "text": "Work",
-            "reasons": [],
-            "contrast": 7.4723690065166055,
-            "foreground": "rgb(76, 88, 77)",
-            "background": [
-              255,
-              255,
-              255,
-              1
-            ],
-            "disabled": false
-          },
-          {
-            "id": "source-title",
-            "text": "Arc",
-            "reasons": [],
-            "contrast": 14.965646292385909,
-            "foreground": "rgb(29, 42, 31)",
-            "background": [
-              255,
-              255,
-              255,
-              1
-            ],
-            "disabled": false
-          },
-          {
-            "id": "source-detail",
-            "text": "Personal",
-            "reasons": [],
-            "contrast": 7.4723690065166055,
-            "foreground": "rgb(76, 88, 77)",
-            "background": [
-              255,
-              255,
-              255,
-              1
-            ],
-            "disabled": false
-          },
-          {
-            "id": "import-footnote",
-            "text": "Copies cookies and signed-in sessions only, not passwords, history or bookmarks. macOS may ask for your login password to unlock the browser’s Keychain item; Olive uses it on this Mac only. Your other browser isn’t changed. Existing Olive cookies are kept. Some sites will still ask you to sign in again.",
-            "reasons": [],
-            "contrast": 7.4723690065166055,
-            "foreground": "rgb(76, 88, 77)",
-            "background": [
-              255,
-              255,
-              255,
-              1
-            ],
-            "disabled": false
-          },
-          {
-            "id": "later",
-            "text": "Skip",
-            "reasons": [],
-            "contrast": 14.965646292385909,
-            "foreground": "rgb(29, 42, 31)",
-            "background": [
-              255,
-              255,
-              255,
-              1
-            ],
-            "disabled": false
-          },
-          {
-            "id": "next",
-            "text": "Import",
-            "reasons": [],
-            "contrast": 7.4723690065166055,
-            "foreground": "rgb(76, 88, 77)",
-            "background": [
-              255,
-              255,
-              255,
-              1
-            ],
-            "disabled": true
-          }
-        ],
-        "uiText": "Import from Another Browser\n\nCopy signed-in sessions so you can start where you left off.\n\nGoogle ChromePersonal\nGoogle ChromeWork\nArcPersonal\n\nCopies cookies and signed-in sessions only, not passwords, history or bookmarks. macOS may ask for your login password to unlock the browser’s Keychain item; Olive uses it on this Mac only. Your other browser isn’t changed. Existing Olive cookies are kept. Some sites will still ask you to sign in again.\n\nSkip\nImport",
         "viewport": {
           "width": 1020,
           "height": 784
@@ -1811,6 +1303,514 @@
         "scroll": false
       },
       "screenshots": [
+        "1280x800-light-screen-page.png",
+        "1280x800-light-screen-chrome.png"
+      ]
+    },
+    {
+      "label": "1280x800-light-import",
+      "state": {
+        "visibleWindows": [
+          {
+            "title": "Olive",
+            "bounds": {
+              "x": 160,
+              "y": 30,
+              "width": 1280,
+              "height": 800
+            }
+          }
+        ],
+        "expected": {
+          "x": 252,
+          "y": 8,
+          "width": 1020,
+          "height": 784
+        },
+        "actual": {
+          "x": 252,
+          "y": 8,
+          "width": 1020,
+          "height": 784
+        },
+        "pane": {
+          "x": 252,
+          "y": 8,
+          "width": 1020,
+          "height": 784
+        },
+        "embedded": true,
+        "setupOnTop": true,
+        "sidebarWidth": 252,
+        "frame": {
+          "width": 1280,
+          "height": 800
+        },
+        "hiddenTabs": true,
+        "normal": true,
+        "overlay": null
+      },
+      "page": {
+        "interactive": [
+          {
+            "id": "back",
+            "rect": {
+              "x": 14,
+              "y": 14,
+              "width": 28,
+              "height": 28
+            },
+            "reasons": [],
+            "pointerEvents": "auto",
+            "disabled": false,
+            "styles": null
+          },
+          {
+            "id": "<input type=\"checkbox\" aria-label=\"Google Chrome · Personal\">",
+            "rect": {
+              "x": 696,
+              "y": 262.1171875,
+              "width": 14,
+              "height": 14
+            },
+            "reasons": [],
+            "pointerEvents": "auto",
+            "disabled": false,
+            "styles": null
+          },
+          {
+            "id": "<input type=\"checkbox\" aria-label=\"Google Chrome · Work\">",
+            "rect": {
+              "x": 696,
+              "y": 298.1171875,
+              "width": 14,
+              "height": 14
+            },
+            "reasons": [],
+            "pointerEvents": "auto",
+            "disabled": false,
+            "styles": null
+          },
+          {
+            "id": "<input type=\"checkbox\" aria-label=\"Arc · Personal\">",
+            "rect": {
+              "x": 696,
+              "y": 334.1171875,
+              "width": 14,
+              "height": 14
+            },
+            "reasons": [],
+            "pointerEvents": "auto",
+            "disabled": false,
+            "styles": null
+          },
+          {
+            "id": "later",
+            "rect": {
+              "x": 812,
+              "y": 736,
+              "width": 88,
+              "height": 28
+            },
+            "reasons": [],
+            "pointerEvents": "auto",
+            "disabled": false,
+            "styles": null
+          },
+          {
+            "id": "next",
+            "rect": {
+              "x": 908,
+              "y": 736,
+              "width": 88,
+              "height": 28
+            },
+            "reasons": [],
+            "pointerEvents": "auto",
+            "disabled": true,
+            "styles": null
+          }
+        ],
+        "text": [
+          {
+            "id": "import-title",
+            "text": "Import from Another Browser",
+            "reasons": [],
+            "contrast": 14.965646292385909,
+            "foreground": "rgb(29, 42, 31)",
+            "background": [
+              255,
+              255,
+              255,
+              1
+            ],
+            "disabled": false
+          },
+          {
+            "id": "intro",
+            "text": "Copy signed-in sessions so you can start where you left off.",
+            "reasons": [],
+            "contrast": 14.965646292385909,
+            "foreground": "rgb(29, 42, 31)",
+            "background": [
+              255,
+              255,
+              255,
+              1
+            ],
+            "disabled": false
+          },
+          {
+            "id": "source-title",
+            "text": "Google Chrome",
+            "reasons": [],
+            "contrast": 14.965646292385909,
+            "foreground": "rgb(29, 42, 31)",
+            "background": [
+              255,
+              255,
+              255,
+              1
+            ],
+            "disabled": false
+          },
+          {
+            "id": "source-detail",
+            "text": "Personal",
+            "reasons": [],
+            "contrast": 9.163038365890072,
+            "foreground": "rgb(63, 75, 64)",
+            "background": [
+              255,
+              255,
+              255,
+              1
+            ],
+            "disabled": false
+          },
+          {
+            "id": "source-title",
+            "text": "Google Chrome",
+            "reasons": [],
+            "contrast": 14.965646292385909,
+            "foreground": "rgb(29, 42, 31)",
+            "background": [
+              255,
+              255,
+              255,
+              1
+            ],
+            "disabled": false
+          },
+          {
+            "id": "source-detail",
+            "text": "Work",
+            "reasons": [],
+            "contrast": 9.163038365890072,
+            "foreground": "rgb(63, 75, 64)",
+            "background": [
+              255,
+              255,
+              255,
+              1
+            ],
+            "disabled": false
+          },
+          {
+            "id": "source-title",
+            "text": "Arc",
+            "reasons": [],
+            "contrast": 14.965646292385909,
+            "foreground": "rgb(29, 42, 31)",
+            "background": [
+              255,
+              255,
+              255,
+              1
+            ],
+            "disabled": false
+          },
+          {
+            "id": "source-detail",
+            "text": "Personal",
+            "reasons": [],
+            "contrast": 9.163038365890072,
+            "foreground": "rgb(63, 75, 64)",
+            "background": [
+              255,
+              255,
+              255,
+              1
+            ],
+            "disabled": false
+          },
+          {
+            "id": "import-footnote",
+            "text": "Copies cookies and signed-in sessions only, not passwords, history or bookmarks. macOS may ask for your login password to unlock the browser’s Keychain item; Olive uses it on this Mac only. Your other browser isn’t changed. Existing Olive cookies are kept. Some sites will still ask you to sign in again.",
+            "reasons": [],
+            "contrast": 9.163038365890072,
+            "foreground": "rgb(63, 75, 64)",
+            "background": [
+              255,
+              255,
+              255,
+              1
+            ],
+            "disabled": false
+          },
+          {
+            "id": "later",
+            "text": "Skip",
+            "reasons": [],
+            "contrast": 14.965646292385909,
+            "foreground": "rgb(29, 42, 31)",
+            "background": [
+              255,
+              255,
+              255,
+              1
+            ],
+            "disabled": false
+          },
+          {
+            "id": "next",
+            "text": "Import",
+            "reasons": [],
+            "contrast": 9.163038365890072,
+            "foreground": "rgb(63, 75, 64)",
+            "background": [
+              255,
+              255,
+              255,
+              1
+            ],
+            "disabled": true
+          }
+        ],
+        "uiText": "Import from Another Browser\n\nCopy signed-in sessions so you can start where you left off.\n\nGoogle ChromePersonal\nGoogle ChromeWork\nArcPersonal\n\nCopies cookies and signed-in sessions only, not passwords, history or bookmarks. macOS may ask for your login password to unlock the browser’s Keychain item; Olive uses it on this Mac only. Your other browser isn’t changed. Existing Olive cookies are kept. Some sites will still ask you to sign in again.\n\nSkip\nImport",
+        "viewport": {
+          "width": 1020,
+          "height": 784
+        },
+        "footnoteVisible": true,
+        "contentFooterOverlap": false,
+        "scroll": false
+      },
+      "sidebar": {
+        "interactive": [
+          {
+            "id": "btn-sidebar",
+            "rect": {
+              "x": 126,
+              "y": 9,
+              "width": 28,
+              "height": 28
+            },
+            "reasons": [],
+            "pointerEvents": "auto",
+            "disabled": false,
+            "styles": null
+          },
+          {
+            "id": "btn-back",
+            "rect": {
+              "x": 156,
+              "y": 9,
+              "width": 28,
+              "height": 28
+            },
+            "reasons": [],
+            "pointerEvents": "auto",
+            "disabled": true,
+            "styles": null
+          },
+          {
+            "id": "btn-forward",
+            "rect": {
+              "x": 186,
+              "y": 9,
+              "width": 28,
+              "height": 28
+            },
+            "reasons": [],
+            "pointerEvents": "auto",
+            "disabled": true,
+            "styles": null
+          },
+          {
+            "id": "btn-reload",
+            "rect": {
+              "x": 216,
+              "y": 9,
+              "width": 28,
+              "height": 28
+            },
+            "reasons": [],
+            "pointerEvents": "auto",
+            "disabled": false,
+            "styles": null
+          },
+          {
+            "id": "btn-site-settings",
+            "rect": {
+              "x": 21,
+              "y": 52,
+              "width": 24,
+              "height": 24
+            },
+            "reasons": [],
+            "pointerEvents": "auto",
+            "disabled": false,
+            "styles": null
+          },
+          {
+            "id": "setup-row",
+            "rect": {
+              "x": 10,
+              "y": 92,
+              "width": 234,
+              "height": 36
+            },
+            "reasons": [],
+            "pointerEvents": "auto",
+            "styles": null
+          },
+          {
+            "id": "newtab",
+            "rect": {
+              "x": 10,
+              "y": 132,
+              "width": 234,
+              "height": 36
+            },
+            "reasons": [],
+            "pointerEvents": "auto",
+            "disabled": false,
+            "styles": null
+          },
+          {
+            "id": "btn-ublock",
+            "rect": {
+              "x": 10,
+              "y": 723,
+              "width": 234,
+              "height": 30
+            },
+            "reasons": [],
+            "pointerEvents": "auto",
+            "disabled": false,
+            "styles": null
+          },
+          {
+            "id": "btn-ledger",
+            "rect": {
+              "x": 10,
+              "y": 767.546875,
+              "width": 53.1484375,
+              "height": 16.8984375
+            },
+            "reasons": [],
+            "pointerEvents": "auto",
+            "disabled": false,
+            "styles": null
+          },
+          {
+            "id": "btn-devtools",
+            "rect": {
+              "x": 156,
+              "y": 762,
+              "width": 28,
+              "height": 28
+            },
+            "reasons": [],
+            "pointerEvents": "auto",
+            "disabled": false,
+            "styles": null
+          },
+          {
+            "id": "btn-split",
+            "rect": {
+              "x": 186,
+              "y": 762,
+              "width": 28,
+              "height": 28
+            },
+            "reasons": [],
+            "pointerEvents": "auto",
+            "disabled": false,
+            "styles": null
+          },
+          {
+            "id": "btn-new",
+            "rect": {
+              "x": 216,
+              "y": 762,
+              "width": 28,
+              "height": 28
+            },
+            "reasons": [],
+            "pointerEvents": "auto",
+            "disabled": false,
+            "styles": null
+          }
+        ],
+        "text": [
+          {
+            "id": "host placeholder",
+            "text": "Search or enter URL",
+            "reasons": []
+          },
+          {
+            "id": "title",
+            "text": "Set Up Olive",
+            "reasons": []
+          },
+          {
+            "id": "setup-left",
+            "text": "2 left",
+            "reasons": []
+          },
+          {
+            "id": "plus",
+            "text": "+",
+            "reasons": []
+          },
+          {
+            "id": "title",
+            "text": "New Tab",
+            "reasons": []
+          },
+          {
+            "id": "fav letter",
+            "text": "F",
+            "reasons": []
+          },
+          {
+            "id": "title",
+            "text": "Fixture tab",
+            "reasons": []
+          },
+          {
+            "id": "btn-ublock",
+            "text": "uBO Lite · on",
+            "reasons": []
+          },
+          {
+            "id": "btn-ledger",
+            "text": "Activity",
+            "reasons": []
+          }
+        ],
+        "uiText": "Search or enter URL\nSet Up Olive\n2 left\n+\nNew Tab\nF\nFixture tab\nuBO Lite · on\nActivity",
+        "viewport": {
+          "width": 1280,
+          "height": 800
+        },
+        "footnoteVisible": true,
+        "contentFooterOverlap": false,
+        "scroll": false
+      },
+      "screenshots": [
         "1280x800-light-import-page.png",
         "1280x800-light-import-chrome.png"
       ]
@@ -1907,8 +1907,8 @@
             "id": "summary-calls",
             "text": "Skipped",
             "reasons": [],
-            "contrast": 7.4723690065166055,
-            "foreground": "rgb(76, 88, 77)",
+            "contrast": 9.163038365890072,
+            "foreground": "rgb(63, 75, 64)",
             "background": [
               255,
               255,
@@ -1935,8 +1935,8 @@
             "id": "summary-screen",
             "text": "Skipped",
             "reasons": [],
-            "contrast": 7.4723690065166055,
-            "foreground": "rgb(76, 88, 77)",
+            "contrast": 9.163038365890072,
+            "foreground": "rgb(63, 75, 64)",
             "background": [
               255,
               255,
@@ -1963,8 +1963,8 @@
             "id": "summary-import",
             "text": "Skipped",
             "reasons": [],
-            "contrast": 7.4723690065166055,
-            "foreground": "rgb(76, 88, 77)",
+            "contrast": 9.163038365890072,
+            "foreground": "rgb(63, 75, 64)",
             "background": [
               255,
               255,
@@ -1991,8 +1991,8 @@
             "id": "summary-blocker",
             "text": "uBO Lite basic, on",
             "reasons": [],
-            "contrast": 7.4723690065166055,
-            "foreground": "rgb(76, 88, 77)",
+            "contrast": 9.163038365890072,
+            "foreground": "rgb(63, 75, 64)",
             "background": [
               255,
               255,
@@ -2005,8 +2005,8 @@
             "id": "done-footnote",
             "text": "Change any of these later from the shield, the lock in the address bar, or Olive ▸ Set Up Olive…",
             "reasons": [],
-            "contrast": 7.4723690065166055,
-            "foreground": "rgb(76, 88, 77)",
+            "contrast": 9.163038365890072,
+            "foreground": "rgb(63, 75, 64)",
             "background": [
               255,
               255,
@@ -2377,8 +2377,8 @@
             "id": "row-description",
             "text": "Tabs, history, imports and site choices are stored locally. No Olive account or cloud.",
             "reasons": [],
-            "contrast": 7.503982926827148,
-            "foreground": "rgb(168, 179, 165)",
+            "contrast": 8.204347686355124,
+            "foreground": "rgb(176, 187, 173)",
             "background": [
               31,
               32,
@@ -2405,8 +2405,8 @@
             "id": "blocker-description",
             "text": "uBO Lite basic network blocking is on. Cosmetic filtering and per-site modes aren’t supported yet; turn blocking off from the shield button.",
             "reasons": [],
-            "contrast": 7.503982926827148,
-            "foreground": "rgb(168, 179, 165)",
+            "contrast": 8.204347686355124,
+            "foreground": "rgb(176, 187, 173)",
             "background": [
               31,
               32,
@@ -2433,8 +2433,8 @@
             "id": "row-description",
             "text": "Olive asks macOS for the microphone, camera or screen only when you choose to set them up.",
             "reasons": [],
-            "contrast": 7.503982926827148,
-            "foreground": "rgb(168, 179, 165)",
+            "contrast": 8.204347686355124,
+            "foreground": "rgb(176, 187, 173)",
             "background": [
               31,
               32,
@@ -2447,8 +2447,8 @@
             "id": "welcome-footnote",
             "text": "Sites and your search engine still see what you send them.",
             "reasons": [],
-            "contrast": 7.503982926827148,
-            "foreground": "rgb(168, 179, 165)",
+            "contrast": 8.204347686355124,
+            "foreground": "rgb(176, 187, 173)",
             "background": [
               31,
               32,
@@ -2841,8 +2841,8 @@
             "id": "mic-status",
             "text": "Not requested",
             "reasons": [],
-            "contrast": 7.503982926827148,
-            "foreground": "rgb(168, 179, 165)",
+            "contrast": 8.204347686355124,
+            "foreground": "rgb(176, 187, 173)",
             "background": [
               31,
               32,
@@ -2869,8 +2869,8 @@
             "id": "camera-status",
             "text": "Not requested",
             "reasons": [],
-            "contrast": 7.503982926827148,
-            "foreground": "rgb(168, 179, 165)",
+            "contrast": 8.204347686355124,
+            "foreground": "rgb(176, 187, 173)",
             "background": [
               31,
               32,
@@ -2883,8 +2883,8 @@
             "id": "calls-footnote",
             "text": "Next, macOS asks about your microphone, then your camera. Each site still asks you separately.",
             "reasons": [],
-            "contrast": 7.503982926827148,
-            "foreground": "rgb(168, 179, 165)",
+            "contrast": 8.204347686355124,
+            "foreground": "rgb(176, 187, 173)",
             "background": [
               31,
               32,
@@ -3282,8 +3282,8 @@
             "id": "screen-status",
             "text": "Not allowed",
             "reasons": [],
-            "contrast": 7.503982926827148,
-            "foreground": "rgb(168, 179, 165)",
+            "contrast": 8.204347686355124,
+            "foreground": "rgb(176, 187, 173)",
             "background": [
               31,
               32,
@@ -3296,8 +3296,8 @@
             "id": "screen-footnote",
             "text": "Next, macOS opens System Settings. Turn on Olive under Screen & System Audio Recording, then come back here. Olive has to quit and reopen once.",
             "reasons": [],
-            "contrast": 7.503982926827148,
-            "foreground": "rgb(168, 179, 165)",
+            "contrast": 8.204347686355124,
+            "foreground": "rgb(176, 187, 173)",
             "background": [
               31,
               32,
@@ -3336,514 +3336,6 @@
           }
         ],
         "uiText": "Screen Sharing\n\nShare a window or your whole screen in calls. You choose what to share each time a site asks.\n\nScreen & System Audio Recording\nNot allowed\n\nNext, macOS opens System Settings. Turn on Olive under Screen & System Audio Recording, then come back here. Olive has to quit and reopen once.\n\nSkip\nContinue",
-        "viewport": {
-          "width": 1020,
-          "height": 784
-        },
-        "footnoteVisible": true,
-        "contentFooterOverlap": false,
-        "scroll": false
-      },
-      "sidebar": {
-        "interactive": [
-          {
-            "id": "btn-sidebar",
-            "rect": {
-              "x": 126,
-              "y": 9,
-              "width": 28,
-              "height": 28
-            },
-            "reasons": [],
-            "pointerEvents": "auto",
-            "disabled": false,
-            "styles": null
-          },
-          {
-            "id": "btn-back",
-            "rect": {
-              "x": 156,
-              "y": 9,
-              "width": 28,
-              "height": 28
-            },
-            "reasons": [],
-            "pointerEvents": "auto",
-            "disabled": true,
-            "styles": null
-          },
-          {
-            "id": "btn-forward",
-            "rect": {
-              "x": 186,
-              "y": 9,
-              "width": 28,
-              "height": 28
-            },
-            "reasons": [],
-            "pointerEvents": "auto",
-            "disabled": true,
-            "styles": null
-          },
-          {
-            "id": "btn-reload",
-            "rect": {
-              "x": 216,
-              "y": 9,
-              "width": 28,
-              "height": 28
-            },
-            "reasons": [],
-            "pointerEvents": "auto",
-            "disabled": false,
-            "styles": null
-          },
-          {
-            "id": "btn-site-settings",
-            "rect": {
-              "x": 21,
-              "y": 52,
-              "width": 24,
-              "height": 24
-            },
-            "reasons": [],
-            "pointerEvents": "auto",
-            "disabled": false,
-            "styles": null
-          },
-          {
-            "id": "setup-row",
-            "rect": {
-              "x": 10,
-              "y": 92,
-              "width": 234,
-              "height": 36
-            },
-            "reasons": [],
-            "pointerEvents": "auto",
-            "styles": null
-          },
-          {
-            "id": "newtab",
-            "rect": {
-              "x": 10,
-              "y": 132,
-              "width": 234,
-              "height": 36
-            },
-            "reasons": [],
-            "pointerEvents": "auto",
-            "disabled": false,
-            "styles": null
-          },
-          {
-            "id": "btn-ublock",
-            "rect": {
-              "x": 10,
-              "y": 723,
-              "width": 234,
-              "height": 30
-            },
-            "reasons": [],
-            "pointerEvents": "auto",
-            "disabled": false,
-            "styles": null
-          },
-          {
-            "id": "btn-ledger",
-            "rect": {
-              "x": 10,
-              "y": 767.546875,
-              "width": 53.1484375,
-              "height": 16.8984375
-            },
-            "reasons": [],
-            "pointerEvents": "auto",
-            "disabled": false,
-            "styles": null
-          },
-          {
-            "id": "btn-devtools",
-            "rect": {
-              "x": 156,
-              "y": 762,
-              "width": 28,
-              "height": 28
-            },
-            "reasons": [],
-            "pointerEvents": "auto",
-            "disabled": false,
-            "styles": null
-          },
-          {
-            "id": "btn-split",
-            "rect": {
-              "x": 186,
-              "y": 762,
-              "width": 28,
-              "height": 28
-            },
-            "reasons": [],
-            "pointerEvents": "auto",
-            "disabled": false,
-            "styles": null
-          },
-          {
-            "id": "btn-new",
-            "rect": {
-              "x": 216,
-              "y": 762,
-              "width": 28,
-              "height": 28
-            },
-            "reasons": [],
-            "pointerEvents": "auto",
-            "disabled": false,
-            "styles": null
-          }
-        ],
-        "text": [
-          {
-            "id": "host placeholder",
-            "text": "Search or enter URL",
-            "reasons": []
-          },
-          {
-            "id": "title",
-            "text": "Set Up Olive",
-            "reasons": []
-          },
-          {
-            "id": "setup-left",
-            "text": "2 left",
-            "reasons": []
-          },
-          {
-            "id": "plus",
-            "text": "+",
-            "reasons": []
-          },
-          {
-            "id": "title",
-            "text": "New Tab",
-            "reasons": []
-          },
-          {
-            "id": "fav letter",
-            "text": "F",
-            "reasons": []
-          },
-          {
-            "id": "title",
-            "text": "Fixture tab",
-            "reasons": []
-          },
-          {
-            "id": "btn-ublock",
-            "text": "uBO Lite · on",
-            "reasons": []
-          },
-          {
-            "id": "btn-ledger",
-            "text": "Activity",
-            "reasons": []
-          }
-        ],
-        "uiText": "Search or enter URL\nSet Up Olive\n2 left\n+\nNew Tab\nF\nFixture tab\nuBO Lite · on\nActivity",
-        "viewport": {
-          "width": 1280,
-          "height": 800
-        },
-        "footnoteVisible": true,
-        "contentFooterOverlap": false,
-        "scroll": false
-      },
-      "screenshots": [
-        "1280x800-dark-screen-page.png",
-        "1280x800-dark-screen-chrome.png"
-      ]
-    },
-    {
-      "label": "1280x800-dark-import",
-      "state": {
-        "visibleWindows": [
-          {
-            "title": "Olive",
-            "bounds": {
-              "x": 160,
-              "y": 30,
-              "width": 1280,
-              "height": 800
-            }
-          }
-        ],
-        "expected": {
-          "x": 252,
-          "y": 8,
-          "width": 1020,
-          "height": 784
-        },
-        "actual": {
-          "x": 252,
-          "y": 8,
-          "width": 1020,
-          "height": 784
-        },
-        "pane": {
-          "x": 252,
-          "y": 8,
-          "width": 1020,
-          "height": 784
-        },
-        "embedded": true,
-        "setupOnTop": true,
-        "sidebarWidth": 252,
-        "frame": {
-          "width": 1280,
-          "height": 800
-        },
-        "hiddenTabs": true,
-        "normal": true,
-        "overlay": null
-      },
-      "page": {
-        "interactive": [
-          {
-            "id": "back",
-            "rect": {
-              "x": 14,
-              "y": 14,
-              "width": 28,
-              "height": 28
-            },
-            "reasons": [],
-            "pointerEvents": "auto",
-            "disabled": false,
-            "styles": null
-          },
-          {
-            "id": "<input type=\"checkbox\" aria-label=\"Google Chrome · Personal\" style=\"\">",
-            "rect": {
-              "x": 696,
-              "y": 262.1171875,
-              "width": 14,
-              "height": 14
-            },
-            "reasons": [],
-            "pointerEvents": "auto",
-            "disabled": false,
-            "styles": ""
-          },
-          {
-            "id": "<input type=\"checkbox\" aria-label=\"Google Chrome · Work\" style=\"\">",
-            "rect": {
-              "x": 696,
-              "y": 298.1171875,
-              "width": 14,
-              "height": 14
-            },
-            "reasons": [],
-            "pointerEvents": "auto",
-            "disabled": false,
-            "styles": ""
-          },
-          {
-            "id": "<input type=\"checkbox\" aria-label=\"Arc · Personal\" style=\"\">",
-            "rect": {
-              "x": 696,
-              "y": 334.1171875,
-              "width": 14,
-              "height": 14
-            },
-            "reasons": [],
-            "pointerEvents": "auto",
-            "disabled": false,
-            "styles": ""
-          },
-          {
-            "id": "later",
-            "rect": {
-              "x": 812,
-              "y": 736,
-              "width": 88,
-              "height": 28
-            },
-            "reasons": [],
-            "pointerEvents": "auto",
-            "disabled": false,
-            "styles": null
-          },
-          {
-            "id": "next",
-            "rect": {
-              "x": 908,
-              "y": 736,
-              "width": 88,
-              "height": 28
-            },
-            "reasons": [],
-            "pointerEvents": "auto",
-            "disabled": true,
-            "styles": null
-          }
-        ],
-        "text": [
-          {
-            "id": "import-title",
-            "text": "Import from Another Browser",
-            "reasons": [],
-            "contrast": 13.749019290112262,
-            "foreground": "rgb(230, 238, 226)",
-            "background": [
-              31,
-              32,
-              33,
-              1
-            ],
-            "disabled": false
-          },
-          {
-            "id": "intro",
-            "text": "Copy signed-in sessions so you can start where you left off.",
-            "reasons": [],
-            "contrast": 13.749019290112262,
-            "foreground": "rgb(230, 238, 226)",
-            "background": [
-              31,
-              32,
-              33,
-              1
-            ],
-            "disabled": false
-          },
-          {
-            "id": "source-title",
-            "text": "Google Chrome",
-            "reasons": [],
-            "contrast": 10.847133488000036,
-            "foreground": "rgb(230, 238, 226)",
-            "background": [
-              48.92,
-              49.84,
-              50.760000000000005,
-              1
-            ],
-            "disabled": false
-          },
-          {
-            "id": "source-detail",
-            "text": "Personal",
-            "reasons": [],
-            "contrast": 5.920182580404443,
-            "foreground": "rgb(168, 179, 165)",
-            "background": [
-              48.92,
-              49.84,
-              50.760000000000005,
-              1
-            ],
-            "disabled": false
-          },
-          {
-            "id": "source-title",
-            "text": "Google Chrome",
-            "reasons": [],
-            "contrast": 10.847133488000036,
-            "foreground": "rgb(230, 238, 226)",
-            "background": [
-              48.92,
-              49.84,
-              50.760000000000005,
-              1
-            ],
-            "disabled": false
-          },
-          {
-            "id": "source-detail",
-            "text": "Work",
-            "reasons": [],
-            "contrast": 5.920182580404443,
-            "foreground": "rgb(168, 179, 165)",
-            "background": [
-              48.92,
-              49.84,
-              50.760000000000005,
-              1
-            ],
-            "disabled": false
-          },
-          {
-            "id": "source-title",
-            "text": "Arc",
-            "reasons": [],
-            "contrast": 10.847133488000036,
-            "foreground": "rgb(230, 238, 226)",
-            "background": [
-              48.92,
-              49.84,
-              50.760000000000005,
-              1
-            ],
-            "disabled": false
-          },
-          {
-            "id": "source-detail",
-            "text": "Personal",
-            "reasons": [],
-            "contrast": 5.920182580404443,
-            "foreground": "rgb(168, 179, 165)",
-            "background": [
-              48.92,
-              49.84,
-              50.760000000000005,
-              1
-            ],
-            "disabled": false
-          },
-          {
-            "id": "import-footnote",
-            "text": "Copies cookies and signed-in sessions only, not passwords, history or bookmarks. macOS may ask for your login password to unlock the browser’s Keychain item; Olive uses it on this Mac only. Your other browser isn’t changed. Existing Olive cookies are kept. Some sites will still ask you to sign in again.",
-            "reasons": [],
-            "contrast": 7.503982926827148,
-            "foreground": "rgb(168, 179, 165)",
-            "background": [
-              31,
-              32,
-              33,
-              1
-            ],
-            "disabled": false
-          },
-          {
-            "id": "later",
-            "text": "Skip",
-            "reasons": [],
-            "contrast": 10.847133488000036,
-            "foreground": "rgb(230, 238, 226)",
-            "background": [
-              48.92,
-              49.84,
-              50.760000000000005,
-              1
-            ],
-            "disabled": false
-          },
-          {
-            "id": "next",
-            "text": "Import",
-            "reasons": [],
-            "contrast": 5.920182580404443,
-            "foreground": "rgb(168, 179, 165)",
-            "background": [
-              48.92,
-              49.84,
-              50.760000000000005,
-              1
-            ],
-            "disabled": true
-          }
-        ],
-        "uiText": "Import from Another Browser\n\nCopy signed-in sessions so you can start where you left off.\n\nGoogle ChromePersonal\nGoogle ChromeWork\nArcPersonal\n\nCopies cookies and signed-in sessions only, not passwords, history or bookmarks. macOS may ask for your login password to unlock the browser’s Keychain item; Olive uses it on this Mac only. Your other browser isn’t changed. Existing Olive cookies are kept. Some sites will still ask you to sign in again.\n\nSkip\nImport",
         "viewport": {
           "width": 1020,
           "height": 784
@@ -4067,6 +3559,514 @@
         "scroll": false
       },
       "screenshots": [
+        "1280x800-dark-screen-page.png",
+        "1280x800-dark-screen-chrome.png"
+      ]
+    },
+    {
+      "label": "1280x800-dark-import",
+      "state": {
+        "visibleWindows": [
+          {
+            "title": "Olive",
+            "bounds": {
+              "x": 160,
+              "y": 30,
+              "width": 1280,
+              "height": 800
+            }
+          }
+        ],
+        "expected": {
+          "x": 252,
+          "y": 8,
+          "width": 1020,
+          "height": 784
+        },
+        "actual": {
+          "x": 252,
+          "y": 8,
+          "width": 1020,
+          "height": 784
+        },
+        "pane": {
+          "x": 252,
+          "y": 8,
+          "width": 1020,
+          "height": 784
+        },
+        "embedded": true,
+        "setupOnTop": true,
+        "sidebarWidth": 252,
+        "frame": {
+          "width": 1280,
+          "height": 800
+        },
+        "hiddenTabs": true,
+        "normal": true,
+        "overlay": null
+      },
+      "page": {
+        "interactive": [
+          {
+            "id": "back",
+            "rect": {
+              "x": 14,
+              "y": 14,
+              "width": 28,
+              "height": 28
+            },
+            "reasons": [],
+            "pointerEvents": "auto",
+            "disabled": false,
+            "styles": null
+          },
+          {
+            "id": "<input type=\"checkbox\" aria-label=\"Google Chrome · Personal\" style=\"\">",
+            "rect": {
+              "x": 696,
+              "y": 262.1171875,
+              "width": 14,
+              "height": 14
+            },
+            "reasons": [],
+            "pointerEvents": "auto",
+            "disabled": false,
+            "styles": ""
+          },
+          {
+            "id": "<input type=\"checkbox\" aria-label=\"Google Chrome · Work\" style=\"\">",
+            "rect": {
+              "x": 696,
+              "y": 298.1171875,
+              "width": 14,
+              "height": 14
+            },
+            "reasons": [],
+            "pointerEvents": "auto",
+            "disabled": false,
+            "styles": ""
+          },
+          {
+            "id": "<input type=\"checkbox\" aria-label=\"Arc · Personal\" style=\"\">",
+            "rect": {
+              "x": 696,
+              "y": 334.1171875,
+              "width": 14,
+              "height": 14
+            },
+            "reasons": [],
+            "pointerEvents": "auto",
+            "disabled": false,
+            "styles": ""
+          },
+          {
+            "id": "later",
+            "rect": {
+              "x": 812,
+              "y": 736,
+              "width": 88,
+              "height": 28
+            },
+            "reasons": [],
+            "pointerEvents": "auto",
+            "disabled": false,
+            "styles": null
+          },
+          {
+            "id": "next",
+            "rect": {
+              "x": 908,
+              "y": 736,
+              "width": 88,
+              "height": 28
+            },
+            "reasons": [],
+            "pointerEvents": "auto",
+            "disabled": true,
+            "styles": null
+          }
+        ],
+        "text": [
+          {
+            "id": "import-title",
+            "text": "Import from Another Browser",
+            "reasons": [],
+            "contrast": 13.749019290112262,
+            "foreground": "rgb(230, 238, 226)",
+            "background": [
+              31,
+              32,
+              33,
+              1
+            ],
+            "disabled": false
+          },
+          {
+            "id": "intro",
+            "text": "Copy signed-in sessions so you can start where you left off.",
+            "reasons": [],
+            "contrast": 13.749019290112262,
+            "foreground": "rgb(230, 238, 226)",
+            "background": [
+              31,
+              32,
+              33,
+              1
+            ],
+            "disabled": false
+          },
+          {
+            "id": "source-title",
+            "text": "Google Chrome",
+            "reasons": [],
+            "contrast": 10.847133488000036,
+            "foreground": "rgb(230, 238, 226)",
+            "background": [
+              48.92,
+              49.84,
+              50.760000000000005,
+              1
+            ],
+            "disabled": false
+          },
+          {
+            "id": "source-detail",
+            "text": "Personal",
+            "reasons": [],
+            "contrast": 6.472727447539397,
+            "foreground": "rgb(176, 187, 173)",
+            "background": [
+              48.92,
+              49.84,
+              50.760000000000005,
+              1
+            ],
+            "disabled": false
+          },
+          {
+            "id": "source-title",
+            "text": "Google Chrome",
+            "reasons": [],
+            "contrast": 10.847133488000036,
+            "foreground": "rgb(230, 238, 226)",
+            "background": [
+              48.92,
+              49.84,
+              50.760000000000005,
+              1
+            ],
+            "disabled": false
+          },
+          {
+            "id": "source-detail",
+            "text": "Work",
+            "reasons": [],
+            "contrast": 6.472727447539397,
+            "foreground": "rgb(176, 187, 173)",
+            "background": [
+              48.92,
+              49.84,
+              50.760000000000005,
+              1
+            ],
+            "disabled": false
+          },
+          {
+            "id": "source-title",
+            "text": "Arc",
+            "reasons": [],
+            "contrast": 10.847133488000036,
+            "foreground": "rgb(230, 238, 226)",
+            "background": [
+              48.92,
+              49.84,
+              50.760000000000005,
+              1
+            ],
+            "disabled": false
+          },
+          {
+            "id": "source-detail",
+            "text": "Personal",
+            "reasons": [],
+            "contrast": 6.472727447539397,
+            "foreground": "rgb(176, 187, 173)",
+            "background": [
+              48.92,
+              49.84,
+              50.760000000000005,
+              1
+            ],
+            "disabled": false
+          },
+          {
+            "id": "import-footnote",
+            "text": "Copies cookies and signed-in sessions only, not passwords, history or bookmarks. macOS may ask for your login password to unlock the browser’s Keychain item; Olive uses it on this Mac only. Your other browser isn’t changed. Existing Olive cookies are kept. Some sites will still ask you to sign in again.",
+            "reasons": [],
+            "contrast": 8.204347686355124,
+            "foreground": "rgb(176, 187, 173)",
+            "background": [
+              31,
+              32,
+              33,
+              1
+            ],
+            "disabled": false
+          },
+          {
+            "id": "later",
+            "text": "Skip",
+            "reasons": [],
+            "contrast": 10.847133488000036,
+            "foreground": "rgb(230, 238, 226)",
+            "background": [
+              48.92,
+              49.84,
+              50.760000000000005,
+              1
+            ],
+            "disabled": false
+          },
+          {
+            "id": "next",
+            "text": "Import",
+            "reasons": [],
+            "contrast": 6.472727447539397,
+            "foreground": "rgb(176, 187, 173)",
+            "background": [
+              48.92,
+              49.84,
+              50.760000000000005,
+              1
+            ],
+            "disabled": true
+          }
+        ],
+        "uiText": "Import from Another Browser\n\nCopy signed-in sessions so you can start where you left off.\n\nGoogle ChromePersonal\nGoogle ChromeWork\nArcPersonal\n\nCopies cookies and signed-in sessions only, not passwords, history or bookmarks. macOS may ask for your login password to unlock the browser’s Keychain item; Olive uses it on this Mac only. Your other browser isn’t changed. Existing Olive cookies are kept. Some sites will still ask you to sign in again.\n\nSkip\nImport",
+        "viewport": {
+          "width": 1020,
+          "height": 784
+        },
+        "footnoteVisible": true,
+        "contentFooterOverlap": false,
+        "scroll": false
+      },
+      "sidebar": {
+        "interactive": [
+          {
+            "id": "btn-sidebar",
+            "rect": {
+              "x": 126,
+              "y": 9,
+              "width": 28,
+              "height": 28
+            },
+            "reasons": [],
+            "pointerEvents": "auto",
+            "disabled": false,
+            "styles": null
+          },
+          {
+            "id": "btn-back",
+            "rect": {
+              "x": 156,
+              "y": 9,
+              "width": 28,
+              "height": 28
+            },
+            "reasons": [],
+            "pointerEvents": "auto",
+            "disabled": true,
+            "styles": null
+          },
+          {
+            "id": "btn-forward",
+            "rect": {
+              "x": 186,
+              "y": 9,
+              "width": 28,
+              "height": 28
+            },
+            "reasons": [],
+            "pointerEvents": "auto",
+            "disabled": true,
+            "styles": null
+          },
+          {
+            "id": "btn-reload",
+            "rect": {
+              "x": 216,
+              "y": 9,
+              "width": 28,
+              "height": 28
+            },
+            "reasons": [],
+            "pointerEvents": "auto",
+            "disabled": false,
+            "styles": null
+          },
+          {
+            "id": "btn-site-settings",
+            "rect": {
+              "x": 21,
+              "y": 52,
+              "width": 24,
+              "height": 24
+            },
+            "reasons": [],
+            "pointerEvents": "auto",
+            "disabled": false,
+            "styles": null
+          },
+          {
+            "id": "setup-row",
+            "rect": {
+              "x": 10,
+              "y": 92,
+              "width": 234,
+              "height": 36
+            },
+            "reasons": [],
+            "pointerEvents": "auto",
+            "styles": null
+          },
+          {
+            "id": "newtab",
+            "rect": {
+              "x": 10,
+              "y": 132,
+              "width": 234,
+              "height": 36
+            },
+            "reasons": [],
+            "pointerEvents": "auto",
+            "disabled": false,
+            "styles": null
+          },
+          {
+            "id": "btn-ublock",
+            "rect": {
+              "x": 10,
+              "y": 723,
+              "width": 234,
+              "height": 30
+            },
+            "reasons": [],
+            "pointerEvents": "auto",
+            "disabled": false,
+            "styles": null
+          },
+          {
+            "id": "btn-ledger",
+            "rect": {
+              "x": 10,
+              "y": 767.546875,
+              "width": 53.1484375,
+              "height": 16.8984375
+            },
+            "reasons": [],
+            "pointerEvents": "auto",
+            "disabled": false,
+            "styles": null
+          },
+          {
+            "id": "btn-devtools",
+            "rect": {
+              "x": 156,
+              "y": 762,
+              "width": 28,
+              "height": 28
+            },
+            "reasons": [],
+            "pointerEvents": "auto",
+            "disabled": false,
+            "styles": null
+          },
+          {
+            "id": "btn-split",
+            "rect": {
+              "x": 186,
+              "y": 762,
+              "width": 28,
+              "height": 28
+            },
+            "reasons": [],
+            "pointerEvents": "auto",
+            "disabled": false,
+            "styles": null
+          },
+          {
+            "id": "btn-new",
+            "rect": {
+              "x": 216,
+              "y": 762,
+              "width": 28,
+              "height": 28
+            },
+            "reasons": [],
+            "pointerEvents": "auto",
+            "disabled": false,
+            "styles": null
+          }
+        ],
+        "text": [
+          {
+            "id": "host placeholder",
+            "text": "Search or enter URL",
+            "reasons": []
+          },
+          {
+            "id": "title",
+            "text": "Set Up Olive",
+            "reasons": []
+          },
+          {
+            "id": "setup-left",
+            "text": "2 left",
+            "reasons": []
+          },
+          {
+            "id": "plus",
+            "text": "+",
+            "reasons": []
+          },
+          {
+            "id": "title",
+            "text": "New Tab",
+            "reasons": []
+          },
+          {
+            "id": "fav letter",
+            "text": "F",
+            "reasons": []
+          },
+          {
+            "id": "title",
+            "text": "Fixture tab",
+            "reasons": []
+          },
+          {
+            "id": "btn-ublock",
+            "text": "uBO Lite · on",
+            "reasons": []
+          },
+          {
+            "id": "btn-ledger",
+            "text": "Activity",
+            "reasons": []
+          }
+        ],
+        "uiText": "Search or enter URL\nSet Up Olive\n2 left\n+\nNew Tab\nF\nFixture tab\nuBO Lite · on\nActivity",
+        "viewport": {
+          "width": 1280,
+          "height": 800
+        },
+        "footnoteVisible": true,
+        "contentFooterOverlap": false,
+        "scroll": false
+      },
+      "screenshots": [
         "1280x800-dark-import-page.png",
         "1280x800-dark-import-chrome.png"
       ]
@@ -4163,8 +4163,8 @@
             "id": "summary-calls",
             "text": "Skipped",
             "reasons": [],
-            "contrast": 7.503982926827148,
-            "foreground": "rgb(168, 179, 165)",
+            "contrast": 8.204347686355124,
+            "foreground": "rgb(176, 187, 173)",
             "background": [
               31,
               32,
@@ -4191,8 +4191,8 @@
             "id": "summary-screen",
             "text": "Skipped",
             "reasons": [],
-            "contrast": 7.503982926827148,
-            "foreground": "rgb(168, 179, 165)",
+            "contrast": 8.204347686355124,
+            "foreground": "rgb(176, 187, 173)",
             "background": [
               31,
               32,
@@ -4219,8 +4219,8 @@
             "id": "summary-import",
             "text": "Skipped",
             "reasons": [],
-            "contrast": 7.503982926827148,
-            "foreground": "rgb(168, 179, 165)",
+            "contrast": 8.204347686355124,
+            "foreground": "rgb(176, 187, 173)",
             "background": [
               31,
               32,
@@ -4247,8 +4247,8 @@
             "id": "summary-blocker",
             "text": "uBO Lite basic, on",
             "reasons": [],
-            "contrast": 7.503982926827148,
-            "foreground": "rgb(168, 179, 165)",
+            "contrast": 8.204347686355124,
+            "foreground": "rgb(176, 187, 173)",
             "background": [
               31,
               32,
@@ -4261,8 +4261,8 @@
             "id": "done-footnote",
             "text": "Change any of these later from the shield, the lock in the address bar, or Olive ▸ Set Up Olive…",
             "reasons": [],
-            "contrast": 7.503982926827148,
-            "foreground": "rgb(168, 179, 165)",
+            "contrast": 8.204347686355124,
+            "foreground": "rgb(176, 187, 173)",
             "background": [
               31,
               32,
@@ -4633,8 +4633,8 @@
             "id": "row-description",
             "text": "Tabs, history, imports and site choices are stored locally. No Olive account or cloud.",
             "reasons": [],
-            "contrast": 7.4723690065166055,
-            "foreground": "rgb(76, 88, 77)",
+            "contrast": 9.163038365890072,
+            "foreground": "rgb(63, 75, 64)",
             "background": [
               255,
               255,
@@ -4661,8 +4661,8 @@
             "id": "blocker-description",
             "text": "uBO Lite basic network blocking is on. Cosmetic filtering and per-site modes aren’t supported yet; turn blocking off from the shield button.",
             "reasons": [],
-            "contrast": 7.4723690065166055,
-            "foreground": "rgb(76, 88, 77)",
+            "contrast": 9.163038365890072,
+            "foreground": "rgb(63, 75, 64)",
             "background": [
               255,
               255,
@@ -4689,8 +4689,8 @@
             "id": "row-description",
             "text": "Olive asks macOS for the microphone, camera or screen only when you choose to set them up.",
             "reasons": [],
-            "contrast": 7.4723690065166055,
-            "foreground": "rgb(76, 88, 77)",
+            "contrast": 9.163038365890072,
+            "foreground": "rgb(63, 75, 64)",
             "background": [
               255,
               255,
@@ -4703,8 +4703,8 @@
             "id": "welcome-footnote",
             "text": "Sites and your search engine still see what you send them.",
             "reasons": [],
-            "contrast": 7.4723690065166055,
-            "foreground": "rgb(76, 88, 77)",
+            "contrast": 9.163038365890072,
+            "foreground": "rgb(63, 75, 64)",
             "background": [
               255,
               255,
@@ -5097,8 +5097,8 @@
             "id": "mic-status",
             "text": "Not requested",
             "reasons": [],
-            "contrast": 7.4723690065166055,
-            "foreground": "rgb(76, 88, 77)",
+            "contrast": 9.163038365890072,
+            "foreground": "rgb(63, 75, 64)",
             "background": [
               255,
               255,
@@ -5125,8 +5125,8 @@
             "id": "camera-status",
             "text": "Not requested",
             "reasons": [],
-            "contrast": 7.4723690065166055,
-            "foreground": "rgb(76, 88, 77)",
+            "contrast": 9.163038365890072,
+            "foreground": "rgb(63, 75, 64)",
             "background": [
               255,
               255,
@@ -5139,8 +5139,8 @@
             "id": "calls-footnote",
             "text": "Next, macOS asks about your microphone, then your camera. Each site still asks you separately.",
             "reasons": [],
-            "contrast": 7.4723690065166055,
-            "foreground": "rgb(76, 88, 77)",
+            "contrast": 9.163038365890072,
+            "foreground": "rgb(63, 75, 64)",
             "background": [
               255,
               255,
@@ -5538,8 +5538,8 @@
             "id": "screen-status",
             "text": "Not allowed",
             "reasons": [],
-            "contrast": 7.4723690065166055,
-            "foreground": "rgb(76, 88, 77)",
+            "contrast": 9.163038365890072,
+            "foreground": "rgb(63, 75, 64)",
             "background": [
               255,
               255,
@@ -5552,8 +5552,8 @@
             "id": "screen-footnote",
             "text": "Next, macOS opens System Settings. Turn on Olive under Screen & System Audio Recording, then come back here. Olive has to quit and reopen once.",
             "reasons": [],
-            "contrast": 7.4723690065166055,
-            "foreground": "rgb(76, 88, 77)",
+            "contrast": 9.163038365890072,
+            "foreground": "rgb(63, 75, 64)",
             "background": [
               255,
               255,
@@ -5592,514 +5592,6 @@
           }
         ],
         "uiText": "Screen Sharing\n\nShare a window or your whole screen in calls. You choose what to share each time a site asks.\n\nScreen & System Audio Recording\nNot allowed\n\nNext, macOS opens System Settings. Turn on Olive under Screen & System Audio Recording, then come back here. Olive has to quit and reopen once.\n\nSkip\nContinue",
-        "viewport": {
-          "width": 1100,
-          "height": 864
-        },
-        "footnoteVisible": true,
-        "contentFooterOverlap": false,
-        "scroll": false
-      },
-      "sidebar": {
-        "interactive": [
-          {
-            "id": "btn-sidebar",
-            "rect": {
-              "x": 126,
-              "y": 9,
-              "width": 28,
-              "height": 28
-            },
-            "reasons": [],
-            "pointerEvents": "auto",
-            "disabled": false,
-            "styles": null
-          },
-          {
-            "id": "btn-back",
-            "rect": {
-              "x": 156,
-              "y": 9,
-              "width": 28,
-              "height": 28
-            },
-            "reasons": [],
-            "pointerEvents": "auto",
-            "disabled": true,
-            "styles": null
-          },
-          {
-            "id": "btn-forward",
-            "rect": {
-              "x": 186,
-              "y": 9,
-              "width": 28,
-              "height": 28
-            },
-            "reasons": [],
-            "pointerEvents": "auto",
-            "disabled": true,
-            "styles": null
-          },
-          {
-            "id": "btn-reload",
-            "rect": {
-              "x": 216,
-              "y": 9,
-              "width": 28,
-              "height": 28
-            },
-            "reasons": [],
-            "pointerEvents": "auto",
-            "disabled": false,
-            "styles": null
-          },
-          {
-            "id": "btn-site-settings",
-            "rect": {
-              "x": 21,
-              "y": 52,
-              "width": 24,
-              "height": 24
-            },
-            "reasons": [],
-            "pointerEvents": "auto",
-            "disabled": false,
-            "styles": null
-          },
-          {
-            "id": "setup-row",
-            "rect": {
-              "x": 10,
-              "y": 92,
-              "width": 234,
-              "height": 36
-            },
-            "reasons": [],
-            "pointerEvents": "auto",
-            "styles": null
-          },
-          {
-            "id": "newtab",
-            "rect": {
-              "x": 10,
-              "y": 132,
-              "width": 234,
-              "height": 36
-            },
-            "reasons": [],
-            "pointerEvents": "auto",
-            "disabled": false,
-            "styles": null
-          },
-          {
-            "id": "btn-ublock",
-            "rect": {
-              "x": 10,
-              "y": 803,
-              "width": 234,
-              "height": 30
-            },
-            "reasons": [],
-            "pointerEvents": "auto",
-            "disabled": false,
-            "styles": null
-          },
-          {
-            "id": "btn-ledger",
-            "rect": {
-              "x": 10,
-              "y": 847.546875,
-              "width": 53.1484375,
-              "height": 16.8984375
-            },
-            "reasons": [],
-            "pointerEvents": "auto",
-            "disabled": false,
-            "styles": null
-          },
-          {
-            "id": "btn-devtools",
-            "rect": {
-              "x": 156,
-              "y": 842,
-              "width": 28,
-              "height": 28
-            },
-            "reasons": [],
-            "pointerEvents": "auto",
-            "disabled": false,
-            "styles": null
-          },
-          {
-            "id": "btn-split",
-            "rect": {
-              "x": 186,
-              "y": 842,
-              "width": 28,
-              "height": 28
-            },
-            "reasons": [],
-            "pointerEvents": "auto",
-            "disabled": false,
-            "styles": null
-          },
-          {
-            "id": "btn-new",
-            "rect": {
-              "x": 216,
-              "y": 842,
-              "width": 28,
-              "height": 28
-            },
-            "reasons": [],
-            "pointerEvents": "auto",
-            "disabled": false,
-            "styles": null
-          }
-        ],
-        "text": [
-          {
-            "id": "host placeholder",
-            "text": "Search or enter URL",
-            "reasons": []
-          },
-          {
-            "id": "title",
-            "text": "Set Up Olive",
-            "reasons": []
-          },
-          {
-            "id": "setup-left",
-            "text": "2 left",
-            "reasons": []
-          },
-          {
-            "id": "plus",
-            "text": "+",
-            "reasons": []
-          },
-          {
-            "id": "title",
-            "text": "New Tab",
-            "reasons": []
-          },
-          {
-            "id": "fav letter",
-            "text": "F",
-            "reasons": []
-          },
-          {
-            "id": "title",
-            "text": "Fixture tab",
-            "reasons": []
-          },
-          {
-            "id": "btn-ublock",
-            "text": "uBO Lite · on",
-            "reasons": []
-          },
-          {
-            "id": "btn-ledger",
-            "text": "Activity",
-            "reasons": []
-          }
-        ],
-        "uiText": "Search or enter URL\nSet Up Olive\n2 left\n+\nNew Tab\nF\nFixture tab\nuBO Lite · on\nActivity",
-        "viewport": {
-          "width": 1360,
-          "height": 880
-        },
-        "footnoteVisible": true,
-        "contentFooterOverlap": false,
-        "scroll": false
-      },
-      "screenshots": [
-        "1360x880-light-screen-page.png",
-        "1360x880-light-screen-chrome.png"
-      ]
-    },
-    {
-      "label": "1360x880-light-import",
-      "state": {
-        "visibleWindows": [
-          {
-            "title": "Olive",
-            "bounds": {
-              "x": 160,
-              "y": 30,
-              "width": 1360,
-              "height": 880
-            }
-          }
-        ],
-        "expected": {
-          "x": 252,
-          "y": 8,
-          "width": 1100,
-          "height": 864
-        },
-        "actual": {
-          "x": 252,
-          "y": 8,
-          "width": 1100,
-          "height": 864
-        },
-        "pane": {
-          "x": 252,
-          "y": 8,
-          "width": 1100,
-          "height": 864
-        },
-        "embedded": true,
-        "setupOnTop": true,
-        "sidebarWidth": 252,
-        "frame": {
-          "width": 1360,
-          "height": 880
-        },
-        "hiddenTabs": true,
-        "normal": true,
-        "overlay": null
-      },
-      "page": {
-        "interactive": [
-          {
-            "id": "back",
-            "rect": {
-              "x": 14,
-              "y": 14,
-              "width": 28,
-              "height": 28
-            },
-            "reasons": [],
-            "pointerEvents": "auto",
-            "disabled": false,
-            "styles": null
-          },
-          {
-            "id": "<input type=\"checkbox\" aria-label=\"Google Chrome · Personal\" style=\"\">",
-            "rect": {
-              "x": 736,
-              "y": 276.515625,
-              "width": 14,
-              "height": 14
-            },
-            "reasons": [],
-            "pointerEvents": "auto",
-            "disabled": false,
-            "styles": ""
-          },
-          {
-            "id": "<input type=\"checkbox\" aria-label=\"Google Chrome · Work\" style=\"\">",
-            "rect": {
-              "x": 736,
-              "y": 312.515625,
-              "width": 14,
-              "height": 14
-            },
-            "reasons": [],
-            "pointerEvents": "auto",
-            "disabled": false,
-            "styles": ""
-          },
-          {
-            "id": "<input type=\"checkbox\" aria-label=\"Arc · Personal\" style=\"\">",
-            "rect": {
-              "x": 736,
-              "y": 348.515625,
-              "width": 14,
-              "height": 14
-            },
-            "reasons": [],
-            "pointerEvents": "auto",
-            "disabled": false,
-            "styles": ""
-          },
-          {
-            "id": "later",
-            "rect": {
-              "x": 892,
-              "y": 816,
-              "width": 88,
-              "height": 28
-            },
-            "reasons": [],
-            "pointerEvents": "auto",
-            "disabled": false,
-            "styles": null
-          },
-          {
-            "id": "next",
-            "rect": {
-              "x": 988,
-              "y": 816,
-              "width": 88,
-              "height": 28
-            },
-            "reasons": [],
-            "pointerEvents": "auto",
-            "disabled": true,
-            "styles": null
-          }
-        ],
-        "text": [
-          {
-            "id": "import-title",
-            "text": "Import from Another Browser",
-            "reasons": [],
-            "contrast": 14.965646292385909,
-            "foreground": "rgb(29, 42, 31)",
-            "background": [
-              255,
-              255,
-              255,
-              1
-            ],
-            "disabled": false
-          },
-          {
-            "id": "intro",
-            "text": "Copy signed-in sessions so you can start where you left off.",
-            "reasons": [],
-            "contrast": 14.965646292385909,
-            "foreground": "rgb(29, 42, 31)",
-            "background": [
-              255,
-              255,
-              255,
-              1
-            ],
-            "disabled": false
-          },
-          {
-            "id": "source-title",
-            "text": "Google Chrome",
-            "reasons": [],
-            "contrast": 14.965646292385909,
-            "foreground": "rgb(29, 42, 31)",
-            "background": [
-              255,
-              255,
-              255,
-              1
-            ],
-            "disabled": false
-          },
-          {
-            "id": "source-detail",
-            "text": "Personal",
-            "reasons": [],
-            "contrast": 7.4723690065166055,
-            "foreground": "rgb(76, 88, 77)",
-            "background": [
-              255,
-              255,
-              255,
-              1
-            ],
-            "disabled": false
-          },
-          {
-            "id": "source-title",
-            "text": "Google Chrome",
-            "reasons": [],
-            "contrast": 14.965646292385909,
-            "foreground": "rgb(29, 42, 31)",
-            "background": [
-              255,
-              255,
-              255,
-              1
-            ],
-            "disabled": false
-          },
-          {
-            "id": "source-detail",
-            "text": "Work",
-            "reasons": [],
-            "contrast": 7.4723690065166055,
-            "foreground": "rgb(76, 88, 77)",
-            "background": [
-              255,
-              255,
-              255,
-              1
-            ],
-            "disabled": false
-          },
-          {
-            "id": "source-title",
-            "text": "Arc",
-            "reasons": [],
-            "contrast": 14.965646292385909,
-            "foreground": "rgb(29, 42, 31)",
-            "background": [
-              255,
-              255,
-              255,
-              1
-            ],
-            "disabled": false
-          },
-          {
-            "id": "source-detail",
-            "text": "Personal",
-            "reasons": [],
-            "contrast": 7.4723690065166055,
-            "foreground": "rgb(76, 88, 77)",
-            "background": [
-              255,
-              255,
-              255,
-              1
-            ],
-            "disabled": false
-          },
-          {
-            "id": "import-footnote",
-            "text": "Copies cookies and signed-in sessions only, not passwords, history or bookmarks. macOS may ask for your login password to unlock the browser’s Keychain item; Olive uses it on this Mac only. Your other browser isn’t changed. Existing Olive cookies are kept. Some sites will still ask you to sign in again.",
-            "reasons": [],
-            "contrast": 7.4723690065166055,
-            "foreground": "rgb(76, 88, 77)",
-            "background": [
-              255,
-              255,
-              255,
-              1
-            ],
-            "disabled": false
-          },
-          {
-            "id": "later",
-            "text": "Skip",
-            "reasons": [],
-            "contrast": 14.965646292385909,
-            "foreground": "rgb(29, 42, 31)",
-            "background": [
-              255,
-              255,
-              255,
-              1
-            ],
-            "disabled": false
-          },
-          {
-            "id": "next",
-            "text": "Import",
-            "reasons": [],
-            "contrast": 7.4723690065166055,
-            "foreground": "rgb(76, 88, 77)",
-            "background": [
-              255,
-              255,
-              255,
-              1
-            ],
-            "disabled": true
-          }
-        ],
-        "uiText": "Import from Another Browser\n\nCopy signed-in sessions so you can start where you left off.\n\nGoogle ChromePersonal\nGoogle ChromeWork\nArcPersonal\n\nCopies cookies and signed-in sessions only, not passwords, history or bookmarks. macOS may ask for your login password to unlock the browser’s Keychain item; Olive uses it on this Mac only. Your other browser isn’t changed. Existing Olive cookies are kept. Some sites will still ask you to sign in again.\n\nSkip\nImport",
         "viewport": {
           "width": 1100,
           "height": 864
@@ -6323,6 +5815,514 @@
         "scroll": false
       },
       "screenshots": [
+        "1360x880-light-screen-page.png",
+        "1360x880-light-screen-chrome.png"
+      ]
+    },
+    {
+      "label": "1360x880-light-import",
+      "state": {
+        "visibleWindows": [
+          {
+            "title": "Olive",
+            "bounds": {
+              "x": 160,
+              "y": 30,
+              "width": 1360,
+              "height": 880
+            }
+          }
+        ],
+        "expected": {
+          "x": 252,
+          "y": 8,
+          "width": 1100,
+          "height": 864
+        },
+        "actual": {
+          "x": 252,
+          "y": 8,
+          "width": 1100,
+          "height": 864
+        },
+        "pane": {
+          "x": 252,
+          "y": 8,
+          "width": 1100,
+          "height": 864
+        },
+        "embedded": true,
+        "setupOnTop": true,
+        "sidebarWidth": 252,
+        "frame": {
+          "width": 1360,
+          "height": 880
+        },
+        "hiddenTabs": true,
+        "normal": true,
+        "overlay": null
+      },
+      "page": {
+        "interactive": [
+          {
+            "id": "back",
+            "rect": {
+              "x": 14,
+              "y": 14,
+              "width": 28,
+              "height": 28
+            },
+            "reasons": [],
+            "pointerEvents": "auto",
+            "disabled": false,
+            "styles": null
+          },
+          {
+            "id": "<input type=\"checkbox\" aria-label=\"Google Chrome · Personal\" style=\"\">",
+            "rect": {
+              "x": 736,
+              "y": 276.515625,
+              "width": 14,
+              "height": 14
+            },
+            "reasons": [],
+            "pointerEvents": "auto",
+            "disabled": false,
+            "styles": ""
+          },
+          {
+            "id": "<input type=\"checkbox\" aria-label=\"Google Chrome · Work\" style=\"\">",
+            "rect": {
+              "x": 736,
+              "y": 312.515625,
+              "width": 14,
+              "height": 14
+            },
+            "reasons": [],
+            "pointerEvents": "auto",
+            "disabled": false,
+            "styles": ""
+          },
+          {
+            "id": "<input type=\"checkbox\" aria-label=\"Arc · Personal\" style=\"\">",
+            "rect": {
+              "x": 736,
+              "y": 348.515625,
+              "width": 14,
+              "height": 14
+            },
+            "reasons": [],
+            "pointerEvents": "auto",
+            "disabled": false,
+            "styles": ""
+          },
+          {
+            "id": "later",
+            "rect": {
+              "x": 892,
+              "y": 816,
+              "width": 88,
+              "height": 28
+            },
+            "reasons": [],
+            "pointerEvents": "auto",
+            "disabled": false,
+            "styles": null
+          },
+          {
+            "id": "next",
+            "rect": {
+              "x": 988,
+              "y": 816,
+              "width": 88,
+              "height": 28
+            },
+            "reasons": [],
+            "pointerEvents": "auto",
+            "disabled": true,
+            "styles": null
+          }
+        ],
+        "text": [
+          {
+            "id": "import-title",
+            "text": "Import from Another Browser",
+            "reasons": [],
+            "contrast": 14.965646292385909,
+            "foreground": "rgb(29, 42, 31)",
+            "background": [
+              255,
+              255,
+              255,
+              1
+            ],
+            "disabled": false
+          },
+          {
+            "id": "intro",
+            "text": "Copy signed-in sessions so you can start where you left off.",
+            "reasons": [],
+            "contrast": 14.965646292385909,
+            "foreground": "rgb(29, 42, 31)",
+            "background": [
+              255,
+              255,
+              255,
+              1
+            ],
+            "disabled": false
+          },
+          {
+            "id": "source-title",
+            "text": "Google Chrome",
+            "reasons": [],
+            "contrast": 14.965646292385909,
+            "foreground": "rgb(29, 42, 31)",
+            "background": [
+              255,
+              255,
+              255,
+              1
+            ],
+            "disabled": false
+          },
+          {
+            "id": "source-detail",
+            "text": "Personal",
+            "reasons": [],
+            "contrast": 9.163038365890072,
+            "foreground": "rgb(63, 75, 64)",
+            "background": [
+              255,
+              255,
+              255,
+              1
+            ],
+            "disabled": false
+          },
+          {
+            "id": "source-title",
+            "text": "Google Chrome",
+            "reasons": [],
+            "contrast": 14.965646292385909,
+            "foreground": "rgb(29, 42, 31)",
+            "background": [
+              255,
+              255,
+              255,
+              1
+            ],
+            "disabled": false
+          },
+          {
+            "id": "source-detail",
+            "text": "Work",
+            "reasons": [],
+            "contrast": 9.163038365890072,
+            "foreground": "rgb(63, 75, 64)",
+            "background": [
+              255,
+              255,
+              255,
+              1
+            ],
+            "disabled": false
+          },
+          {
+            "id": "source-title",
+            "text": "Arc",
+            "reasons": [],
+            "contrast": 14.965646292385909,
+            "foreground": "rgb(29, 42, 31)",
+            "background": [
+              255,
+              255,
+              255,
+              1
+            ],
+            "disabled": false
+          },
+          {
+            "id": "source-detail",
+            "text": "Personal",
+            "reasons": [],
+            "contrast": 9.163038365890072,
+            "foreground": "rgb(63, 75, 64)",
+            "background": [
+              255,
+              255,
+              255,
+              1
+            ],
+            "disabled": false
+          },
+          {
+            "id": "import-footnote",
+            "text": "Copies cookies and signed-in sessions only, not passwords, history or bookmarks. macOS may ask for your login password to unlock the browser’s Keychain item; Olive uses it on this Mac only. Your other browser isn’t changed. Existing Olive cookies are kept. Some sites will still ask you to sign in again.",
+            "reasons": [],
+            "contrast": 9.163038365890072,
+            "foreground": "rgb(63, 75, 64)",
+            "background": [
+              255,
+              255,
+              255,
+              1
+            ],
+            "disabled": false
+          },
+          {
+            "id": "later",
+            "text": "Skip",
+            "reasons": [],
+            "contrast": 14.965646292385909,
+            "foreground": "rgb(29, 42, 31)",
+            "background": [
+              255,
+              255,
+              255,
+              1
+            ],
+            "disabled": false
+          },
+          {
+            "id": "next",
+            "text": "Import",
+            "reasons": [],
+            "contrast": 9.163038365890072,
+            "foreground": "rgb(63, 75, 64)",
+            "background": [
+              255,
+              255,
+              255,
+              1
+            ],
+            "disabled": true
+          }
+        ],
+        "uiText": "Import from Another Browser\n\nCopy signed-in sessions so you can start where you left off.\n\nGoogle ChromePersonal\nGoogle ChromeWork\nArcPersonal\n\nCopies cookies and signed-in sessions only, not passwords, history or bookmarks. macOS may ask for your login password to unlock the browser’s Keychain item; Olive uses it on this Mac only. Your other browser isn’t changed. Existing Olive cookies are kept. Some sites will still ask you to sign in again.\n\nSkip\nImport",
+        "viewport": {
+          "width": 1100,
+          "height": 864
+        },
+        "footnoteVisible": true,
+        "contentFooterOverlap": false,
+        "scroll": false
+      },
+      "sidebar": {
+        "interactive": [
+          {
+            "id": "btn-sidebar",
+            "rect": {
+              "x": 126,
+              "y": 9,
+              "width": 28,
+              "height": 28
+            },
+            "reasons": [],
+            "pointerEvents": "auto",
+            "disabled": false,
+            "styles": null
+          },
+          {
+            "id": "btn-back",
+            "rect": {
+              "x": 156,
+              "y": 9,
+              "width": 28,
+              "height": 28
+            },
+            "reasons": [],
+            "pointerEvents": "auto",
+            "disabled": true,
+            "styles": null
+          },
+          {
+            "id": "btn-forward",
+            "rect": {
+              "x": 186,
+              "y": 9,
+              "width": 28,
+              "height": 28
+            },
+            "reasons": [],
+            "pointerEvents": "auto",
+            "disabled": true,
+            "styles": null
+          },
+          {
+            "id": "btn-reload",
+            "rect": {
+              "x": 216,
+              "y": 9,
+              "width": 28,
+              "height": 28
+            },
+            "reasons": [],
+            "pointerEvents": "auto",
+            "disabled": false,
+            "styles": null
+          },
+          {
+            "id": "btn-site-settings",
+            "rect": {
+              "x": 21,
+              "y": 52,
+              "width": 24,
+              "height": 24
+            },
+            "reasons": [],
+            "pointerEvents": "auto",
+            "disabled": false,
+            "styles": null
+          },
+          {
+            "id": "setup-row",
+            "rect": {
+              "x": 10,
+              "y": 92,
+              "width": 234,
+              "height": 36
+            },
+            "reasons": [],
+            "pointerEvents": "auto",
+            "styles": null
+          },
+          {
+            "id": "newtab",
+            "rect": {
+              "x": 10,
+              "y": 132,
+              "width": 234,
+              "height": 36
+            },
+            "reasons": [],
+            "pointerEvents": "auto",
+            "disabled": false,
+            "styles": null
+          },
+          {
+            "id": "btn-ublock",
+            "rect": {
+              "x": 10,
+              "y": 803,
+              "width": 234,
+              "height": 30
+            },
+            "reasons": [],
+            "pointerEvents": "auto",
+            "disabled": false,
+            "styles": null
+          },
+          {
+            "id": "btn-ledger",
+            "rect": {
+              "x": 10,
+              "y": 847.546875,
+              "width": 53.1484375,
+              "height": 16.8984375
+            },
+            "reasons": [],
+            "pointerEvents": "auto",
+            "disabled": false,
+            "styles": null
+          },
+          {
+            "id": "btn-devtools",
+            "rect": {
+              "x": 156,
+              "y": 842,
+              "width": 28,
+              "height": 28
+            },
+            "reasons": [],
+            "pointerEvents": "auto",
+            "disabled": false,
+            "styles": null
+          },
+          {
+            "id": "btn-split",
+            "rect": {
+              "x": 186,
+              "y": 842,
+              "width": 28,
+              "height": 28
+            },
+            "reasons": [],
+            "pointerEvents": "auto",
+            "disabled": false,
+            "styles": null
+          },
+          {
+            "id": "btn-new",
+            "rect": {
+              "x": 216,
+              "y": 842,
+              "width": 28,
+              "height": 28
+            },
+            "reasons": [],
+            "pointerEvents": "auto",
+            "disabled": false,
+            "styles": null
+          }
+        ],
+        "text": [
+          {
+            "id": "host placeholder",
+            "text": "Search or enter URL",
+            "reasons": []
+          },
+          {
+            "id": "title",
+            "text": "Set Up Olive",
+            "reasons": []
+          },
+          {
+            "id": "setup-left",
+            "text": "2 left",
+            "reasons": []
+          },
+          {
+            "id": "plus",
+            "text": "+",
+            "reasons": []
+          },
+          {
+            "id": "title",
+            "text": "New Tab",
+            "reasons": []
+          },
+          {
+            "id": "fav letter",
+            "text": "F",
+            "reasons": []
+          },
+          {
+            "id": "title",
+            "text": "Fixture tab",
+            "reasons": []
+          },
+          {
+            "id": "btn-ublock",
+            "text": "uBO Lite · on",
+            "reasons": []
+          },
+          {
+            "id": "btn-ledger",
+            "text": "Activity",
+            "reasons": []
+          }
+        ],
+        "uiText": "Search or enter URL\nSet Up Olive\n2 left\n+\nNew Tab\nF\nFixture tab\nuBO Lite · on\nActivity",
+        "viewport": {
+          "width": 1360,
+          "height": 880
+        },
+        "footnoteVisible": true,
+        "contentFooterOverlap": false,
+        "scroll": false
+      },
+      "screenshots": [
         "1360x880-light-import-page.png",
         "1360x880-light-import-chrome.png"
       ]
@@ -6419,8 +6419,8 @@
             "id": "summary-calls",
             "text": "Skipped",
             "reasons": [],
-            "contrast": 7.4723690065166055,
-            "foreground": "rgb(76, 88, 77)",
+            "contrast": 9.163038365890072,
+            "foreground": "rgb(63, 75, 64)",
             "background": [
               255,
               255,
@@ -6447,8 +6447,8 @@
             "id": "summary-screen",
             "text": "Skipped",
             "reasons": [],
-            "contrast": 7.4723690065166055,
-            "foreground": "rgb(76, 88, 77)",
+            "contrast": 9.163038365890072,
+            "foreground": "rgb(63, 75, 64)",
             "background": [
               255,
               255,
@@ -6475,8 +6475,8 @@
             "id": "summary-import",
             "text": "Skipped",
             "reasons": [],
-            "contrast": 7.4723690065166055,
-            "foreground": "rgb(76, 88, 77)",
+            "contrast": 9.163038365890072,
+            "foreground": "rgb(63, 75, 64)",
             "background": [
               255,
               255,
@@ -6503,8 +6503,8 @@
             "id": "summary-blocker",
             "text": "uBO Lite basic, on",
             "reasons": [],
-            "contrast": 7.4723690065166055,
-            "foreground": "rgb(76, 88, 77)",
+            "contrast": 9.163038365890072,
+            "foreground": "rgb(63, 75, 64)",
             "background": [
               255,
               255,
@@ -6517,8 +6517,8 @@
             "id": "done-footnote",
             "text": "Change any of these later from the shield, the lock in the address bar, or Olive ▸ Set Up Olive…",
             "reasons": [],
-            "contrast": 7.4723690065166055,
-            "foreground": "rgb(76, 88, 77)",
+            "contrast": 9.163038365890072,
+            "foreground": "rgb(63, 75, 64)",
             "background": [
               255,
               255,
@@ -6889,8 +6889,8 @@
             "id": "row-description",
             "text": "Tabs, history, imports and site choices are stored locally. No Olive account or cloud.",
             "reasons": [],
-            "contrast": 7.503982926827148,
-            "foreground": "rgb(168, 179, 165)",
+            "contrast": 8.204347686355124,
+            "foreground": "rgb(176, 187, 173)",
             "background": [
               31,
               32,
@@ -6917,8 +6917,8 @@
             "id": "blocker-description",
             "text": "uBO Lite basic network blocking is on. Cosmetic filtering and per-site modes aren’t supported yet; turn blocking off from the shield button.",
             "reasons": [],
-            "contrast": 7.503982926827148,
-            "foreground": "rgb(168, 179, 165)",
+            "contrast": 8.204347686355124,
+            "foreground": "rgb(176, 187, 173)",
             "background": [
               31,
               32,
@@ -6945,8 +6945,8 @@
             "id": "row-description",
             "text": "Olive asks macOS for the microphone, camera or screen only when you choose to set them up.",
             "reasons": [],
-            "contrast": 7.503982926827148,
-            "foreground": "rgb(168, 179, 165)",
+            "contrast": 8.204347686355124,
+            "foreground": "rgb(176, 187, 173)",
             "background": [
               31,
               32,
@@ -6959,8 +6959,8 @@
             "id": "welcome-footnote",
             "text": "Sites and your search engine still see what you send them.",
             "reasons": [],
-            "contrast": 7.503982926827148,
-            "foreground": "rgb(168, 179, 165)",
+            "contrast": 8.204347686355124,
+            "foreground": "rgb(176, 187, 173)",
             "background": [
               31,
               32,
@@ -7353,8 +7353,8 @@
             "id": "mic-status",
             "text": "Not requested",
             "reasons": [],
-            "contrast": 7.503982926827148,
-            "foreground": "rgb(168, 179, 165)",
+            "contrast": 8.204347686355124,
+            "foreground": "rgb(176, 187, 173)",
             "background": [
               31,
               32,
@@ -7381,8 +7381,8 @@
             "id": "camera-status",
             "text": "Not requested",
             "reasons": [],
-            "contrast": 7.503982926827148,
-            "foreground": "rgb(168, 179, 165)",
+            "contrast": 8.204347686355124,
+            "foreground": "rgb(176, 187, 173)",
             "background": [
               31,
               32,
@@ -7395,8 +7395,8 @@
             "id": "calls-footnote",
             "text": "Next, macOS asks about your microphone, then your camera. Each site still asks you separately.",
             "reasons": [],
-            "contrast": 7.503982926827148,
-            "foreground": "rgb(168, 179, 165)",
+            "contrast": 8.204347686355124,
+            "foreground": "rgb(176, 187, 173)",
             "background": [
               31,
               32,
@@ -7794,8 +7794,8 @@
             "id": "screen-status",
             "text": "Not allowed",
             "reasons": [],
-            "contrast": 7.503982926827148,
-            "foreground": "rgb(168, 179, 165)",
+            "contrast": 8.204347686355124,
+            "foreground": "rgb(176, 187, 173)",
             "background": [
               31,
               32,
@@ -7808,8 +7808,8 @@
             "id": "screen-footnote",
             "text": "Next, macOS opens System Settings. Turn on Olive under Screen & System Audio Recording, then come back here. Olive has to quit and reopen once.",
             "reasons": [],
-            "contrast": 7.503982926827148,
-            "foreground": "rgb(168, 179, 165)",
+            "contrast": 8.204347686355124,
+            "foreground": "rgb(176, 187, 173)",
             "background": [
               31,
               32,
@@ -7848,514 +7848,6 @@
           }
         ],
         "uiText": "Screen Sharing\n\nShare a window or your whole screen in calls. You choose what to share each time a site asks.\n\nScreen & System Audio Recording\nNot allowed\n\nNext, macOS opens System Settings. Turn on Olive under Screen & System Audio Recording, then come back here. Olive has to quit and reopen once.\n\nSkip\nContinue",
-        "viewport": {
-          "width": 1100,
-          "height": 864
-        },
-        "footnoteVisible": true,
-        "contentFooterOverlap": false,
-        "scroll": false
-      },
-      "sidebar": {
-        "interactive": [
-          {
-            "id": "btn-sidebar",
-            "rect": {
-              "x": 126,
-              "y": 9,
-              "width": 28,
-              "height": 28
-            },
-            "reasons": [],
-            "pointerEvents": "auto",
-            "disabled": false,
-            "styles": null
-          },
-          {
-            "id": "btn-back",
-            "rect": {
-              "x": 156,
-              "y": 9,
-              "width": 28,
-              "height": 28
-            },
-            "reasons": [],
-            "pointerEvents": "auto",
-            "disabled": true,
-            "styles": null
-          },
-          {
-            "id": "btn-forward",
-            "rect": {
-              "x": 186,
-              "y": 9,
-              "width": 28,
-              "height": 28
-            },
-            "reasons": [],
-            "pointerEvents": "auto",
-            "disabled": true,
-            "styles": null
-          },
-          {
-            "id": "btn-reload",
-            "rect": {
-              "x": 216,
-              "y": 9,
-              "width": 28,
-              "height": 28
-            },
-            "reasons": [],
-            "pointerEvents": "auto",
-            "disabled": false,
-            "styles": null
-          },
-          {
-            "id": "btn-site-settings",
-            "rect": {
-              "x": 21,
-              "y": 52,
-              "width": 24,
-              "height": 24
-            },
-            "reasons": [],
-            "pointerEvents": "auto",
-            "disabled": false,
-            "styles": null
-          },
-          {
-            "id": "setup-row",
-            "rect": {
-              "x": 10,
-              "y": 92,
-              "width": 234,
-              "height": 36
-            },
-            "reasons": [],
-            "pointerEvents": "auto",
-            "styles": null
-          },
-          {
-            "id": "newtab",
-            "rect": {
-              "x": 10,
-              "y": 132,
-              "width": 234,
-              "height": 36
-            },
-            "reasons": [],
-            "pointerEvents": "auto",
-            "disabled": false,
-            "styles": null
-          },
-          {
-            "id": "btn-ublock",
-            "rect": {
-              "x": 10,
-              "y": 803,
-              "width": 234,
-              "height": 30
-            },
-            "reasons": [],
-            "pointerEvents": "auto",
-            "disabled": false,
-            "styles": null
-          },
-          {
-            "id": "btn-ledger",
-            "rect": {
-              "x": 10,
-              "y": 847.546875,
-              "width": 53.1484375,
-              "height": 16.8984375
-            },
-            "reasons": [],
-            "pointerEvents": "auto",
-            "disabled": false,
-            "styles": null
-          },
-          {
-            "id": "btn-devtools",
-            "rect": {
-              "x": 156,
-              "y": 842,
-              "width": 28,
-              "height": 28
-            },
-            "reasons": [],
-            "pointerEvents": "auto",
-            "disabled": false,
-            "styles": null
-          },
-          {
-            "id": "btn-split",
-            "rect": {
-              "x": 186,
-              "y": 842,
-              "width": 28,
-              "height": 28
-            },
-            "reasons": [],
-            "pointerEvents": "auto",
-            "disabled": false,
-            "styles": null
-          },
-          {
-            "id": "btn-new",
-            "rect": {
-              "x": 216,
-              "y": 842,
-              "width": 28,
-              "height": 28
-            },
-            "reasons": [],
-            "pointerEvents": "auto",
-            "disabled": false,
-            "styles": null
-          }
-        ],
-        "text": [
-          {
-            "id": "host placeholder",
-            "text": "Search or enter URL",
-            "reasons": []
-          },
-          {
-            "id": "title",
-            "text": "Set Up Olive",
-            "reasons": []
-          },
-          {
-            "id": "setup-left",
-            "text": "2 left",
-            "reasons": []
-          },
-          {
-            "id": "plus",
-            "text": "+",
-            "reasons": []
-          },
-          {
-            "id": "title",
-            "text": "New Tab",
-            "reasons": []
-          },
-          {
-            "id": "fav letter",
-            "text": "F",
-            "reasons": []
-          },
-          {
-            "id": "title",
-            "text": "Fixture tab",
-            "reasons": []
-          },
-          {
-            "id": "btn-ublock",
-            "text": "uBO Lite · on",
-            "reasons": []
-          },
-          {
-            "id": "btn-ledger",
-            "text": "Activity",
-            "reasons": []
-          }
-        ],
-        "uiText": "Search or enter URL\nSet Up Olive\n2 left\n+\nNew Tab\nF\nFixture tab\nuBO Lite · on\nActivity",
-        "viewport": {
-          "width": 1360,
-          "height": 880
-        },
-        "footnoteVisible": true,
-        "contentFooterOverlap": false,
-        "scroll": false
-      },
-      "screenshots": [
-        "1360x880-dark-screen-page.png",
-        "1360x880-dark-screen-chrome.png"
-      ]
-    },
-    {
-      "label": "1360x880-dark-import",
-      "state": {
-        "visibleWindows": [
-          {
-            "title": "Olive",
-            "bounds": {
-              "x": 160,
-              "y": 30,
-              "width": 1360,
-              "height": 880
-            }
-          }
-        ],
-        "expected": {
-          "x": 252,
-          "y": 8,
-          "width": 1100,
-          "height": 864
-        },
-        "actual": {
-          "x": 252,
-          "y": 8,
-          "width": 1100,
-          "height": 864
-        },
-        "pane": {
-          "x": 252,
-          "y": 8,
-          "width": 1100,
-          "height": 864
-        },
-        "embedded": true,
-        "setupOnTop": true,
-        "sidebarWidth": 252,
-        "frame": {
-          "width": 1360,
-          "height": 880
-        },
-        "hiddenTabs": true,
-        "normal": true,
-        "overlay": null
-      },
-      "page": {
-        "interactive": [
-          {
-            "id": "back",
-            "rect": {
-              "x": 14,
-              "y": 14,
-              "width": 28,
-              "height": 28
-            },
-            "reasons": [],
-            "pointerEvents": "auto",
-            "disabled": false,
-            "styles": null
-          },
-          {
-            "id": "<input type=\"checkbox\" aria-label=\"Google Chrome · Personal\" style=\"\">",
-            "rect": {
-              "x": 736,
-              "y": 276.515625,
-              "width": 14,
-              "height": 14
-            },
-            "reasons": [],
-            "pointerEvents": "auto",
-            "disabled": false,
-            "styles": ""
-          },
-          {
-            "id": "<input type=\"checkbox\" aria-label=\"Google Chrome · Work\" style=\"\">",
-            "rect": {
-              "x": 736,
-              "y": 312.515625,
-              "width": 14,
-              "height": 14
-            },
-            "reasons": [],
-            "pointerEvents": "auto",
-            "disabled": false,
-            "styles": ""
-          },
-          {
-            "id": "<input type=\"checkbox\" aria-label=\"Arc · Personal\" style=\"\">",
-            "rect": {
-              "x": 736,
-              "y": 348.515625,
-              "width": 14,
-              "height": 14
-            },
-            "reasons": [],
-            "pointerEvents": "auto",
-            "disabled": false,
-            "styles": ""
-          },
-          {
-            "id": "later",
-            "rect": {
-              "x": 892,
-              "y": 816,
-              "width": 88,
-              "height": 28
-            },
-            "reasons": [],
-            "pointerEvents": "auto",
-            "disabled": false,
-            "styles": null
-          },
-          {
-            "id": "next",
-            "rect": {
-              "x": 988,
-              "y": 816,
-              "width": 88,
-              "height": 28
-            },
-            "reasons": [],
-            "pointerEvents": "auto",
-            "disabled": true,
-            "styles": null
-          }
-        ],
-        "text": [
-          {
-            "id": "import-title",
-            "text": "Import from Another Browser",
-            "reasons": [],
-            "contrast": 13.749019290112262,
-            "foreground": "rgb(230, 238, 226)",
-            "background": [
-              31,
-              32,
-              33,
-              1
-            ],
-            "disabled": false
-          },
-          {
-            "id": "intro",
-            "text": "Copy signed-in sessions so you can start where you left off.",
-            "reasons": [],
-            "contrast": 13.749019290112262,
-            "foreground": "rgb(230, 238, 226)",
-            "background": [
-              31,
-              32,
-              33,
-              1
-            ],
-            "disabled": false
-          },
-          {
-            "id": "source-title",
-            "text": "Google Chrome",
-            "reasons": [],
-            "contrast": 10.847133488000036,
-            "foreground": "rgb(230, 238, 226)",
-            "background": [
-              48.92,
-              49.84,
-              50.760000000000005,
-              1
-            ],
-            "disabled": false
-          },
-          {
-            "id": "source-detail",
-            "text": "Personal",
-            "reasons": [],
-            "contrast": 5.920182580404443,
-            "foreground": "rgb(168, 179, 165)",
-            "background": [
-              48.92,
-              49.84,
-              50.760000000000005,
-              1
-            ],
-            "disabled": false
-          },
-          {
-            "id": "source-title",
-            "text": "Google Chrome",
-            "reasons": [],
-            "contrast": 10.847133488000036,
-            "foreground": "rgb(230, 238, 226)",
-            "background": [
-              48.92,
-              49.84,
-              50.760000000000005,
-              1
-            ],
-            "disabled": false
-          },
-          {
-            "id": "source-detail",
-            "text": "Work",
-            "reasons": [],
-            "contrast": 5.920182580404443,
-            "foreground": "rgb(168, 179, 165)",
-            "background": [
-              48.92,
-              49.84,
-              50.760000000000005,
-              1
-            ],
-            "disabled": false
-          },
-          {
-            "id": "source-title",
-            "text": "Arc",
-            "reasons": [],
-            "contrast": 10.847133488000036,
-            "foreground": "rgb(230, 238, 226)",
-            "background": [
-              48.92,
-              49.84,
-              50.760000000000005,
-              1
-            ],
-            "disabled": false
-          },
-          {
-            "id": "source-detail",
-            "text": "Personal",
-            "reasons": [],
-            "contrast": 5.920182580404443,
-            "foreground": "rgb(168, 179, 165)",
-            "background": [
-              48.92,
-              49.84,
-              50.760000000000005,
-              1
-            ],
-            "disabled": false
-          },
-          {
-            "id": "import-footnote",
-            "text": "Copies cookies and signed-in sessions only, not passwords, history or bookmarks. macOS may ask for your login password to unlock the browser’s Keychain item; Olive uses it on this Mac only. Your other browser isn’t changed. Existing Olive cookies are kept. Some sites will still ask you to sign in again.",
-            "reasons": [],
-            "contrast": 7.503982926827148,
-            "foreground": "rgb(168, 179, 165)",
-            "background": [
-              31,
-              32,
-              33,
-              1
-            ],
-            "disabled": false
-          },
-          {
-            "id": "later",
-            "text": "Skip",
-            "reasons": [],
-            "contrast": 10.847133488000036,
-            "foreground": "rgb(230, 238, 226)",
-            "background": [
-              48.92,
-              49.84,
-              50.760000000000005,
-              1
-            ],
-            "disabled": false
-          },
-          {
-            "id": "next",
-            "text": "Import",
-            "reasons": [],
-            "contrast": 5.920182580404443,
-            "foreground": "rgb(168, 179, 165)",
-            "background": [
-              48.92,
-              49.84,
-              50.760000000000005,
-              1
-            ],
-            "disabled": true
-          }
-        ],
-        "uiText": "Import from Another Browser\n\nCopy signed-in sessions so you can start where you left off.\n\nGoogle ChromePersonal\nGoogle ChromeWork\nArcPersonal\n\nCopies cookies and signed-in sessions only, not passwords, history or bookmarks. macOS may ask for your login password to unlock the browser’s Keychain item; Olive uses it on this Mac only. Your other browser isn’t changed. Existing Olive cookies are kept. Some sites will still ask you to sign in again.\n\nSkip\nImport",
         "viewport": {
           "width": 1100,
           "height": 864
@@ -8579,6 +8071,514 @@
         "scroll": false
       },
       "screenshots": [
+        "1360x880-dark-screen-page.png",
+        "1360x880-dark-screen-chrome.png"
+      ]
+    },
+    {
+      "label": "1360x880-dark-import",
+      "state": {
+        "visibleWindows": [
+          {
+            "title": "Olive",
+            "bounds": {
+              "x": 160,
+              "y": 30,
+              "width": 1360,
+              "height": 880
+            }
+          }
+        ],
+        "expected": {
+          "x": 252,
+          "y": 8,
+          "width": 1100,
+          "height": 864
+        },
+        "actual": {
+          "x": 252,
+          "y": 8,
+          "width": 1100,
+          "height": 864
+        },
+        "pane": {
+          "x": 252,
+          "y": 8,
+          "width": 1100,
+          "height": 864
+        },
+        "embedded": true,
+        "setupOnTop": true,
+        "sidebarWidth": 252,
+        "frame": {
+          "width": 1360,
+          "height": 880
+        },
+        "hiddenTabs": true,
+        "normal": true,
+        "overlay": null
+      },
+      "page": {
+        "interactive": [
+          {
+            "id": "back",
+            "rect": {
+              "x": 14,
+              "y": 14,
+              "width": 28,
+              "height": 28
+            },
+            "reasons": [],
+            "pointerEvents": "auto",
+            "disabled": false,
+            "styles": null
+          },
+          {
+            "id": "<input type=\"checkbox\" aria-label=\"Google Chrome · Personal\" style=\"\">",
+            "rect": {
+              "x": 736,
+              "y": 276.515625,
+              "width": 14,
+              "height": 14
+            },
+            "reasons": [],
+            "pointerEvents": "auto",
+            "disabled": false,
+            "styles": ""
+          },
+          {
+            "id": "<input type=\"checkbox\" aria-label=\"Google Chrome · Work\" style=\"\">",
+            "rect": {
+              "x": 736,
+              "y": 312.515625,
+              "width": 14,
+              "height": 14
+            },
+            "reasons": [],
+            "pointerEvents": "auto",
+            "disabled": false,
+            "styles": ""
+          },
+          {
+            "id": "<input type=\"checkbox\" aria-label=\"Arc · Personal\" style=\"\">",
+            "rect": {
+              "x": 736,
+              "y": 348.515625,
+              "width": 14,
+              "height": 14
+            },
+            "reasons": [],
+            "pointerEvents": "auto",
+            "disabled": false,
+            "styles": ""
+          },
+          {
+            "id": "later",
+            "rect": {
+              "x": 892,
+              "y": 816,
+              "width": 88,
+              "height": 28
+            },
+            "reasons": [],
+            "pointerEvents": "auto",
+            "disabled": false,
+            "styles": null
+          },
+          {
+            "id": "next",
+            "rect": {
+              "x": 988,
+              "y": 816,
+              "width": 88,
+              "height": 28
+            },
+            "reasons": [],
+            "pointerEvents": "auto",
+            "disabled": true,
+            "styles": null
+          }
+        ],
+        "text": [
+          {
+            "id": "import-title",
+            "text": "Import from Another Browser",
+            "reasons": [],
+            "contrast": 13.749019290112262,
+            "foreground": "rgb(230, 238, 226)",
+            "background": [
+              31,
+              32,
+              33,
+              1
+            ],
+            "disabled": false
+          },
+          {
+            "id": "intro",
+            "text": "Copy signed-in sessions so you can start where you left off.",
+            "reasons": [],
+            "contrast": 13.749019290112262,
+            "foreground": "rgb(230, 238, 226)",
+            "background": [
+              31,
+              32,
+              33,
+              1
+            ],
+            "disabled": false
+          },
+          {
+            "id": "source-title",
+            "text": "Google Chrome",
+            "reasons": [],
+            "contrast": 10.847133488000036,
+            "foreground": "rgb(230, 238, 226)",
+            "background": [
+              48.92,
+              49.84,
+              50.760000000000005,
+              1
+            ],
+            "disabled": false
+          },
+          {
+            "id": "source-detail",
+            "text": "Personal",
+            "reasons": [],
+            "contrast": 6.472727447539397,
+            "foreground": "rgb(176, 187, 173)",
+            "background": [
+              48.92,
+              49.84,
+              50.760000000000005,
+              1
+            ],
+            "disabled": false
+          },
+          {
+            "id": "source-title",
+            "text": "Google Chrome",
+            "reasons": [],
+            "contrast": 10.847133488000036,
+            "foreground": "rgb(230, 238, 226)",
+            "background": [
+              48.92,
+              49.84,
+              50.760000000000005,
+              1
+            ],
+            "disabled": false
+          },
+          {
+            "id": "source-detail",
+            "text": "Work",
+            "reasons": [],
+            "contrast": 6.472727447539397,
+            "foreground": "rgb(176, 187, 173)",
+            "background": [
+              48.92,
+              49.84,
+              50.760000000000005,
+              1
+            ],
+            "disabled": false
+          },
+          {
+            "id": "source-title",
+            "text": "Arc",
+            "reasons": [],
+            "contrast": 10.847133488000036,
+            "foreground": "rgb(230, 238, 226)",
+            "background": [
+              48.92,
+              49.84,
+              50.760000000000005,
+              1
+            ],
+            "disabled": false
+          },
+          {
+            "id": "source-detail",
+            "text": "Personal",
+            "reasons": [],
+            "contrast": 6.472727447539397,
+            "foreground": "rgb(176, 187, 173)",
+            "background": [
+              48.92,
+              49.84,
+              50.760000000000005,
+              1
+            ],
+            "disabled": false
+          },
+          {
+            "id": "import-footnote",
+            "text": "Copies cookies and signed-in sessions only, not passwords, history or bookmarks. macOS may ask for your login password to unlock the browser’s Keychain item; Olive uses it on this Mac only. Your other browser isn’t changed. Existing Olive cookies are kept. Some sites will still ask you to sign in again.",
+            "reasons": [],
+            "contrast": 8.204347686355124,
+            "foreground": "rgb(176, 187, 173)",
+            "background": [
+              31,
+              32,
+              33,
+              1
+            ],
+            "disabled": false
+          },
+          {
+            "id": "later",
+            "text": "Skip",
+            "reasons": [],
+            "contrast": 10.847133488000036,
+            "foreground": "rgb(230, 238, 226)",
+            "background": [
+              48.92,
+              49.84,
+              50.760000000000005,
+              1
+            ],
+            "disabled": false
+          },
+          {
+            "id": "next",
+            "text": "Import",
+            "reasons": [],
+            "contrast": 6.472727447539397,
+            "foreground": "rgb(176, 187, 173)",
+            "background": [
+              48.92,
+              49.84,
+              50.760000000000005,
+              1
+            ],
+            "disabled": true
+          }
+        ],
+        "uiText": "Import from Another Browser\n\nCopy signed-in sessions so you can start where you left off.\n\nGoogle ChromePersonal\nGoogle ChromeWork\nArcPersonal\n\nCopies cookies and signed-in sessions only, not passwords, history or bookmarks. macOS may ask for your login password to unlock the browser’s Keychain item; Olive uses it on this Mac only. Your other browser isn’t changed. Existing Olive cookies are kept. Some sites will still ask you to sign in again.\n\nSkip\nImport",
+        "viewport": {
+          "width": 1100,
+          "height": 864
+        },
+        "footnoteVisible": true,
+        "contentFooterOverlap": false,
+        "scroll": false
+      },
+      "sidebar": {
+        "interactive": [
+          {
+            "id": "btn-sidebar",
+            "rect": {
+              "x": 126,
+              "y": 9,
+              "width": 28,
+              "height": 28
+            },
+            "reasons": [],
+            "pointerEvents": "auto",
+            "disabled": false,
+            "styles": null
+          },
+          {
+            "id": "btn-back",
+            "rect": {
+              "x": 156,
+              "y": 9,
+              "width": 28,
+              "height": 28
+            },
+            "reasons": [],
+            "pointerEvents": "auto",
+            "disabled": true,
+            "styles": null
+          },
+          {
+            "id": "btn-forward",
+            "rect": {
+              "x": 186,
+              "y": 9,
+              "width": 28,
+              "height": 28
+            },
+            "reasons": [],
+            "pointerEvents": "auto",
+            "disabled": true,
+            "styles": null
+          },
+          {
+            "id": "btn-reload",
+            "rect": {
+              "x": 216,
+              "y": 9,
+              "width": 28,
+              "height": 28
+            },
+            "reasons": [],
+            "pointerEvents": "auto",
+            "disabled": false,
+            "styles": null
+          },
+          {
+            "id": "btn-site-settings",
+            "rect": {
+              "x": 21,
+              "y": 52,
+              "width": 24,
+              "height": 24
+            },
+            "reasons": [],
+            "pointerEvents": "auto",
+            "disabled": false,
+            "styles": null
+          },
+          {
+            "id": "setup-row",
+            "rect": {
+              "x": 10,
+              "y": 92,
+              "width": 234,
+              "height": 36
+            },
+            "reasons": [],
+            "pointerEvents": "auto",
+            "styles": null
+          },
+          {
+            "id": "newtab",
+            "rect": {
+              "x": 10,
+              "y": 132,
+              "width": 234,
+              "height": 36
+            },
+            "reasons": [],
+            "pointerEvents": "auto",
+            "disabled": false,
+            "styles": null
+          },
+          {
+            "id": "btn-ublock",
+            "rect": {
+              "x": 10,
+              "y": 803,
+              "width": 234,
+              "height": 30
+            },
+            "reasons": [],
+            "pointerEvents": "auto",
+            "disabled": false,
+            "styles": null
+          },
+          {
+            "id": "btn-ledger",
+            "rect": {
+              "x": 10,
+              "y": 847.546875,
+              "width": 53.1484375,
+              "height": 16.8984375
+            },
+            "reasons": [],
+            "pointerEvents": "auto",
+            "disabled": false,
+            "styles": null
+          },
+          {
+            "id": "btn-devtools",
+            "rect": {
+              "x": 156,
+              "y": 842,
+              "width": 28,
+              "height": 28
+            },
+            "reasons": [],
+            "pointerEvents": "auto",
+            "disabled": false,
+            "styles": null
+          },
+          {
+            "id": "btn-split",
+            "rect": {
+              "x": 186,
+              "y": 842,
+              "width": 28,
+              "height": 28
+            },
+            "reasons": [],
+            "pointerEvents": "auto",
+            "disabled": false,
+            "styles": null
+          },
+          {
+            "id": "btn-new",
+            "rect": {
+              "x": 216,
+              "y": 842,
+              "width": 28,
+              "height": 28
+            },
+            "reasons": [],
+            "pointerEvents": "auto",
+            "disabled": false,
+            "styles": null
+          }
+        ],
+        "text": [
+          {
+            "id": "host placeholder",
+            "text": "Search or enter URL",
+            "reasons": []
+          },
+          {
+            "id": "title",
+            "text": "Set Up Olive",
+            "reasons": []
+          },
+          {
+            "id": "setup-left",
+            "text": "2 left",
+            "reasons": []
+          },
+          {
+            "id": "plus",
+            "text": "+",
+            "reasons": []
+          },
+          {
+            "id": "title",
+            "text": "New Tab",
+            "reasons": []
+          },
+          {
+            "id": "fav letter",
+            "text": "F",
+            "reasons": []
+          },
+          {
+            "id": "title",
+            "text": "Fixture tab",
+            "reasons": []
+          },
+          {
+            "id": "btn-ublock",
+            "text": "uBO Lite · on",
+            "reasons": []
+          },
+          {
+            "id": "btn-ledger",
+            "text": "Activity",
+            "reasons": []
+          }
+        ],
+        "uiText": "Search or enter URL\nSet Up Olive\n2 left\n+\nNew Tab\nF\nFixture tab\nuBO Lite · on\nActivity",
+        "viewport": {
+          "width": 1360,
+          "height": 880
+        },
+        "footnoteVisible": true,
+        "contentFooterOverlap": false,
+        "scroll": false
+      },
+      "screenshots": [
         "1360x880-dark-import-page.png",
         "1360x880-dark-import-chrome.png"
       ]
@@ -8675,8 +8675,8 @@
             "id": "summary-calls",
             "text": "Skipped",
             "reasons": [],
-            "contrast": 7.503982926827148,
-            "foreground": "rgb(168, 179, 165)",
+            "contrast": 8.204347686355124,
+            "foreground": "rgb(176, 187, 173)",
             "background": [
               31,
               32,
@@ -8703,8 +8703,8 @@
             "id": "summary-screen",
             "text": "Skipped",
             "reasons": [],
-            "contrast": 7.503982926827148,
-            "foreground": "rgb(168, 179, 165)",
+            "contrast": 8.204347686355124,
+            "foreground": "rgb(176, 187, 173)",
             "background": [
               31,
               32,
@@ -8731,8 +8731,8 @@
             "id": "summary-import",
             "text": "Skipped",
             "reasons": [],
-            "contrast": 7.503982926827148,
-            "foreground": "rgb(168, 179, 165)",
+            "contrast": 8.204347686355124,
+            "foreground": "rgb(176, 187, 173)",
             "background": [
               31,
               32,
@@ -8759,8 +8759,8 @@
             "id": "summary-blocker",
             "text": "uBO Lite basic, on",
             "reasons": [],
-            "contrast": 7.503982926827148,
-            "foreground": "rgb(168, 179, 165)",
+            "contrast": 8.204347686355124,
+            "foreground": "rgb(176, 187, 173)",
             "background": [
               31,
               32,
@@ -8773,8 +8773,8 @@
             "id": "done-footnote",
             "text": "Change any of these later from the shield, the lock in the address bar, or Olive ▸ Set Up Olive…",
             "reasons": [],
-            "contrast": 7.503982926827148,
-            "foreground": "rgb(168, 179, 165)",
+            "contrast": 8.204347686355124,
+            "foreground": "rgb(176, 187, 173)",
             "background": [
               31,
               32,

@@ -99,6 +99,7 @@
       "groupId": 2,
       "loading": false,
       "loaded": true,
+      "frames": false,
       "targetId": "<target>",
       "webSocketDebuggerUrl": null
     }
@@ -119,6 +120,7 @@
       "groupId": 2,
       "loading": false,
       "loaded": true,
+      "frames": false,
       "targetId": "<target>",
       "webSocketDebuggerUrl": null
     }
@@ -139,6 +141,7 @@
       "groupId": 2,
       "loading": false,
       "loaded": true,
+      "frames": false,
       "targetId": "<target>",
       "webSocketDebuggerUrl": null
     }
@@ -159,6 +162,7 @@
       "groupId": 2,
       "loading": false,
       "loaded": true,
+      "frames": false,
       "targetId": "<target>",
       "webSocketDebuggerUrl": null
     }
@@ -179,6 +183,7 @@
       "groupId": 2,
       "loading": false,
       "loaded": true,
+      "frames": false,
       "targetId": "<target>",
       "webSocketDebuggerUrl": null
     }

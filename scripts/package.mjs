@@ -56,6 +56,7 @@ const [appDir] = await packager({
     NSCameraUsageDescription: 'Websites you allow can use your camera.',
     NSMicrophoneUsageDescription: 'Websites you allow can use your microphone.',
     NSLocationUsageDescription: 'Websites you allow can use your location.',
+    NSLocationWhenInUseUsageDescription: 'Websites you allow can use your location.',
     NSHumanReadableCopyright: 'Olive, local build',
   },
 });
