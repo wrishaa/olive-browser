@@ -152,6 +152,35 @@ test('screenshot of a hidden tab: stayHidden, size override only, no focus emula
   assert.equal(t2.wc.debugger.attached, false, 'override dropped (detached) after the linger');
 });
 
+test('first screenshot of a never-drawn hidden tab: UnknownVizError/empty frame retried, still hidden', async (t) => {
+  const { mgr, win, t2 } = fakeMgr();
+  const call = await api(t, mgr);
+  const results = [() => { throw new Error('UnknownVizError'); }, () => ({ isEmpty: () => true }), () => ({ isEmpty: () => false, toPNG: () => Buffer.from('PNG') })];
+  t2.wc.capturePage = async (rect, opts) => { t2.captureOpts.push(opts); return results.shift()(); };
+  const r = await call('GET', '/tabs/2/screenshot');
+  assert.equal(r.status, 200);
+  assert.equal(r.body, 'PNG');
+  assert.deepEqual(t2.captureOpts, [{ stayHidden: true }, { stayHidden: true }, { stayHidden: true }]);
+  assert.equal(win.activeId, 1, 'selected tab unchanged');
+  assert.equal(win.focusCalls, 0);
+  assert.equal(t2.wc.debugger.sent.some(([m]) => m === 'Emulation.setFocusEmulationEnabled'), false);
+});
+
+test('screenshot: a viz error that never clears gives up after a few tries; other errors are not retried', async (t) => {
+  const { mgr, t1, t2 } = fakeMgr();
+  const call = await api(t, mgr);
+  t2.wc.capturePage = async (rect, opts) => { t2.captureOpts.push(opts); throw new Error('UnknownVizError'); };
+  const r = await call('GET', '/tabs/2/screenshot');
+  assert.equal(r.status, 500);
+  assert.match(JSON.stringify(r.body), /UnknownVizError/);
+  assert.equal(t2.captureOpts.length, 4);
+  // a visible tab with a different error: one try only
+  t1.wc.capturePage = async (rect, opts) => { t1.captureOpts.push(opts); throw new Error('boom'); };
+  const r1 = await call('GET', '/tabs/1/screenshot');
+  assert.equal(r1.status, 500);
+  assert.equal(t1.captureOpts.length, 1);
+});
+
 test('eval on a hidden tab emulates focus only during the step, then re-throttles and detaches', async (t) => {
   const { mgr, t2 } = fakeMgr();
   const call = await api(t, mgr);

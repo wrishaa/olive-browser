@@ -153,7 +153,7 @@ async function handle(mgr, req, res, token) {
     if (m === 'GET' && !action) return send(res, 200, await describe(mgr, win, tab));
     if (m === 'GET' && action === 'screenshot') {
       // stayHidden: capture without flipping the page to visible (which unthrottles it)
-      const img = await mgr.agentWake.step(win, tab, () => withTimeout(tab.wc.capturePage(undefined, { stayHidden: true }), SCREENSHOT_TIMEOUT_MS, 'screenshot'), { focus: false });
+      const img = await mgr.agentWake.step(win, tab, () => captureHidden(tab.wc), { focus: false });
       if (img.isEmpty()) return send(res, 500, { error: 'empty screenshot' });
       return send(res, 200, img.toPNG(), 'image/png');
     }
@@ -343,6 +343,31 @@ async function targetIdFor(tab) {
     tab.targetId = null;
   }
   return tab.targetId;
+}
+
+// stayHidden capture that copes with a view that never drew: the first
+// capture of a never-shown tab (or right after the step's size override)
+// can fail with UnknownVizError or come back empty because the compositor has
+// no frame yet. that first request makes it draw one, so retry a few times,
+// still hidden, within the overall screenshot timeout.
+const CAPTURE_RETRIES = 3;
+async function captureHidden(wc, { timeoutMs = SCREENSHOT_TIMEOUT_MS, retries = CAPTURE_RETRIES, delayMs = 150 } = {}) {
+  const until = Date.now() + timeoutMs;
+  for (let i = 0; ; i++) {
+    let img, err;
+    try {
+      img = await withTimeout(wc.capturePage(undefined, { stayHidden: true }), Math.max(until - Date.now(), 1), 'screenshot');
+    } catch (e) {
+      if (e?.code === 'ETIMEDOUT' || !/viz/i.test(String(e?.message || e))) throw e;
+      err = e;
+    }
+    if (img && !img.isEmpty()) return img;
+    if (i >= retries || Date.now() + delayMs >= until || wc.isDestroyed()) {
+      if (err) throw err;
+      return img;
+    }
+    await new Promise((r) => setTimeout(r, delayMs));
+  }
 }
 
 // keep the compositor of a hidden view drawing until stop.done (stayHidden

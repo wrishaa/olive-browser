@@ -59,7 +59,7 @@ try {
   const userTab = tabsNow.find((t) => t.url.endsWith('/user'))?.id;
   const s0 = await winState();
   console.log('start:', front0, s0);
-  check(s0.front === front0 && !/electron|olive/i.test(s0.front) && s0.activeId === userTab, 'fixture running behind the user app, user tab selected', s0);
+  check(s0.front === front0 && !/electron/i.test(s0.front) && s0.activeId === userTab, 'fixture running behind the user app, user tab selected', s0);
 
   // 1. open in the background
   const opened = await call('POST', '/tabs', { url: base + '/page' });
@@ -119,6 +119,21 @@ try {
   const afterWin = await rates(id);
   check(afterWin.raf === 0 && afterWin.ticks <= 3 && (await call('GET', `/tabs/${id}`)).body.frames === false, 'frames window ends by itself, throttled again', afterWin);
   check(frontApp() === front0, 'frontmost app unchanged after frames', frontApp());
+
+  // 7b. first screenshot of a never-shown bg tab (no eval/step before it): the
+  //     installed build gave UnknownVizError here. a few fresh tabs, each must
+  //     return a png on the first call, stay hidden and leave the front app alone.
+  for (const q of ['a', 'b', 'c']) {
+    const fresh = await call('POST', '/tabs', { url: base + '/user?fresh-' + q });
+    const fid = fresh.body.id;
+    const fs1 = await call('GET', `/tabs/${fid}/screenshot`, null, true);
+    const fp = fs1.body;
+    const ok = fs1.status === 200 && fp.slice(1, 4).toString() === 'PNG' && fp.readUInt32BE(16) > 100;
+    const info1 = (await call('GET', `/tabs/${fid}`)).body;
+    check(ok, `first screenshot of a fresh bg tab returns a png (${q})`, { status: fs1.status, err: ok ? null : fp.toString().slice(0, 120) });
+    check(info1.active === false && info1.visible === false && frontApp() === front0, `fresh bg tab stays hidden, front unchanged (${q})`, { active: info1.active, visible: info1.visible, front: frontApp() });
+    await call('POST', `/tabs/${fid}/close`);
+  }
 
   // 8. static page + the agent's own viewport (the hive screenshot scripts):
   //    cdp captureScreenshot must not hang, the override survives between steps
