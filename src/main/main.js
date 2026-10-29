@@ -157,6 +157,9 @@ class Manager {
     if (!ses.__olivePageDialogs) {
       ses.__olivePageDialogs = true;
       ses.registerPreloadScript({ type: 'frame', id: 'olive-page-dialogs', filePath: path.join(__dirname, '../ui/page-dialogs-preload.js') });
+      // camera / mic / notifications / location: the page sees 'prompt' (not 'denied') until the
+      // user decides in olive's prompt (src/main/permissions.js, queryKeys)
+      ses.registerPreloadScript({ type: 'frame', id: 'olive-site-permissions', filePath: path.join(__dirname, '../ui/site-permissions-preload.js') });
     }
 
     if (ses.__oliveDownloadsInstalled) return;
