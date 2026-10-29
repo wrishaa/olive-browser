@@ -155,6 +155,17 @@ test('done stays done across relaunch and quit', async () => {
     const next = launch(dir, 'granted');
     assert.equal(next.setup.maybeRun(), false);
     assert.equal(saved(dir).step, 'done'); assert.equal(saved(dir).completed, true);
+    // Reopening a finished setup from the menu replays it but never un-finishes the profile.
+    assert.equal(next.setup.show(), true);
+    assert.equal(next.setup.state().step, 'welcome');
+    assert.equal(saved(dir).completed, true, 'Set Up Olive… does not reset completed');
+    assert.equal(next.setup.listed(), false, 'no sidebar row for a finished profile');
+    await next.setup.command('later');
+    assert.equal(saved(dir).completed, true); assert.notEqual(saved(dir).paused, true);
+    next.setup.close();
+    assert.equal(saved(dir).completed, true, 'closing a reopened finished setup keeps it done');
+    assert.equal(next.setup.listed(), false);
+    assert.equal(next.setup.maybeRun(), false, 'no auto popup after done');
   } finally { fs.rmSync(dir, { recursive: true, force: true }); }
 });
 

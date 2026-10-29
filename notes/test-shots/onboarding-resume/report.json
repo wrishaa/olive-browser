@@ -1,5 +1,5 @@
 {
-  "checks": 32,
+  "checks": 34,
   "failures": [],
   "note": "Own temp Electron copy (com.reframe.olive.onboarding-resume-test), temp userData, no CDP/API port. Kill = SIGTERM to the app pid, then a fresh launch on the same profile. Shots are WebContents captures (setup page + chrome)."
 }

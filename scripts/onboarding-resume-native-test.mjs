@@ -149,9 +149,12 @@ try {
   await clickMenu('Set Up Olive…');
   page = await renderer(app, 'onboarding');
   await page.locator('#welcome-title').waitFor({ state: 'visible' });
-  check(true, 'Set Up Olive… opens setup after done');
+  check(readSaved(file).completed === true, 'Set Up Olive… opens setup after done without resetting completed', readSaved(file));
   await page.locator('#later').click(); // Set Up Later
   await poll(async () => await app.evaluate(() => !global.olive.onboarding.view), 'set up later');
+  check(readSaved(file).completed === true && readSaved(file).paused !== true, 'closing a reopened finished setup keeps it done', readSaved(file));
+  { const chrome = await renderer(app, 'index'); await new Promise(r => setTimeout(r, 300));
+    check(await chrome.evaluate(() => { const r = document.querySelector('.setup-row, #setup-row'); return !r || r.hidden || getComputedStyle(r).display === 'none'; }), 'no setup sidebar row after done'); }
   const menu = await clickMenu('Import from Browser…');
   check(menu.indexOf('Import from Browser…') >= 0 && menu.indexOf('Import from Browser…') + 1 === menu.indexOf('Import from Arc…'), 'Olive menu has Import from Browser… next to Import from Arc…', menu);
   page = await renderer(app, 'onboarding');
@@ -163,7 +166,7 @@ try {
   for (const appearance of ['light', 'dark']) await shoot(page, chrome2, `menu-import-${appearance}`, appearance);
   await page.locator('#later').click();
   await poll(async () => await app.evaluate(() => !global.olive.onboarding.view), 'import panel closed');
-  check(readSaved(file).step === 'welcome' && readSaved(file).paused === true, 'closing the import panel leaves setup state as it was', readSaved(file));
+  check(readSaved(file).step === 'welcome' && readSaved(file).completed === true && readSaved(file).paused !== true, 'closing the import panel leaves setup state as it was', readSaved(file));
   check(!(await app.evaluate(() => global.fixtureCalls)).some(c => /^ask:/.test(c)), 'no macOS media prompt was requested');
 } catch (error) { failures.push({ message: error.message, stack: error.stack }); console.error(error); }
 finally {

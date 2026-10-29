@@ -77,8 +77,10 @@ class Onboarding {
     if (this.view && !this.view.isDestroyed()) { this.view.show(); this.view.focus(); return true; }
     if (options.only) return this.open();
     // Non-modal: skipping setup never prevents normal browsing.
-    if (this.saved.completed) { this.saved.completed = false; this.saved.step = 'welcome'; }
-    this.saved.paused = false; delete this.saved.pausedBy; this.save();
+    // A finished profile stays finished: reopening only replays the steps from the start.
+    if (this.saved.completed) this.saved.step = 'welcome';
+    else { this.saved.paused = false; delete this.saved.pausedBy; }
+    this.save();
     return this.open();
   }
   open() {
@@ -137,7 +139,7 @@ class Onboarding {
       if (this.only && ['next', 'skip', 'back', 'later', 'finish'].includes(action)) { this.close(); }
       else if (action === 'next' || action === 'skip') this.advance();
       else if (action === 'back') { this.saved.step = STEPS[Math.max(0, STEPS.indexOf(this.saved.step) - 1)]; this.save(); }
-      else if (action === 'later') { this.pause(); this.close(); }
+      else if (action === 'later') { if (!this.saved.completed) this.pause(); this.close(); }
       else if (action === 'finish') { this.saved.completed = true; this.saved.step = 'done'; this.save(); this.close(); this.mgr.focusedWindow?.()?.openPalette('new'); }
       else if (action === 'calls') {
         if (this.saved.step !== 'calls' || payload.confirmed !== true) throw new Error('Confirm the macOS permission warning first.');

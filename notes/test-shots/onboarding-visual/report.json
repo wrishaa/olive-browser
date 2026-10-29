@@ -133,7 +133,7 @@
           },
           {
             "id": "blocker-label",
-            "text": "Ad blocking",
+            "text": "Ads are blocked by default",
             "reasons": [],
             "contrast": 14.965646292385909,
             "foreground": "rgb(29, 42, 31)",
@@ -147,7 +147,7 @@
           },
           {
             "id": "blocker-description",
-            "text": "uBO Lite is turned off in this profile. Turn it on from the shield button.",
+            "text": "uBO Lite basic network blocking is on. Cosmetic filtering and per-site modes aren’t supported yet; turn blocking off from the shield button.",
             "reasons": [],
             "contrast": 9.163038365890072,
             "foreground": "rgb(63, 75, 64)",
@@ -230,7 +230,7 @@
             "disabled": false
           }
         ],
-        "uiText": "Welcome to Olive\n\nOlive keeps your browsing on this Mac. A few optional steps and you’re set.\n\nStays on this Mac\nTabs, history, imports and site choices are stored locally. No Olive account or cloud.\nAd blocking\nuBO Lite is turned off in this profile. Turn it on from the shield button.\nPermissions only when you need them\nOlive asks macOS for the microphone, camera or screen only when you choose to set them up.\n\nSites and your search engine still see what you send them.\n\nSet Up Later\nContinue",
+        "uiText": "Welcome to Olive\n\nOlive keeps your browsing on this Mac. A few optional steps and you’re set.\n\nStays on this Mac\nTabs, history, imports and site choices are stored locally. No Olive account or cloud.\nAds are blocked by default\nuBO Lite basic network blocking is on. Cosmetic filtering and per-site modes aren’t supported yet; turn blocking off from the shield button.\nPermissions only when you need them\nOlive asks macOS for the microphone, camera or screen only when you choose to set them up.\n\nSites and your search engine still see what you send them.\n\nSet Up Later\nContinue",
         "viewport": {
           "width": 1020,
           "height": 784
