@@ -1,0 +1,30 @@
+{
+  "app": "/Users/risha/Work/olive-onboarding-resume-wt/dist/Olive-darwin-arm64/Olive.app",
+  "checks": 13,
+  "failures": [],
+  "summary": {
+    "system": {
+      "microphone": "granted",
+      "camera": "granted",
+      "screen": "denied"
+    },
+    "devices": [
+      {
+        "kind": "audioinput",
+        "label": "Fake Default Audio Input"
+      },
+      {
+        "kind": "audioinput",
+        "label": "Fake Audio Input 1"
+      },
+      {
+        "kind": "audioinput",
+        "label": "Fake Audio Input 2"
+      },
+      {
+        "kind": "videoinput",
+        "label": "fake_device_0"
+      }
+    ]
+  }
+}
