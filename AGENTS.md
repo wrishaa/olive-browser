@@ -44,7 +44,7 @@ to rotate the token: quit olive, delete `agent-token`, relaunch.
 | `POST /tabs/:id/back` `/forward` `/reload` `/close` | |
 | `POST /tabs/:id/eval {expression}` | run js in the page, awaits promises, returns `{result}` |
 | `GET /tabs/:id/text` | `document.body.innerText` |
-| `GET /tabs/:id/screenshot` | png, works for background tabs without waking them |
+| `GET /tabs/:id/screenshot` | png, works for background tabs without waking them (incl. the first shot of a never-shown tab: retried inside olive, no script retry needed) |
 | `POST /tabs/:id/cdp {method, params, timeout?}` | any CDP command on that tab, no websocket needed. 504 after `timeout` ms (default 15000) |
 | `POST /tabs/:id/frames {on?, ms?}` | full frame rate (~60/s) for a background tab for `ms` (default 30000, max 600000); `on:false` ends it. off by default |
 | `POST /tabs/:id/devtools` | toggle docked devtools |
