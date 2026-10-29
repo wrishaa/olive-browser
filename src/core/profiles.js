@@ -7,13 +7,22 @@ class Profiles {
     this.root = root;
     this.file = path.join(root, 'profiles.json');
     const existing = ['session.json','permissions.json','history.json','Partitions/olive/Cookies'].some(p => fs.existsSync(path.join(root,p)));
+    // onboarding.json is only ever written for a fresh (non-legacy) default profile.
+    const freshBefore = fs.existsSync(path.join(root,'onboarding.json'));
     try { this.data = JSON.parse(fs.readFileSync(this.file,'utf8')); } catch (e) {
       if (fs.existsSync(this.file)) throw new Error('Profile registry could not be read. No profile was changed.');
-      this.data = { version:1, active:'default', profiles:[{id:'default',name:existing ? 'Default (existing)' : 'Default',isLegacy:existing,created:Date.now()}] };
+      const legacy = existing && !freshBefore;
+      this.data = { version:1, active:'default', profiles:[{id:'default',name:legacy ? 'Default (existing)' : 'Default',isLegacy:legacy,created:Date.now()}] };
+      // Persist a fresh registry at once. Otherwise the next launch sees this run's
+      // session.json, calls the profile legacy and setup can never open again.
+      if (!legacy) this.save();
     }
     if (this.data.version !== 1 || !Array.isArray(this.data.profiles) || !this.data.profiles.some(p=>p.id==='default')) throw new Error('Invalid profile registry');
     if (this.data.profiles.some(p=>!this.validId(p.id))) throw new Error('Invalid profile identifier');
     if (!this.get(this.data.active)) this.data.active='default';
+    // Heal registries saved after the bug above: a default profile with setup state was fresh.
+    const def = this.get('default');
+    if (def.isLegacy && freshBefore) { def.isLegacy=false; if (def.name==='Default (existing)') def.name='Default'; this.save(); }
   }
   validId(id) { return id==='default' || /^p-[a-f0-9]{24}$/.test(id); }
   list() { return this.data.profiles.map(p=>({...p,active:p.id===this.data.active})); }

@@ -25,6 +25,7 @@ function buildMenu(mgr) {
         { label: 'Keyboard Shortcuts…', accelerator: shortcut('settings'), click: () => mgr.shortcuts?.showSettings(mgr.focusedWindow()) },
         { type: 'separator' },
         { label: 'Set as Default Browser…', click: () => mgr.makeDefault() },
+        { label: 'Import from Browser…', click: () => mgr.onboarding?.showImport() },
         { label: 'Import from Arc…', click: () => require('./arc-import').showImport(mgr) },
         { label: 'Reset Permissions for This Site', click: () => mgr.permissions.reset(mgr.focusedWindow()) },
         { label: 'Copy Agent Endpoints', click: w('copyAgentInfo') },

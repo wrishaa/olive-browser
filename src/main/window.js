@@ -1137,7 +1137,7 @@ class OliveWindow {
       find: this.find,
       htmlFullscreen: !!this.htmlFullscreenId,
       appPage: ['settings','activities'].includes(this.inlinePage?.kind) ? {title:this.inlinePage.options.title||'Settings'} : null,
-      onboarding: !this.isPrivate && this.mgr.onboarding?.eligible() && !this.mgr.onboarding.saved.completed ? {active:this.inlinePage?.kind==='setup', step:this.mgr.onboarding.saved.step, remaining:Math.max(0,4-['welcome','calls','screen','import','done'].indexOf(this.mgr.onboarding.saved.step))} : null,
+      onboarding: !this.isPrivate && this.mgr.onboarding?.listed() ? {active:this.inlinePage?.kind==='setup', step:this.mgr.onboarding.saved.step, remaining:Math.max(0,4-require('./onboarding').STEPS.indexOf(this.mgr.onboarding.saved.step))} : null,
       active: !this.inlinePage && active
         ? {
             id: active.id,
@@ -1312,6 +1312,7 @@ class OliveWindow {
       case 'closePanel': return this.appPanel?.close();
       case 'profiles': return this.mgr.profileControls?.show();
       case 'onboarding': return this.mgr.onboarding?.show();
+      case 'importBrowser': return this.mgr.onboarding?.showImport();
       case 'onboardingLater': return this.mgr.onboarding?.command('later');
       case 'shortcuts': return this.mgr.shortcuts?.showSettings(this);
       case 'activities': return this.mgr.siteTime?.show(this);

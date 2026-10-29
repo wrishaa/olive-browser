@@ -1,5 +1,5 @@
 const $ = id => document.getElementById(id);
-const steps = ['welcome', 'calls', 'screen', 'import', 'done'];
+const steps = ['welcome', 'calls', 'import', 'screen', 'done'];
 const labels = { granted: 'Allowed', denied: 'Not allowed', restricted: 'Not allowed', 'not-determined': 'Not requested', 'not-applicable': 'Not needed', unknown: 'Not requested' };
 let state, pending = false, discovering = false, discovered = false, callsRequested = false, sourceKey = '';
 const selectedProfiles = new Set();
@@ -11,10 +11,10 @@ function callsAnswered() { return callsRequested || state?.callsRequested || ['m
 function controls() {
   if (!state) return;
   const step = state.step;
-  $('back').hidden = !['calls', 'screen', 'import'].includes(step);
-  $('later').hidden = step === 'done';
-  $('later').textContent = step === 'welcome' ? 'Set Up Later' : 'Skip';
-  $('next').textContent = step === 'done' ? 'Start Browsing' : step === 'screen' && state.screenRequested ? 'Quit and Reopen Olive…' : step === 'import' && !state.result && !isEmptyImport() ? 'Import' : 'Continue';
+  $('back').hidden = !!state.only || !['calls', 'screen', 'import'].includes(step);
+  $('later').hidden = step === 'done' || (!!state.only && !!state.result);
+  $('later').textContent = state.only ? 'Cancel' : step === 'welcome' ? 'Set Up Later' : 'Skip';
+  $('next').textContent = state.only && (state.result || isEmptyImport()) ? 'Done' : step === 'done' ? 'Start Browsing' : step === 'screen' && state.screenRequested ? 'Quit and Reopen Olive…' : step === 'import' && !state.result && !isEmptyImport() ? 'Import' : 'Continue';
   $('next').disabled = pending || !!state.busy || (step === 'import' && !state.result && (!discovered || (!isEmptyImport() && !selections().length)));
   $('later').disabled = pending || !!state.busy;
   $('back').disabled = pending || !!state.busy;
@@ -55,10 +55,11 @@ function renderSources() {
 }
 function render(nextState) {
   if (!nextState) return;
-  const previousStep = state?.step;
+  const previousStep = state?.step, previousResult = state?.result;
   state = nextState;
   for (const step of steps) $(step).hidden = step !== state.step;
   const index = steps.indexOf(state.step);
+  $('steps').hidden = !!state.only;
   $('steps').setAttribute('aria-label', `Step ${index + 1} of 5`);
   document.querySelectorAll('.dot').forEach((dot, i) => dot.classList.toggle('active', i === index));
   for (const [id, kind] of [['mic', 'microphone'], ['camera', 'camera']]) {
@@ -69,7 +70,7 @@ function render(nextState) {
     $(id + '-settings').hidden = !['denied', 'restricted'].includes(status);
   }
   $('screen-status').textContent = state.system.screen === 'granted' ? 'Allowed' : state.screenRequested ? 'Waiting for System Settings…' : 'Not allowed';
-  $('screen-footnote').textContent = state.screenRequested ? 'When Olive is turned on in System Settings, quit and reopen. Setup continues at Import.' : 'Next, macOS opens System Settings. Turn on Olive under Screen & System Audio Recording, then come back here. Olive has to quit and reopen once.';
+  $('screen-footnote').textContent = state.screenRequested ? 'When Olive is turned on in System Settings, quit and reopen. Setup finishes when Olive reopens.' : 'Next, macOS opens System Settings. Turn on Olive under Screen & System Audio Recording, then come back here. Olive has to quit and reopen once.';
   const blockerOn = state.blocker?.installed && state.blocker?.enabled;
   $('blocker-label').textContent = blockerOn ? 'Ads are blocked by default' : state.blocker?.error ? 'Ad blocking isn’t on' : 'Ad blocking';
   $('blocker-description').textContent = blockerOn ? 'uBO Lite basic network blocking is on. Cosmetic filtering and per-site modes aren’t supported yet; turn blocking off from the shield button.' : state.blocker?.error ? 'uBO Lite couldn’t load its rules. Try again from the shield button.' : state.blocker?.installed ? 'uBO Lite is turned off in this profile. Turn it on from the shield button.' : 'uBO Lite basic network blocking is starting. Check its status from the shield button.';
@@ -82,6 +83,7 @@ function render(nextState) {
   renderSources(); controls();
   if (previousStep && previousStep !== state.step) $(state.step + '-title').focus({ preventScroll: true });
   if (state.step === 'import' && !discovered && !discovering && !pending) discover();
+  if (!state.result && previousResult) { selectedProfiles.clear(); sourceKey = ''; renderSources(); controls(); }
 }
 async function discover() {
   if (discovering) return;
@@ -111,11 +113,11 @@ function continueSetup() {
 }
 $('next').onclick = continueSetup;
 $('back').onclick = () => command('back');
-$('later').onclick = () => command(state.step === 'welcome' ? 'later' : 'skip');
+$('later').onclick = () => command(state.only ? 'skip' : state.step === 'welcome' ? 'later' : 'skip');
 $('mic-settings').onclick = () => command('system', { kind: 'microphone' });
 $('camera-settings').onclick = () => command('system', { kind: 'camera' });
 window.addEventListener('keydown', event => {
-  if (event.key === 'Escape') { event.preventDefault(); command(state?.step === 'done' ? 'finish' : 'later'); }
+  if (event.key === 'Escape') { event.preventDefault(); command(state?.only ? 'skip' : state?.step === 'done' ? 'finish' : 'later'); }
   else if (event.key === 'Enter' && !['BUTTON', 'INPUT'].includes(document.activeElement?.tagName)) { event.preventDefault(); continueSetup(); }
   else if (event.metaKey && event.key === '[' && !$('back').hidden) { event.preventDefault(); command('back'); }
 });

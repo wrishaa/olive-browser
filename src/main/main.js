@@ -482,6 +482,7 @@ app.on('window-all-closed', () => {
 app.on('before-quit', () => {
   mgr.saveNow();
   mgr.quitting = true;
+  if (mgr.onboarding) mgr.onboarding.quitting = true; // setup resumes at its saved step next launch
   mgr.history.flush();
   mgr.perms.flush();
   mgr.siteTime?.dispose();
