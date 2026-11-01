@@ -8,6 +8,7 @@ const { matchesInput, holdForInput, holdReleased, holdRepressed } = require('./s
 const { toUrl, displayHost, SEARCH } = require('../core/url');
 const { commandSuggestions, isAppCommand } = require('../core/app-commands');
 const TG = require('../core/tab-groups');
+const TM = require('../core/tab-meta');
 
 const UI_HTML = path.join(__dirname, '..', 'ui', 'index.html');
 const UI_PRELOAD = path.join(__dirname, '..', 'ui', 'preload.js');
@@ -26,9 +27,12 @@ class Tab {
     this.id = nextTabId++;
     this.win = win;
     this.url = d.url || '';
-    this.title = d.title || '';
+    this.title = d.title || ''; // the page's title
+    this.customTitle = TM.cleanTitle(d.customTitle); // Rename Tab…: wins over the page title; '' = none
     this.favicon = d.favicon || '';
     this.pinned = !!d.pinned;
+    // the url a pinned tab belongs to (domain lock, Reset Pinned Tab); '' when unpinned
+    this.pinnedUrl = this.pinned ? d.pinnedUrl || d.url || '' : '';
     this.view = null;
     this.loading = false;
     this.audible = false;
@@ -52,7 +56,9 @@ class Tab {
     const wc = this.wc;
     return {
       id: this.id,
-      title: this.title || displayHost(this.url) || 'New Tab',
+      title: TM.shownTitle(this, displayHost(this.url) || 'New Tab'),
+      pageTitle: this.title,
+      customTitle: this.customTitle,
       url: this.url,
       host: displayHost(this.url),
       favicon: this.favicon,
@@ -60,6 +66,8 @@ class Tab {
       audible: this.audible,
       muted: wc ? wc.isAudioMuted() : this.muted,
       pinned: this.pinned,
+      pinnedUrl: this.pinnedUrl,
+      drifted: this.pinned && TM.drifted(this.pinnedUrl, this.errorFor || this.url),
       splitId: this.splitId,
       groupId: this.groupId,
       crashed: this.crashed,
@@ -190,7 +198,7 @@ class OliveWindow {
     for (const g of this.groups.values()) TG.fixContiguity(this, g.id);
     TG.prune(this, { by: 'user' });
     for (const sp of s.splits || []) {
-      const ids = sp.keys.map((k) => byKey.get(k)).filter(Boolean).map((t) => t.id);
+      const ids = sp.keys.map((k) => byKey.get(k)).filter((t) => t && !t.pinned).map((t) => t.id); // pinned tabs never split
       if (ids.length < 2) continue;
       const sid = nextSplitId++;
       this.splits.set(sid, { ids, ratios: normRatios(sp.ratios, ids.length) });
@@ -206,7 +214,7 @@ class OliveWindow {
     for (const id of this.allIds()) {
       const t = this.tabs.get(id);
       if (!t || !t.url) continue;
-      tabs.push({ key: t.id, url: t.url, title: t.title, favicon: t.favicon, pinned: t.pinned, lastActive: t.lastActive, groupKey: t.groupId });
+      tabs.push({ key: t.id, url: t.url, title: t.title, favicon: t.favicon, pinned: t.pinned, pinnedUrl: t.pinnedUrl || undefined, customTitle: t.customTitle || undefined, lastActive: t.lastActive, groupKey: t.groupId });
     }
     const splits = [...this.splits.values()].map((sp) => ({ keys: sp.ids, ratios: sp.ratios }));
     const groups = [...this.groups.values()].map((g) => ({ key: g.id, name: g.name, agent: g.agent, status: g.status, collapsed: g.collapsed, renamedByUser: g.renamedByUser }));
@@ -325,6 +333,19 @@ class OliveWindow {
           return t.view.webContents;
         },
       };
+    });
+
+    // domain lock (arc): a link or page-initiated navigation from a pinned tab to another
+    // site opens in a new tab next to it and the pinned tab stays put. will-navigate only
+    // fires for renderer-initiated main-frame navigations: server redirects (sso hops),
+    // back/forward, reload and loadURL (omnibar, reset) never come through here.
+    wc.on('will-navigate', (e, legacyUrl) => {
+      const url = e.url || legacyUrl;
+      if (!tab.pinned || e.isMainFrame === false || !url) return;
+      if (!TM.shouldOpenOutside({ pinnedUrl: tab.pinnedUrl || tab.url, currentUrl: tab.committedUrl || tab.url, targetUrl: url })) return;
+      e.preventDefault();
+      this.recordActivity('navigation', { tabId: tab.id, url, action: 'pinned-domain-lock' });
+      this.createTab({ url, activate: true, afterId: tab.id });
     });
 
     wc.on('page-title-updated', (_e, title) => {
@@ -548,12 +569,16 @@ class OliveWindow {
     const tabs = ids.map((id) => this.tabs.get(id)).filter(Boolean);
     if (!tabs.length) return;
     const all = new Set();
-    for (const t of tabs) for (const x of (t.splitId ? this.splits.get(t.splitId).ids : [t.id])) all.add(x);
+    if (list === 'pinned') {
+      // pinned tabs never split: pinning takes a tab out of its split, its partners stay
+      for (const t of tabs) { this.removeFromSplit(t.id); all.add(t.id); }
+    } else for (const t of tabs) for (const x of (t.splitId ? this.splits.get(t.splitId).ids : [t.id])) all.add(x);
     const moving = this.allIds().filter((id) => all.has(id)); // keep their current relative order
     const touched = new Set(tabs.map((t) => t.groupId).filter((g) => g != null));
     TG.place(this, moving, { list: list === 'pinned' ? 'pinned' : list === 'agent' ? 'agent' : 'unpinned', index, groupId: list === 'pinned' ? null : groupId });
     for (const g of touched) TG.fixContiguity(this, g);
     TG.prune(this, { by: 'user' });
+    this.syncPinnedUrls();
     this.changed();
   }
 
@@ -583,6 +608,52 @@ class OliveWindow {
     const tab = this.tabs.get(id);
     if (!tab || tab.pinned === pinned) return;
     this.moveTabs([id], pinned ? 'pinned' : 'unpinned', pinned ? this.pinned.length : 0, null);
+  }
+
+  // pinning remembers the url the tab is on; unpinning forgets it (re-pinning takes the
+  // current url again)
+  syncPinnedUrls() {
+    for (const t of this.tabs.values()) {
+      if (t.pinned && !t.pinnedUrl) t.pinnedUrl = t.errorFor || t.url || '';
+      else if (!t.pinned && t.pinnedUrl) t.pinnedUrl = '';
+    }
+  }
+
+  // Reset Pinned Tab / the sidebar's ↺: back to the pinned url, in place
+  resetPinned(id) {
+    const tab = this.tabs.get(id);
+    if (!tab?.pinned || !tab.pinnedUrl) return;
+    this.recordActivity('navigation', { tabId: tab.id, url: tab.pinnedUrl, action: 'reset-pinned' });
+    tab.url = tab.pinnedUrl;
+    tab.errorFor = null;
+    if (tab.wc) {
+      this.mgr.applyUserAgent(tab.wc, tab.url);
+      tab.wc.loadURL(tab.url).catch(() => {});
+    }
+    this.activate(tab.id);
+  }
+
+  // Rename Tab… / double-click: '' (or only spaces) goes back to the page title
+  renameTab(id, name) {
+    const tab = this.tabs.get(id);
+    if (!tab) return false;
+    tab.customTitle = TM.cleanTitle(name);
+    this.changed();
+    return true;
+  }
+
+  resetTabName(id) {
+    return this.renameTab(id, '');
+  }
+
+  // Set Current URL as Pinned URL
+  setPinnedUrl(id, url = null) {
+    const tab = this.tabs.get(id);
+    if (!tab?.pinned) return;
+    const next = url || tab.errorFor || tab.url;
+    if (!next) return;
+    tab.pinnedUrl = next;
+    this.changed();
   }
 
   duplicate(id) {
@@ -778,11 +849,27 @@ class OliveWindow {
     return [tab.id];
   }
 
+  // a pinned tab never joins a split (arc): its current url opens in a new normal tab at
+  // the top of the list and that one splits instead. returns the tab to split with.
+  unpinnedTwin(tab) {
+    if (!tab?.pinned) return tab;
+    const url = tab.errorFor || tab.url;
+    this.recordActivity('tab-open', { tabId: tab.id, url, action: 'split-pinned-clone' });
+    return this.createTab({ url, title: tab.title, activate: false, index: 0 });
+  }
+
+  // every split goes through here (tab menu, drag onto the page, palette ⇧⏎ / split
+  // mode, ⌃⇧=, agent api). returns { a, b } as split, or undefined
   split(aId, bId) {
-    const a = this.tabs.get(aId);
-    const b = this.tabs.get(bId);
+    let a = this.tabs.get(aId);
+    let b = this.tabs.get(bId);
     if (!a || !b || aId === bId) return;
     if (b.splitId && b.splitId === a.splitId) return;
+    if (a.splitId && this.splits.get(a.splitId)?.ids.length >= 4) return; // full: before any copy is made
+    a = this.unpinnedTwin(a);
+    b = this.unpinnedTwin(b);
+    aId = a.id;
+    bId = b.id;
     this.removeFromSplit(bId);
     let sp;
     if (a.splitId) {
@@ -805,11 +892,12 @@ class OliveWindow {
     const bGroup = b.groupId;
     TG.removeFromLists(this, sp.ids);
     list.splice(insertAt, 0, ...sp.ids);
-    for (const id of sp.ids) { this.tabs.get(id).pinned = a.pinned; this.tabs.get(id).groupId = a.pinned ? null : a.groupId; }
+    for (const id of sp.ids) { this.tabs.get(id).pinned = false; this.tabs.get(id).groupId = a.groupId; }
     if (a.groupId != null) TG.fixContiguity(this, a.groupId);
     if (bGroup != null && bGroup !== a.groupId) TG.prune(this, { by: 'user' });
     this.ensureView(b);
     this.activate(bId);
+    return { a, b };
   }
 
   removeFromSplit(id) {
@@ -1263,6 +1351,21 @@ class OliveWindow {
       t.push(sep, { label: 'Open in New Window', enabled: !!tab.url, click: () => { const url = tab.url; this.closeTab(id); this.mgr.newWindow({ url, private: this.isPrivate }); } });
       t.push(sep);
     }
+    if (n === 1) {
+      t.push(
+        { label: 'Rename Tab…', click: () => this.send('rename-tab', { id }) },
+        { label: 'Reset Tab Name', enabled: !!tab.customTitle, click: () => this.resetTabName(id) },
+        sep,
+      );
+    }
+    if (n === 1 && tab.pinned) {
+      const off = TM.drifted(tab.pinnedUrl, tab.errorFor || tab.url);
+      t.push(
+        { label: 'Reset Pinned Tab', enabled: off, click: () => this.resetPinned(id) },
+        { label: 'Set Current URL as Pinned URL', enabled: off, click: () => this.setPinnedUrl(id) },
+        sep,
+      );
+    }
     if (allPinned) t.push({ label: n === 1 ? 'Unload' : `Unload ${tabsWord}`, enabled: sel.some((x) => x.wc), click: () => this.closeTabs(selIds) }, { label: n === 1 ? 'Remove Pinned Tab' : `Remove ${tabsWord}`, click: () => { for (const x of sel) { this.setPinned(x.id, false); this.closeTab(x.id); } } });
     else t.push(
       { label: 'Unload (Free Memory)', enabled: sel.some((x) => x.wc && !this.visibleIds().includes(x.id)), click: () => { for (const x of sel) if (!this.visibleIds().includes(x.id)) this.unload(x); this.changed(); } },
@@ -1383,6 +1486,10 @@ class OliveWindow {
       case 'ungroup': return this.ungroup(a.id);
       case 'newTabInGroup': return this.newTabInGroup(a.id);
       case 'mute': return this.toggleMute(a.id);
+      case 'resetPinned': return this.resetPinned(a.id);
+      case 'renameTab': return this.renameTab(a.id, a.name);
+      case 'resetTabName': return this.resetTabName(a.id);
+      case 'setPinnedUrl': return this.setPinnedUrl(a.id);
       case 'clearUnpinned': return this.clearUnpinned();
       case 'overlay': return this.setOverlay(a.kind || null);
       case 'submit': return this.submit(a);
@@ -1516,13 +1623,13 @@ class OliveWindow {
       if (w.isPrivate !== this.isPrivate) continue;
       for (const t of w.tabs.values()) {
         if (!t.url) continue;
-        if (!ql || t.title.toLowerCase().includes(ql) || t.url.toLowerCase().includes(ql)) tabs.push(t);
+        if (!ql || t.title.toLowerCase().includes(ql) || t.customTitle.toLowerCase().includes(ql) || t.url.toLowerCase().includes(ql)) tabs.push(t);
       }
     }
     tabs.sort((a, b) => b.lastActive - a.lastActive);
     for (const t of tabs.slice(0, q ? 4 : 5)) {
       if (t.id === this.activeId) continue;
-      out.push({ kind: 'tab', tabId: t.id, title: t.title || t.url, url: t.url, favicon: t.favicon, sub: 'Switch to Tab' });
+      out.push({ kind: 'tab', tabId: t.id, title: t.customTitle || t.title || t.url, url: t.url, favicon: t.favicon, sub: 'Switch to Tab' });
     }
     if (!this.isPrivate) {
       const seen = new Set(out.map((o) => o.url));

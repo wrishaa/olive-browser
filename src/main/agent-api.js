@@ -98,7 +98,7 @@ const HELP = {
     'GET /tabs/:id/screenshot': 'png of the page, works for background tabs without waking them',
     'GET /tabs/:id/text': 'document.body.innerText',
     'POST /tabs/:id/devtools': 'toggle docked devtools',
-    'POST /tabs/:id/split {with}': 'show tab :id next to tab `with`',
+    'POST /tabs/:id/split {with}': 'show tab :id next to tab `with`. pinned tabs never split: a pinned tab is copied into a new normal tab that splits instead (the response describes that copy)',
     'GET /windows': 'windows',
     'POST /windows {private?, url?}': 'open a window',
     'GET /history?q=': 'browsing history',
@@ -229,8 +229,10 @@ async function handle(mgr, req, res, token) {
       case 'split': {
         const other = mgr.findTab(Number(b.with));
         if (!other || other.win !== win) return send(res, 400, { error: '`with` must be a tab id in the same window' });
-        win.split(other.tab.id, tab.id);
-        return send(res, 200, await describe(mgr, win, tab));
+        // a pinned tab never splits: olive splits a normal copy of it; describe that one
+        const done = win.split(other.tab.id, tab.id);
+        const shown = tab.pinned && done ? done.b : tab;
+        return send(res, 200, await describe(mgr, win, shown));
       }
       default:
         return send(res, 404, { error: 'unknown action' });
@@ -388,6 +390,7 @@ async function describe(mgr, win, tab) {
     windowId: win.id,
     private: win.isPrivate,
     title: tab.title,
+    ...(tab.customTitle ? { customTitle: tab.customTitle } : {}), // the user's name for the tab (Rename Tab…)
     url: tab.errorFor || tab.url,
     active: win.activeId === tab.id,
     visible: win.visibleIds().includes(tab.id),

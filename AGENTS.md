@@ -48,7 +48,7 @@ to rotate the token: quit olive, delete `agent-token`, relaunch.
 | `POST /tabs/:id/cdp {method, params, timeout?}` | any CDP command on that tab, no websocket needed. 504 after `timeout` ms (default 15000) |
 | `POST /tabs/:id/frames {on?, ms?}` | full frame rate (~60/s) for a background tab for `ms` (default 30000, max 600000); `on:false` ends it. off by default |
 | `POST /tabs/:id/devtools` | toggle docked devtools |
-| `POST /tabs/:id/split {with}` | show the tab next to tab `with` |
+| `POST /tabs/:id/split {with}` | show the tab next to tab `with`. pinned tabs never split: a pinned tab is copied into a new normal tab that splits instead (the response describes the copy) |
 | `GET /windows`, `POST /windows {private?, url?}` | |
 | `POST /groups {name, status?}` | make a **tab group** for your work: it sits collapsed at the bottom of the sidebar with a sparkle, your name (1-60 chars, a task noun phrase: "Flights to Lisbon") and a one-line status. returns `{id, …}` |
 | `POST /tabs {url, group: <id>}` | open a tab inside your group, always in the background (`activate` is ignored there). `group: {name, status?}` makes the group on the way |

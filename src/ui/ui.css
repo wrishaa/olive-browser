@@ -287,6 +287,10 @@ body.loading #urlbar .progress { opacity: 1; animation: sweep 1.1s linear infini
 .row .audio:hover { background: var(--row-hover); color: var(--text); }
 .row .audio svg { width: 13px; height: 13px; }
 .row .crash { color: #c0392b; font-size: 11px; }
+.row .reset { width: 22px; height: 22px; flex: none; display: grid; place-items: center; border-radius: 6px; color: var(--text-dim); }
+.row .reset svg { width: 12px; height: 12px; }
+.row .reset:hover { background: var(--row-hover); color: var(--text); }
+.row.drifted:hover .reset { margin-right: -4px; }
 .newtab-row { color: var(--text-dim); }
 .newtab-row .plus { width: 16px; text-align: center; font-size: 17px; font-weight: 300; line-height: 1; }
 
@@ -568,5 +572,14 @@ body:not(.no-agent) #tablist, #agent.overflows {
   box-shadow: 0 0 0 1px var(--line), 0 0 0 3.5px color-mix(in srgb, var(--accent) 38%, transparent);
   user-select: text; cursor: text;
 }
+.row .tab-rename {
+  flex: 1; min-width: 0; height: 24px; margin: 0 0 0 -4px; padding: 0 4px;
+  border: 0; outline: 0; border-radius: 5px; background: var(--card); color: var(--text);
+  font: 13px/24px -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  box-shadow: 0 0 0 1px var(--line), 0 0 0 3.5px color-mix(in srgb, var(--accent) 38%, transparent);
+  user-select: text; cursor: text;
+}
+.row .tab-rename::selection { background: color-mix(in srgb, var(--accent) 32%, transparent); }
+.row.renaming .close, .row.renaming .reset, .row.renaming .audio { display: none !important; }
 .group-head .rename::selection { background: color-mix(in srgb, var(--accent) 32%, transparent); }
 .group-head:has(.rename) .close, .group-head:has(.rename) .count { display: none !important; } /* nothing else on the row while naming */
