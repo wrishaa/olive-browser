@@ -1,3 +1,12 @@
 node_modules/
 dist/
 *.log
+build/
+DerivedData/
+*.xcuserstate
+xcuserdata/
+.DS_Store
+.env*
+*.p12
+*.p8
+*.mobileprovision
