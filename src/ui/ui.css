@@ -575,7 +575,7 @@ body:not(.no-agent) #tablist, #agent.overflows {
   user-select: text; cursor: text;
 }
 .row .tab-rename {
-  flex: 1; min-width: 0; height: 24px; margin: 0 0 0 -4px; padding: 0 4px;
+  flex: 1; min-width: 0; height: 24px; margin: 0 4px 0 -4px; padding: 0 5px;
   border: 0; outline: 0; border-radius: 5px; background: var(--card); color: var(--text);
   font: 13px/24px -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   box-shadow: 0 0 0 1px var(--line), 0 0 0 3.5px color-mix(in srgb, var(--accent) 38%, transparent);
