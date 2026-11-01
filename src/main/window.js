@@ -1500,6 +1500,9 @@ class OliveWindow {
         for (let i = this.mgr.downloads.length - 1; i >= 0; i--) if (this.mgr.downloads[i].state !== 'progressing') this.mgr.downloads.splice(i, 1);
         return this.mgr.broadcast();
       case 'focusActive': return active?.wc?.focus();
+      // an inline sidebar field (tab / group rename) needs the keyboard: the row click that
+      // preceded it moved native focus into the page (activate)
+      case 'focusUi': return this.ui.webContents.focus();
       case 'newWindow': return this.mgr.newWindow({});
       case 'newPrivateWindow': return this.mgr.newWindow({ private: true });
       case 'copyAgentInfo': clipboard.writeText(JSON.stringify(this.mgr.agentInfo(), null, 2)); return this.send('toast', 'Copied agent endpoints');

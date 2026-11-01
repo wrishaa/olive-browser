@@ -441,6 +441,7 @@ function startTabRename(id) {
   renderLists(true);
   const field = sidebar.querySelector(`.row[data-id="${id}"] .tab-rename`);
   if (!field) return void (renamingTab = null);
+  olive.cmd('focusUi'); // the row click put native focus in the page
   field.focus();
   field.select();
   const before = findTab(id);
@@ -471,6 +472,7 @@ function startRename(id) {
   renderLists(true);
   const field = sidebar.querySelector('.group-head .rename');
   if (!field) return void (renaming = null);
+  olive.cmd('focusUi');
   field.focus();
   field.select();
   const finish = (commit) => {

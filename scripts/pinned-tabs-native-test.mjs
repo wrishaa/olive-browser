@@ -139,9 +139,12 @@ try {
   await loaded(N, /title\?t=/);
   await poll(async () => (await tab(N)).pageTitle === 'Original Page');
   const rowN = ui.locator(`#unpinned .row[data-id="${N}"]`);
+  // real typing goes wherever native focus is; the row click moved it into the page
+  await main((w) => { global.__uiFocus = 0; const wc = w.ui.webContents; const f = wc.focus; wc.focus = function () { global.__uiFocus++; return f.call(this); }; });
   await rowN.locator('.title').dblclick();
   const field = rowN.locator('input.tab-rename');
   check(await poll(() => field.count()) === 1, 'item3: double-click on the row title opens the inline rename field');
+  check(await poll(() => app.evaluate(() => global.__uiFocus > 0)), 'item3: opening the field moves native keyboard focus to the sidebar ui');
   check(await field.evaluate((el) => el.value === 'Original Page' && el.selectionStart === 0 && el.selectionEnd === el.value.length), 'item3: field starts with the title, all selected');
   await field.pressSequentially('Reading list');
   shotsTaken.push(await shot('tab-rename-field-light.png'));
