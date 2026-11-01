@@ -104,6 +104,11 @@ try {
   { const start = w.activeId; input('Tab'); const prev = w.activeId; input('Control'); input('Tab'); assert.equal(w.activeId,start); input('Control',{type:'keyUp',control:false});
     input('Tab'); assert.equal(w.activeId,prev); input('Control',{control:true,isAutoRepeat:true}); assert.ok(w.tabMRU.walk); w.cmd('mruNext'); assert.equal(w.activeId,start); assert.equal(w.tabMRU.walk,null);
     w.cmd('mruNext'); assert.equal(w.activeId,prev); w.cmd('mruNext'); assert.equal(w.activeId,start); }
+  // esc with ctrl held cancels the walk: back to the start tab, mru unchanged, esc swallowed, the release is a no-op
+  { const start = w.activeId, order = [...w.tabMRU.order]; input('Tab'); input('Tab'); assert.notEqual(w.activeId,start);
+    const p0 = prevented; input('Escape'); assert.equal(prevented,p0+1); assert.equal(w.activeId,start); assert.equal(w.tabMRU.walk,null); assert.deepEqual(w.tabMRU.order,order);
+    input('Escape',{type:'keyUp'}); assert.equal(prevented,p0+2); input('Control',{type:'keyUp',control:false}); assert.equal(w.activeId,start); assert.deepEqual(w.tabMRU.order,order);
+    input('Escape',{control:false}); assert.equal(prevented,p0+2,'esc outside a walk is not swallowed'); }
   const active = w.activeId; input('Tab',{meta:true}); assert.equal(w.activeId,active);
   w.mgr.shortcuts = s;
   s.set('mruNext','Cmd+Alt+K'); s.set('mruPrev','Cmd+Alt+Shift+K');

@@ -133,6 +133,68 @@ const scenarios = {
     await tap(); ref.press(1); ref.release();
     await expectState(ref, 'second tap returns to original');
   },
+  async a5() {
+    // esc while the modifier is held cancels: back to the start tab, mru unchanged,
+    // esc never reaches the page, and the later modifier release does nothing.
+    const escLog = () => ev(async () => {
+      const w = global.olive.focusedWindow();
+      const out = {};
+      for (const t of w.tabs.values()) if (t.wc && !t.wc.isDestroyed()) out[t.id] = await t.wc.executeJavaScript('window.__esc || 0').catch(() => -1);
+      return out;
+    });
+    const armEsc = () => ev(async () => {
+      for (const t of global.olive.focusedWindow().tabs.values()) if (t.wc) await t.wc.executeJavaScript("window.__esc = 0; addEventListener('keydown', e => { if (e.key === 'Escape') window.__esc++; }, true); addEventListener('keyup', e => { if (e.key === 'Escape') window.__esc++; }, true); 0").catch(() => {});
+    });
+    const esc = async (m, target) => { await key('keyDown', 'Escape', m, target); await key('keyUp', 'Escape', m, target); };
+    // 'cmd': a remapped hold walk (Cmd+Alt+K, as in shortcuts-native-test); olive rejects
+    // Alt+Tab as a shortcut, so there is no alt-tab walk.
+    for (const style of ['control', 'cmd']) {
+      const { order } = await reset(4);
+      const start = order[0];
+      if (style === 'cmd') await ev(() => { global.olive.shortcuts.overrides.mruNext = 'Cmd+Alt+K'; global.olive.shortcuts.overrides.mruPrev = 'Cmd+Alt+Shift+K'; });
+      // force every tab's view so the page listeners can be armed
+      await ev(async () => { const w = global.olive.focusedWindow(); for (const t of w.tabs.values()) w.ensureView(t); await new Promise(r => setTimeout(r, 300)); });
+      await armEsc();
+      const cmd = style === 'cmd';
+      const held = cmd ? ['meta', 'alt'] : ['control'];
+      const K = cmd ? 'Meta' : 'Control', step = cmd ? 'K' : 'Tab';
+      const down = (k, h = true) => key('keyDown', k, h ? held : []);
+      const up = (k, h = true) => key('keyUp', k, h ? held : []);
+      await down(K);
+      for (let i = 0; i < 2; i++) { await down(step); await up(step); }
+      let s = await settled();
+      check(s.walk && s.active === order[2], `${style}: hold walk previews mru[2]`, s);
+      await down('Escape'); await up('Escape');
+      s = await settled();
+      check(!s.walk && s.active === start && eqArr(s.order, order), `${style}: esc cancels back to the start tab, mru unchanged`, { got: s, want: { start, order } });
+      await up(K, false);
+      s = await settled();
+      check(!s.walk && s.active === start && eqArr(s.order, order), `${style}: releasing the modifier after esc does nothing`, s);
+      const log = await escLog();
+      check(Object.values(log).every(n => n === 0), `${style}: esc never reached a page`, log);
+      // the next tap still toggles to the previous tab
+      await down(K); await down(step); await up(step); await up(K, false);
+      s = await settled();
+      check(s.active === order[1] && s.order[0] === order[1] && s.order[1] === start, `${style}: next tap after a cancel toggles normally`, s);
+      // esc with no walk open still reaches the page
+      await esc([]);
+      const after = await escLog();
+      check(after[s.active] > 0, `${style}: esc outside a walk still reaches the page`, after);
+      if (style === 'cmd') await ev(() => { delete global.olive.shortcuts.overrides.mruNext; delete global.olive.shortcuts.overrides.mruPrev; });
+    }
+    // palette open (focus stays in ui): esc cancels the walk, palette stays open
+    const { order } = await reset(4);
+    await ev(() => global.olive.focusedWindow().openPalette('new'));
+    await pause(100);
+    await ev(() => global.olive.focusedWindow().ui.webContents.focus());
+    await ctrlDown(); await tab(); await tab();
+    await esc(['control']);
+    await ctrlUp();
+    const s = await settled();
+    const ov = await ev(() => global.olive.focusedWindow().overlay);
+    check(!s.walk && s.active === order[0] && eqArr(s.order, order) && ov === 'palette', 'palette: esc cancels the walk and is not taken by the palette', { s, ov });
+    await ev(() => global.olive.focusedWindow().setOverlay(null));
+  },
   async b() {
     const { order } = await reset(4);
     const ref = new Ref(order);

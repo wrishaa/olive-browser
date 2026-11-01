@@ -4,7 +4,7 @@ const { BaseWindow, WebContentsView, Menu, clipboard, shell, nativeTheme, app } 
 const path = require('path');
 const { TabMRU } = require('./tab-mru');
 const { COMMANDS } = require('./shortcuts');
-const { matchesInput, holdForInput, holdReleased, holdRepressed } = require('./shortcut-input');
+const { matchesInput, holdForInput, holdReleased, holdRepressed, cancelsWalk } = require('./shortcut-input');
 const { toUrl, displayHost, SEARCH } = require('../core/url');
 const { commandSuggestions, isAppCommand } = require('../core/app-commands');
 const TG = require('../core/tab-groups');
@@ -1543,6 +1543,18 @@ class OliveWindow {
 
   wireTabKeys(wc) {
     wc.on('before-input-event', (event, input) => {
+      // Esc while the walk is held cancels it: back to the start tab, mru untouched,
+      // and the later modifier release finds no walk. Swallow the Esc (and its keyUp)
+      // so the page / palette / inline page never sees it.
+      if (this.tabMRU.walk && cancelsWalk(input)) {
+        event.preventDefault();
+        this.tabWalkSwallowEscUp = true;
+        return this.cancelTabWalk();
+      }
+      if (input.type === 'keyUp' && this.tabWalkSwallowEscUp && cancelsWalk({ ...input, type: 'keyDown' })) {
+        this.tabWalkSwallowEscUp = false;
+        return event.preventDefault();
+      }
       if (this.tabMRU.walk) {
         if (holdReleased(this.tabWalkHold, input)) this.finishTabWalk();
         // A fresh press of the hold modifier means it was released since the walk
@@ -1591,6 +1603,20 @@ class OliveWindow {
     try {
       for (const flag of modifiers) target.sendInputEvent({ type: 'keyDown', keyCode: keyCode[flag], modifiers });
     } finally { this.tabWalkPriming = null; }
+  }
+
+  cancelTabWalk() {
+    const hold = this.tabWalkHold;
+    const start = this.tabMRU.cancel();
+    if (start == null) return this.finishTabWalk(); // start tab closed mid-walk: commit where we are
+    if (start !== this.activeId) this.activate(start, { mruPreview: true });
+    // the modifier is still physically down: re-prime the start tab so its keyUp
+    // arrives (it then finds no walk and does nothing)
+    this.tabWalkHold = hold;
+    const tab = this.tabs.get(this.activeId);
+    if (tab?.wc) this.primeTabWalkKeys(tab.wc);
+    this.tabWalkHold = null;
+    this.changed?.();
   }
 
   finishTabWalk() {

@@ -3,12 +3,14 @@
 model: each window keeps an MRU list of its tab ids (most recent first). a "walk" is
 a frozen snapshot of that list taken on the first ctrl+tab keyDown; previews during
 the walk never change recency. releasing the hold modifier (ctrl) commits: the tab
-you landed on becomes most recent. ctrl+shift+tab walks the same snapshot backwards
+you landed on becomes most recent. esc while the modifier is still held cancels the
+walk instead (back to the tab it started on, mru untouched). ctrl+shift+tab walks the same snapshot backwards
 (shift is not a commit modifier, so toggling shift mid-walk just reverses).
 
 | id | scenario | expected |
 |----|----------|----------|
 | a | mru = [A, B, ...], A active. tap ctrl+tab (ctrl down, tab, ctrl up). tap again. | first tap -> B, mru [B, A, ...]. second tap -> A, mru [A, B, ...]. |
+| a5 | mru = [A, B, C, D], A active. hold ctrl, tab twice (previews C), press esc with ctrl still held, then release ctrl. same for a remapped hold walk (e.g. cmd+alt+k). | esc cancels: back on A, mru still [A, B, C, D], no walk left. esc is swallowed (the page, palette or inline page never sees its keyDown/keyUp). the ctrl release afterwards does nothing; the next tap toggles A -> B as usual. esc with no walk open reaches the page normally. (olive rejects alt+tab as a shortcut, so there is no alt-tab walk.) |
 | b | mru = [A, B, C, D], A active. hold ctrl, press tab N times (N=3), release ctrl. then one tap. | previews B, C, D; on release D active, mru [D, A, B, C]. next tap -> A. |
 | c | 20 quick taps, ctrl released between each (including when the keyUp lands in a different webcontents than the keyDown, e.g. the previewed tab's view, or is lost entirely). | alternates A, B, A, B ... never walks to a third tab. |
 | d1 | sidebar click on tab C (activate from ui), then tap. | goes back to the tab active before the click. |
@@ -42,3 +44,24 @@ you landed on becomes most recent. ctrl+shift+tab walks the same snapshot backwa
    disappeared mid-walk; it now continues from the closed tab's slot.
 
 before fix (native): a, b, c, c2, c3, d1, d4, e, f1, f2 fail; d2, d3, d5 pass. after: all pass.
+
+## a5 esc cancel (follow-up)
+
+before: esc during a held walk was not special. with a real keyboard (ctrl still held,
+so esc arrives flagged ctrl) it fell through to the page/palette and the walk stayed
+open until the ctrl release committed the previewed tab; with a synthetic esc that lacks
+the ctrl flag, `holdReleased` read it as "released elsewhere" and committed at once.
+either way the switch happened. fix: `TabMRU` remembers the walk's start tab and gets
+`cancel()` (drops the walk, returns the start, no recency change); window.js
+`wireTabKeys` checks `cancelsWalk(input)` before the release check, `preventDefault()`s
+the esc keyDown and its keyUp, and `cancelTabWalk()` goes back to the start tab as a
+preview (no touch) and re-primes it so the coming modifier keyUp lands cleanly.
+if the start tab was closed mid-walk, esc commits where the walk is.
+tests: unit `a5` cases, `scripts/shortcuts-test.mjs` (mocked window), native scenario
+`a5` (ctrl+tab and a cmd+alt+k remap, plus palette open): 4/13 before, 13/13 after.
+real keys (cua into `scripts/tab-mru-cua-fixture.mjs`): real ctrl+tab x2 then real
+ctrl+esc -> start tab, mru unchanged, esc unseen by pages, release a no-op.
+cua cannot post a bare modifier release (no flagsChanged; ctrl+tab arrives as a
+ctrl-flagged keyDown only), and this shell has no accessibility trust to post CGEvents,
+so in that run the commit is a Control keyUp sent with `webContents.sendInputEvent`,
+never esc.
