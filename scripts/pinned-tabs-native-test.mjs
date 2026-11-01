@@ -179,6 +179,62 @@ try {
   check((await tab(N)).title === 'Page Retitled Itself', 'item3: Reset Tab Name returns to the page title', await tab(N));
   await main((w, id) => w.renameTab(id, 'Reading list'), N);
 
+  // ---------- item 4: pinned tabs never split ----------
+  const pinnedSplitFree = () => main((w) => {
+    const bad = [];
+    for (const sp of w.splits.values()) for (const id of sp.ids) if (w.tabs.get(id)?.pinned) bad.push(id);
+    for (const id of w.pinned) if (w.tabs.get(id).splitId) bad.push(id);
+    return bad;
+  });
+  const splitOf = (id) => main((w, id) => { const t = w.tabs.get(id); const sp = t?.splitId ? w.splits.get(t.splitId) : null; return sp ? sp.ids.map((x) => ({ id: x, url: w.tabs.get(x).url, pinned: w.tabs.get(x).pinned })) : null; }, id);
+  const pUrl = (await tab(P)).url;
+  const isCopy = (m) => m && !m.pinned && m.id !== P && m.url === pUrl;
+  // a) tab menu: Open in Split View with Current Tab, while the pinned tab is current
+  const S1 = await main((w, a) => w.createTab({ url: a.A + '/split-one', activate: false, focusPage: false }).id, { A });
+  await loaded(S1, /split-one/);
+  await main((w, id) => w.activate(id, { focusPage: false }), P);
+  await main((w, id) => w.tabMenuTemplate(id).find((x) => x.label === 'Open in Split View with Current Tab').click(), S1);
+  let sp = await splitOf(S1);
+  check(sp && sp.length === 2 && isCopy(sp[0]) && (await tab(P)).splitId == null, 'item4: split with current tab (pinned current) splits a normal copy', sp);
+  // b) palette ⇧⏎ while the pinned tab is active
+  await main((w, id) => { w.activate(id, { focusPage: false }); w.openPalette('new'); }, P);
+  await ui.locator('#palette-input').fill(`${A}/split-palette`);
+  await pause(200);
+  await ui.locator('#palette-input').press('Shift+Enter');
+  const SP = await poll(async () => (await tabs()).find((x) => x.url.includes('/split-palette')));
+  sp = SP && await poll(() => splitOf(SP.id));
+  check(sp && sp.length === 2 && isCopy(sp[0]) && sp[1].id === SP.id && (await tab(P)).splitId == null, 'item4: palette shift+enter from a pinned tab splits a normal copy', sp);
+  // c) drag a pinned row onto the page: the ui sends split {a: active, b: dragged}
+  const S3 = await main((w, a) => w.createTab({ url: a.A + '/split-drag', activate: true, focusPage: false }).id, { A });
+  await loaded(S3, /split-drag/);
+  await ui.evaluate(({ a, b }) => window.olive.cmd('split', { a, b }), { a: S3, b: P });
+  sp = await poll(() => splitOf(S3));
+  check(sp && sp.length === 2 && sp[0].id === S3 && isCopy(sp[1]) && (await tab(P)).splitId == null, 'item4: drag pinned tab to split (ui split cmd) splits a normal copy', sp);
+  // d) agent api POST /tabs/:id/split {with}
+  const S4 = await main((w, a) => w.createTab({ url: a.A + '/split-api', activate: false, focusPage: false }).id, { A });
+  await loaded(S4, /split-api/);
+  const api = await main((w) => ({ port: w.mgr.apiPort }));
+  const token = fs.readFileSync(path.join(root, 'agent-token'), 'utf8').trim();
+  const r = await fetch(`http://127.0.0.1:${api.port}/tabs/${P}/split`, { method: 'POST', headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' }, body: JSON.stringify({ with: S4 }) });
+  const body = await r.json();
+  sp = await splitOf(S4);
+  check(r.status === 200 && body.id !== P && !body.pinned && body.splitId && sp?.length === 2 && isCopy(sp[1]) && (await tab(P)).splitId == null, 'item4: agent api POST /tabs/:id/split on a pinned tab splits a normal copy', { status: r.status, body: { id: body.id, pinned: body.pinned, splitId: body.splitId }, sp });
+  // e) splitNew (⌃⇧=, Split View with New Tab) while the pinned tab is active
+  await main((w, id) => { w.activate(id, { focusPage: false }); w.cmd('splitNew'); }, P);
+  await ui.locator('#palette-input').fill(`${A}/split-new`);
+  await pause(200);
+  await ui.locator('#palette-input').press('Enter');
+  const SN = await poll(async () => (await tabs()).find((x) => x.url.includes('/split-new')));
+  sp = SN && await poll(() => splitOf(SN.id));
+  check(sp && sp.length === 2 && isCopy(sp[0]) && (await tab(P)).splitId == null, 'item4: splitNew from a pinned tab splits a normal copy', sp);
+  // f) pinning a split member takes it out of the split
+  await main((w, id) => w.setPinned(id, true), S1);
+  check((await tab(S1)).pinned && (await tab(S1)).splitId == null, 'item4: pinning a split tab takes it out of its split', await tab(S1));
+  await main((w, id) => w.setPinned(id, false), S1);
+  const bad = await pinnedSplitFree();
+  check(bad.length === 0 && (await tab(P)).pinned, 'item4: no pinned tab is in any split; the pinned tab is still pinned', bad);
+  await main((w, id) => w.activate(id, { focusPage: false }), N);
+
   // ---------- restart: persisted state ----------
   await main((w, a) => { w.mgr.saveNow(); }, null);
   await app.close();

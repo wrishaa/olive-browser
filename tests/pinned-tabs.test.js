@@ -1,4 +1,4 @@
-// pinned tabs: domain lock + reset, rename tab (src/core/tab-meta.js and the OliveWindow model),
+// pinned tabs: domain lock + reset, rename tab, never split (src/core/tab-meta.js and the OliveWindow model),
 // with fakes only: no electron, no real profile.
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
@@ -172,4 +172,67 @@ test('rename tab: sticks over page title changes, reset and empty go back, persi
     w.cmd('renameTab', { id: t.id, name: '   ' }); // clearing the field
     assert.equal(t.snapshot().title, 'Inbox (4)');
   }
+});
+
+test('pinned tabs never split: split() copies a pinned side into a new normal tab', () => {
+  const w = fakeWindow();
+  const p = w.add('https://mail.example.com/inbox', { pinned: true, title: 'Inbox' });
+  const n = w.add('https://b.com/');
+  // split with current tab while the pinned tab is current
+  w.activeId = p.id;
+  const r = w.split(p.id, n.id);
+  assert.equal(p.splitId, null, 'pinned tab stays unsplit');
+  assert.ok(w.pinned.includes(p.id) && p.pinned);
+  assert.notEqual(r.a.id, p.id);
+  assert.equal(r.a.url, 'https://mail.example.com/inbox');
+  assert.equal(r.a.pinned, false);
+  assert.ok(r.a.splitId && r.a.splitId === n.splitId);
+  assert.deepEqual(w.splits.get(n.splitId).ids, [r.a.id, n.id]);
+  assert.ok(w.unpinned.includes(r.a.id));
+  // the pinned tab as the joining side (drag a pinned row onto the page / api split)
+  const m = w.add('https://c.com/');
+  const r2 = w.split(m.id, p.id);
+  assert.equal(p.splitId, null);
+  assert.equal(r2.b.url, p.url);
+  assert.equal(r2.b.splitId, m.splitId);
+  // both pinned
+  const q = w.add('https://d.com/', { pinned: true });
+  const before = w.pinned.slice();
+  const r3 = w.split(p.id, q.id);
+  assert.deepEqual(w.pinned, before);
+  assert.ok(!p.splitId && !q.splitId && r3.a.splitId === r3.b.splitId && !r3.a.pinned && !r3.b.pinned);
+  for (const sp of w.splits.values()) for (const id of sp.ids) assert.equal(w.tabs.get(id).pinned, false);
+});
+
+test('openInSplit from a pinned tab (palette ⇧⏎, split mode, ⌃⇧=) splits a copy', () => {
+  const w = fakeWindow();
+  const p = w.add('https://mail.example.com/inbox', { pinned: true });
+  w.activeId = p.id;
+  w.setOverlay = () => {};
+  w.submit({ mode: 'split', input: 'https://news.example.org/' });
+  assert.equal(p.splitId, null);
+  const sp = [...w.splits.values()][0];
+  assert.equal(sp.ids.length, 2);
+  const urls = sp.ids.map((id) => w.tabs.get(id).url);
+  assert.deepEqual(urls, ['https://mail.example.com/inbox', 'https://news.example.org/']);
+  assert.ok(sp.ids.every((id) => !w.tabs.get(id).pinned && id !== p.id));
+});
+
+test('pinning a split tab takes it out of the split; restore drops pinned tabs from splits', () => {
+  const w = fakeWindow();
+  const a = w.add('https://a.com/');
+  const b = w.add('https://b.com/');
+  const c = w.add('https://c.com/');
+  w.split(a.id, b.id);
+  w.split(a.id, c.id);
+  w.setPinned(b.id, true);
+  assert.equal(b.pinned, true);
+  assert.equal(b.splitId, null);
+  assert.deepEqual(w.splits.get(a.splitId).ids, [a.id, c.id]);
+  assert.equal(b.pinnedUrl, 'https://b.com/');
+  // a session saved by an older build with a pinned split
+  const r = fakeWindow();
+  r.restore({ tabs: [{ key: 1, url: 'https://x.com/', pinned: true }, { key: 2, url: 'https://y.com/', pinned: true }, { key: 3, url: 'https://z.com/' }], splits: [{ keys: [1, 2] }, { keys: [1, 3] }] });
+  assert.equal(r.splits.size, 0);
+  assert.ok([...r.tabs.values()].every((t) => !t.splitId));
 });

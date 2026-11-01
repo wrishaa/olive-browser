@@ -198,7 +198,7 @@ class OliveWindow {
     for (const g of this.groups.values()) TG.fixContiguity(this, g.id);
     TG.prune(this, { by: 'user' });
     for (const sp of s.splits || []) {
-      const ids = sp.keys.map((k) => byKey.get(k)).filter(Boolean).map((t) => t.id);
+      const ids = sp.keys.map((k) => byKey.get(k)).filter((t) => t && !t.pinned).map((t) => t.id); // pinned tabs never split
       if (ids.length < 2) continue;
       const sid = nextSplitId++;
       this.splits.set(sid, { ids, ratios: normRatios(sp.ratios, ids.length) });
@@ -569,7 +569,10 @@ class OliveWindow {
     const tabs = ids.map((id) => this.tabs.get(id)).filter(Boolean);
     if (!tabs.length) return;
     const all = new Set();
-    for (const t of tabs) for (const x of (t.splitId ? this.splits.get(t.splitId).ids : [t.id])) all.add(x);
+    if (list === 'pinned') {
+      // pinned tabs never split: pinning takes a tab out of its split, its partners stay
+      for (const t of tabs) { this.removeFromSplit(t.id); all.add(t.id); }
+    } else for (const t of tabs) for (const x of (t.splitId ? this.splits.get(t.splitId).ids : [t.id])) all.add(x);
     const moving = this.allIds().filter((id) => all.has(id)); // keep their current relative order
     const touched = new Set(tabs.map((t) => t.groupId).filter((g) => g != null));
     TG.place(this, moving, { list: list === 'pinned' ? 'pinned' : list === 'agent' ? 'agent' : 'unpinned', index, groupId: list === 'pinned' ? null : groupId });
@@ -846,11 +849,27 @@ class OliveWindow {
     return [tab.id];
   }
 
+  // a pinned tab never joins a split (arc): its current url opens in a new normal tab at
+  // the top of the list and that one splits instead. returns the tab to split with.
+  unpinnedTwin(tab) {
+    if (!tab?.pinned) return tab;
+    const url = tab.errorFor || tab.url;
+    this.recordActivity('tab-open', { tabId: tab.id, url, action: 'split-pinned-clone' });
+    return this.createTab({ url, title: tab.title, activate: false, index: 0 });
+  }
+
+  // every split goes through here (tab menu, drag onto the page, palette ⇧⏎ / split
+  // mode, ⌃⇧=, agent api). returns { a, b } as split, or undefined
   split(aId, bId) {
-    const a = this.tabs.get(aId);
-    const b = this.tabs.get(bId);
+    let a = this.tabs.get(aId);
+    let b = this.tabs.get(bId);
     if (!a || !b || aId === bId) return;
     if (b.splitId && b.splitId === a.splitId) return;
+    if (a.splitId && this.splits.get(a.splitId)?.ids.length >= 4) return; // full: before any copy is made
+    a = this.unpinnedTwin(a);
+    b = this.unpinnedTwin(b);
+    aId = a.id;
+    bId = b.id;
     this.removeFromSplit(bId);
     let sp;
     if (a.splitId) {
@@ -873,11 +892,12 @@ class OliveWindow {
     const bGroup = b.groupId;
     TG.removeFromLists(this, sp.ids);
     list.splice(insertAt, 0, ...sp.ids);
-    for (const id of sp.ids) { this.tabs.get(id).pinned = a.pinned; this.tabs.get(id).groupId = a.pinned ? null : a.groupId; }
+    for (const id of sp.ids) { this.tabs.get(id).pinned = false; this.tabs.get(id).groupId = a.groupId; }
     if (a.groupId != null) TG.fixContiguity(this, a.groupId);
     if (bGroup != null && bGroup !== a.groupId) TG.prune(this, { by: 'user' });
     this.ensureView(b);
     this.activate(bId);
+    return { a, b };
   }
 
   removeFromSplit(id) {
