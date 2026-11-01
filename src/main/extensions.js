@@ -1,4 +1,5 @@
-// Narrow uBO Lite spike: unmodified CWS package; native DNR only, no API shims.
+// uBO Lite: unmodified CWS package plus a small Olive overlay in the profile-local
+// copy (worker API shim, see extension-shims/). Olive's on/off drives native DNR.
 const { app, BrowserWindow, ipcMain } = require('electron');
 const { AppPanel } = require('./app-panel');
 const fs = require('fs');
@@ -9,7 +10,20 @@ const STORE_ID = 'ddkjiahejlhfcafbddmgiahcphecmpfh';
 
 // CWS bytes are pinned in the app, never fetched or patched at first run.
 // Electron mutates unpacked extension metadata, so load a verified profile-local copy.
-function verifyPackage(root, record) {
+// The overlay is the only difference between the vendored bytes and the loaded
+// copy: two Olive files and a manifest whose service_worker points at them.
+const SHIMS = { 'olive/worker-shim.js': 'ublock-worker-shim.js', 'olive/worker.js': 'ublock-worker.js' };
+const WORKER = '/olive/worker.js';
+function overlayFiles(source) {
+  const manifest = JSON.parse(fs.readFileSync(path.join(source, 'manifest.json'), 'utf8'));
+  if (manifest.background?.service_worker !== '/js/background.js' || manifest.background?.type !== 'module') throw new Error('unexpected extension worker');
+  manifest.background = { ...manifest.background, service_worker: WORKER };
+  const files = { 'manifest.json': Buffer.from(JSON.stringify(manifest, null, 2) + '\n') };
+  for (const [rel, name] of Object.entries(SHIMS)) files[rel] = fs.readFileSync(path.join(__dirname, 'extension-shims', name));
+  return files;
+}
+const sha256 = data => crypto.createHash('sha256').update(data).digest('hex');
+function verifyPackage(root, record, overlay = null) {
   if (record.storeId !== STORE_ID || !record.files || typeof record.files !== 'object') throw new Error('unexpected extension');
   const found = [];
   const walk = dir => { for (const item of fs.readdirSync(dir, { withFileTypes: true })) {
@@ -22,11 +36,12 @@ function verifyPackage(root, record) {
   }};
   if (fs.lstatSync(root).isSymbolicLink()) throw new Error('extension symlink');
   walk(root);
-  const expected = Object.keys(record.files).filter(f => f !== '_metadata/verified_contents.json' || fs.existsSync(path.join(root, f)));
+  const hashes = { ...record.files };
+  for (const [rel, data] of Object.entries(overlay || {})) hashes[rel] = sha256(data);
+  const expected = Object.keys(hashes).filter(f => f !== '_metadata/verified_contents.json' || fs.existsSync(path.join(root, f)));
   if (found.length !== expected.length) throw new Error('extension contents changed');
   for (const file of found) {
-    const hash = crypto.createHash('sha256').update(fs.readFileSync(path.join(root, file))).digest('hex');
-    if (record.files[file] !== hash) throw new Error('extension integrity mismatch');
+    if (hashes[file] !== sha256(fs.readFileSync(path.join(root, file)))) throw new Error('extension integrity mismatch');
   }
   const manifest = JSON.parse(fs.readFileSync(path.join(root, 'manifest.json'), 'utf8'));
   if (manifest.manifest_version !== 3 || manifest.version !== record.version) throw new Error('unexpected manifest');
@@ -38,13 +53,18 @@ function preparePackage(dataPath, bundle = app?.isPackaged
   const record = JSON.parse(fs.readFileSync(path.join(bundle, 'record.json'), 'utf8'));
   const source = path.join(bundle, 'unpacked');
   verifyPackage(source, record);
+  const overlay = overlayFiles(source);
   const root = path.join(dataPath, 'extensions', `ublock-${record.version}`);
-  try { verifyPackage(root, record); } catch {
+  try { verifyPackage(root, record, overlay); } catch {
     fs.rmSync(root, { recursive: true, force: true });
     fs.mkdirSync(root, { recursive: true, mode: 0o700 });
     fs.cpSync(source, root, { recursive: true, dereference: false });
+    for (const [rel, data] of Object.entries(overlay)) {
+      fs.mkdirSync(path.dirname(path.join(root, rel)), { recursive: true, mode: 0o700 });
+      fs.writeFileSync(path.join(root, rel), data);
+    }
   }
-  return { root, manifest: verifyPackage(root, record) };
+  return { root, manifest: verifyPackage(root, record, overlay) };
 }
 class Extensions {
   constructor(mgr) {
@@ -87,14 +107,14 @@ class Extensions {
       this.helper = new BrowserWindow({ show: false, webPreferences: { session: ses, sandbox: true, contextIsolation: true, nodeIntegration: false } });
       this.helper.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
       this.ext = await ses.extensions.loadExtension(root);
-      this.status = { installed: true, enabled: false, name: 'uBO Lite', version: manifest.version, id: this.ext.id, storeId: STORE_ID, gap: 'Basic network rules only. Electron lacks chrome.permissions in the extension worker: the official popup, per-site modes, cosmetic filtering and picker are not working.' };
+      this.status = { installed: true, enabled: false, name: 'uBO Lite', version: manifest.version, id: this.ext.id, storeId: STORE_ID, gap: 'uBO Lite runs with Olive stand-ins for Chrome APIs Electron lacks (permissions, windows, commands); features needing user scripts are unavailable.' };
       let saved = parsePrefs(null);
       try { saved = parsePrefs(fs.readFileSync(this.prefs, 'utf8')); } catch {}
       // The sidebar button is opt-in; blocking itself does not depend on it.
       this.status.showInToolbar = saved.showInToolbar;
       this.status.optionsPage = typeof manifest.options_page === 'string' ? manifest.options_page : null;
       this.status.description = 'Blocks ads and trackers with uBO Lite’s built-in filter lists.';
-      this.status.limits = 'Network blocking only for now. uBO Lite’s own popup, options page, per-site modes and element picker need its background worker, which Olive can’t run yet.';
+      this.status.limits = 'Some uBO Lite features that need Chrome APIs Olive doesn’t have yet, like custom user scripts, are unavailable.';
       this.icon = iconData(root, manifest);
       await this.setEnabled(saved.enabled);
       this.initialized = true;
@@ -167,10 +187,23 @@ class Extensions {
       try {
         await this.readyHelper();
         result = await this.helper.webContents.executeJavaScript(`(async()=>{
+          const dnr=chrome.declarativeNetRequest, store=chrome.storage.local, KEY='oliveBlocking';
           const all=chrome.runtime.getManifest().declarative_net_request.rule_resources.map(r=>r.id);
-          await chrome.declarativeNetRequest.updateEnabledRulesets({disableRulesetIds:all});
-          if (${enabled}) await chrome.declarativeNetRequest.updateEnabledRulesets({enableRulesetIds:${JSON.stringify(this.defaultRules)}});
-          return chrome.declarativeNetRequest.getEnabledRulesets();
+          const known=ids=>Array.isArray(ids)?ids.filter(id=>all.includes(id)):[];
+          const {[KEY]:gate,rulesetConfig:config}=await store.get([KEY,'rulesetConfig']);
+          // uBOL's own list (its dashboard can change it) wins over manifest defaults.
+          let list=known(config?.enabledRulesets);
+          if (gate?.enabled===false && known(gate.rulesets).length) list=known(gate.rulesets);
+          if (!list.length) list=${JSON.stringify(this.defaultRules)};
+          if (${enabled}) {
+            await store.set({[KEY]:{enabled:true}});
+            await dnr.updateEnabledRulesets({disableRulesetIds:all.filter(id=>!list.includes(id)),enableRulesetIds:list});
+          } else {
+            const live=await dnr.getEnabledRulesets();
+            await store.set({[KEY]:{enabled:false,rulesets:gate?.enabled===false?list:(known(live).length?known(live):list)}});
+            await dnr.updateEnabledRulesets({disableRulesetIds:all});
+          }
+          return dnr.getEnabledRulesets();
         })()`);
         if (context !== this.context) throw new Error('Extension context invalidated.');
         break;
@@ -270,4 +303,4 @@ function iconData(root, manifest) {
   if (!file.startsWith(path.resolve(root) + path.sep)) return null;
   try { return 'data:image/png;base64,' + fs.readFileSync(file).toString('base64'); } catch { return null; }
 }
-module.exports = { Extensions, iconData, verifyPackage, preparePackage };
+module.exports = { Extensions, iconData, verifyPackage, preparePackage, overlayFiles };
