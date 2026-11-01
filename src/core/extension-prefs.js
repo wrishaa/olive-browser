@@ -26,7 +26,7 @@ function extensionRows(statuses) {
   return (statuses || []).filter(Boolean).map(s => ({
     id: s.id || null, name: s.name || 'Extension', version: s.version || '', icon: s.icon || null,
     installed: !!s.installed, enabled: !!s.enabled, showInToolbar: s.showInToolbar === true,
-    hasOptions: !!(s.installed && s.optionsPage), note: s.gap || '', error: s.error || '',
+    hasOptions: !!(s.installed && s.optionsPage), description: s.description || '', limits: s.limits || s.gap || '', error: s.error || '',
   }));
 }
 module.exports = { DEFAULTS, parsePrefs, serializePrefs, applyChange, toolbarVisible, extensionRows };

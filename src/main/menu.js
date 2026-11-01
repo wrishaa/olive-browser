@@ -22,6 +22,7 @@ function buildMenu(mgr) {
         { label: 'Activities — Site Time…', click: w('activities') },
         { label: 'Activity Event Log…', click: w('ledger') },
         { label: 'Set Up Olive…', click: () => mgr.onboarding?.show() },
+        { label: 'Extensions…', click: w('extensions') },
         { label: 'Keyboard Shortcuts…', accelerator: shortcut('settings'), click: () => mgr.shortcuts?.showSettings(mgr.focusedWindow()) },
         { type: 'separator' },
         { label: 'Set as Default Browser…', click: () => mgr.makeDefault() },

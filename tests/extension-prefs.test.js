@@ -33,6 +33,7 @@ test('toolbarVisible: hidden by default, never in private windows', () => {
 });
 test('extensionRows exposes only page fields', () => {
   const [row] = P.extensionRows([{ id: 'abc', name: 'uBO Lite', version: '1', installed: true, enabled: true, showInToolbar: false, optionsPage: 'dashboard.html', gap: 'g', rulesets: ['x'], storeId: 's' }, null]);
-  assert.deepEqual(row, { id: 'abc', name: 'uBO Lite', version: '1', icon: null, installed: true, enabled: true, showInToolbar: false, hasOptions: true, note: 'g', error: '' });
+  assert.deepEqual(row, { id: 'abc', name: 'uBO Lite', version: '1', icon: null, installed: true, enabled: true, showInToolbar: false, hasOptions: true, description: '', limits: 'g', error: '' });
+  assert.equal(P.extensionRows([{ installed: true, description: 'd', limits: 'l', gap: 'g' }])[0].limits, 'l');
   assert.equal(P.extensionRows([{ installed: false, optionsPage: 'x' }])[0].hasOptions, false);
 });

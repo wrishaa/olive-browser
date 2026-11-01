@@ -1319,6 +1319,7 @@ class OliveWindow {
       case 'settings': return this.mgr.shortcuts?.showSettings(this);
       case 'ledger': return this.mgr.ledgerUI ? this.mgr.ledgerUI.show(this) : require('./ledger-review').show(this);
       case 'ublock': return this.mgr.extensions?.open(this);
+      case 'extensions': return this.mgr.extensionSettings?.show(this);
       case 'sitePermissions': return this.mgr.permissions.showSettings(this);
       case 'resetPermissions': this.mgr.permissions.reset(this); break;
       case 'newTab': return this.openPalette('new');

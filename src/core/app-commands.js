@@ -2,6 +2,7 @@
 const APP_COMMANDS = Object.freeze([
   { id: 'activities', title: 'Activities — Site Time', sub: 'Time spent on each site · on this Mac', terms: ['activities', 'activity', 'site time', 'screen time', 'time spent', 'usage', 'stats', 'statistics'] },
   { id: 'shortcuts', title: 'Keyboard Shortcuts', sub: 'Settings · view and remap shortcuts', terms: ['shortcuts', 'shortcut', 'keyboard', 'keys', 'remap', 'settings', 'preferences'] },
+  { id: 'extensions', title: 'Extensions', sub: 'uBO Lite and other installed extensions', terms: ['extensions', 'extension', 'ublock', 'ubo', 'ad blocker', 'adblock', 'content blocker', 'add-ons', 'addons', 'plugins', 'settings', 'preferences'] },
   { id: 'profiles', title: 'Profiles', sub: 'Separate tabs, sign-ins and site settings', terms: ['profiles', 'profile', 'settings', 'preferences'] },
   { id: 'sitePermissions', title: 'Site Settings', sub: 'Permissions for the current site', terms: ['settings', 'site settings', 'permissions', 'camera', 'microphone'] },
   { id: 'importBrowser', title: 'Import from Browser', sub: 'Signed-in sessions from Chrome, Brave, Edge or Arc', terms: ['import', 'import from browser', 'browser import', 'chrome', 'brave', 'edge', 'arc', 'cookies', 'sign-ins'] },
