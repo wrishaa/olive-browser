@@ -65,6 +65,7 @@ function favHtml(t, extra = '') {
 let sel = []; // selected tab ids (visual only; the active tab stays what it is)
 let selAnchor = null; // last clicked tab, for ⇧-click ranges
 let renaming = null; // { id } while a group's name is a field
+let renamingTab = null; // { id } while a tab's title is a field (Rename Tab…)
 
 function allTabs() {
   return [...S.pinned, ...S.unpinned, ...S.agentTabs];
@@ -108,7 +109,12 @@ function rowHtml(t, { inSplit = false, focus = false } = {}) {
   // a pinned tab that wandered off its pinned url: ↺ takes it back (arc)
   if (t.pinned && t.drifted) cls.push('drifted');
   const reset = t.pinned && t.drifted ? `<span class="reset" data-act="reset-pinned" title="Back to Pinned URL\n${esc(t.pinnedUrl)}">${ICON.reset}</span>` : '';
-  return `<div class="${cls.join(' ')}" data-id="${t.id}" title="${esc(t.title)}\n${esc(t.url)}">${favHtml(t)}<span class="title">${esc(t.title)}</span>${crash}${audio}${reset}<span class="close" data-act="close" title="${t.pinned ? 'Unload' : 'Close'} (⌘W)">${ICON.close}</span></div>`;
+  if (renamingTab?.id === t.id) cls.push('renaming');
+  const title = renamingTab?.id === t.id
+    ? `<input class="rename tab-rename" value="${esc(t.title)}" placeholder="${esc(t.pageTitle || t.host || 'Tab name')}" maxlength="200" spellcheck="false" autocomplete="off">`
+    : `<span class="title${t.customTitle ? ' custom' : ''}">${esc(t.title)}</span>`;
+  const tip = t.customTitle && t.pageTitle && t.pageTitle !== t.customTitle ? `${esc(t.title)}\n${esc(t.pageTitle)}\n${esc(t.url)}` : `${esc(t.title)}\n${esc(t.url)}`;
+  return `<div class="${cls.join(' ')}" data-id="${t.id}" title="${tip}">${favHtml(t)}${title}${crash}${audio}${reset}<span class="close" data-act="close" title="${t.pinned ? 'Unload' : 'Close'} (⌘W)">${ICON.close}</span></div>`;
 }
 
 function splitHtml(members) {
@@ -184,7 +190,7 @@ function groupHtml(g, tabs) {
 }
 
 function renderLists(force = false) {
-  if (!force && (drag || renaming)) return;
+  if (!force && (drag || renaming || renamingTab)) return;
   setHtml($('#pinned'), runHtml(S.pinned));
   setHtml($('#unpinned'), listHtml(S.unpinned));
   const agentEl = $('#agent');
@@ -417,11 +423,46 @@ sidebar.addEventListener('click', (e) => {
   if (nt) olive.cmd('newTabInGroup', { id: Number(nt.dataset.groupNew) });
 });
 
-// double-click a group's name to rename it
+// double-click a group's name to rename it; a tab's title too (Rename Tab…)
 sidebar.addEventListener('dblclick', (e) => {
+  if (e.target.closest('.close, .rename, [data-act]')) return;
   const gid = groupIdFrom(e.target);
-  if (gid != null && !e.target.closest('.close, .rename')) startRename(gid);
+  if (gid != null) return startRename(gid);
+  const id = tabIdFrom(e.target);
+  if (id != null && e.target.closest('.row .title')) startTabRename(id);
 });
+
+// the tab's title becomes a field. enter/blur keeps it, escape cancels, an empty field
+// goes back to the page title
+function startTabRename(id) {
+  if (!findTab(id) || renaming) return;
+  renamingTab = { id };
+  renderLists(true);
+  const field = sidebar.querySelector(`.row[data-id="${id}"] .tab-rename`);
+  if (!field) return void (renamingTab = null);
+  field.focus();
+  field.select();
+  const before = findTab(id);
+  const finish = (commit) => {
+    if (renamingTab?.id !== id) return;
+    renamingTab = null;
+    const name = field.value.replace(/\s+/g, ' ').trim();
+    if (commit && name !== (before?.customTitle || '')) {
+      // typing the page title back (or nothing) is a reset, not a name
+      olive.cmd('renameTab', { id, name: name === before?.pageTitle ? '' : name });
+    }
+    renderLists(true);
+    render();
+  };
+  field.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); finish(true); }
+    else if (e.key === 'Escape') { e.preventDefault(); finish(false); }
+    e.stopPropagation();
+  });
+  field.addEventListener('blur', () => finish(true));
+  field.addEventListener('pointerdown', (e) => e.stopPropagation());
+  field.addEventListener('dblclick', (e) => e.stopPropagation());
+}
 
 function startRename(id) {
   if (!S?.groups[id]) return;
@@ -919,6 +960,7 @@ olive.on('focus-find', () => {
 });
 olive.on('toast', toast);
 olive.on('rename-group', ({ id }) => startRename(id));
+olive.on('rename-tab', ({ id }) => startTabRename(id));
 olive.invoke('state').then((s) => { if (s) { S = s; render(); } });
 
 window.addEventListener('keydown', (e) => {

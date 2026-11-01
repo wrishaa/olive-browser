@@ -1,4 +1,4 @@
-// pinned tabs: domain lock + reset (src/core/tab-meta.js and the OliveWindow model),
+// pinned tabs: domain lock + reset, rename tab (src/core/tab-meta.js and the OliveWindow model),
 // with fakes only: no electron, no real profile.
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
@@ -134,4 +134,42 @@ test('reset and set-as-pinned-url menu items, only for a drifted pinned tab', ()
   // normal tabs never show them
   const n = w.add('https://b.com/');
   assert.ok(!labels(w.tabMenuTemplate(n.id)).includes('Reset Pinned Tab'));
+});
+
+test('custom title: cleaned, wins over the page title, empty means none', () => {
+  assert.equal(TM.cleanTitle('  My\n  Inbox  '), 'My Inbox');
+  assert.equal(TM.cleanTitle(null), '');
+  assert.equal(TM.cleanTitle('x'.repeat(300)).length, 200);
+  assert.equal(TM.shownTitle({ customTitle: 'Mail', title: 'Inbox (3) - Gmail' }), 'Mail');
+  assert.equal(TM.shownTitle({ customTitle: '   ', title: 'Inbox (3) - Gmail' }), 'Inbox (3) - Gmail');
+  assert.equal(TM.shownTitle({ customTitle: '', title: '' }, 'a.com'), 'a.com');
+});
+
+test('rename tab: sticks over page title changes, reset and empty go back, persists', () => {
+  const w = fakeWindow();
+  w.win = { isDestroyed: () => true };
+  for (const pinned of [false, true]) {
+    const t = w.add('https://a.com/' + pinned, { title: 'Page A', pinned });
+    let tpl = w.tabMenuTemplate(t.id);
+    assert.ok(labels(tpl).includes('Rename Tab…'));
+    assert.equal(item(tpl, 'Reset Tab Name').enabled, false);
+    item(tpl, 'Rename Tab…').click();
+    assert.deepEqual(w.sent.at(-1), ['rename-tab', { id: t.id }]);
+    w.cmd('renameTab', { id: t.id, name: '  Work   mail ' });
+    assert.equal(t.snapshot().title, 'Work mail');
+    t.title = 'Inbox (4)'; // the page retitles itself
+    assert.equal(t.snapshot().title, 'Work mail');
+    assert.equal(t.snapshot().pageTitle, 'Inbox (4)');
+    // persists
+    const saved = w.serialize().tabs.find((x) => x.key === t.id);
+    assert.equal(saved.customTitle, 'Work mail');
+    assert.equal(new Tab(null, saved).snapshot().title, 'Work mail');
+    tpl = w.tabMenuTemplate(t.id);
+    item(tpl, 'Reset Tab Name').click();
+    assert.equal(t.snapshot().title, 'Inbox (4)');
+    assert.equal(w.serialize().tabs.find((x) => x.key === t.id).customTitle, undefined);
+    w.renameTab(t.id, 'again');
+    w.cmd('renameTab', { id: t.id, name: '   ' }); // clearing the field
+    assert.equal(t.snapshot().title, 'Inbox (4)');
+  }
 });

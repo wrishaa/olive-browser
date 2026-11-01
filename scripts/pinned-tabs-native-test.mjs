@@ -134,6 +134,51 @@ try {
   check(t.pinnedUrl === `${A}/page2`, 'item2: Set Current URL as Pinned URL', t);
   await main((w, a) => w.setPinnedUrl(a.P, a.A + '/home'), { P, A });
 
+  // ---------- item 3: rename tab ----------
+  const N = await main((w, a) => w.createTab({ url: a.A + '/title?t=Original%20Page', activate: true, focusPage: false }).id, { A });
+  await loaded(N, /title\?t=/);
+  await poll(async () => (await tab(N)).pageTitle === 'Original Page');
+  const rowN = ui.locator(`#unpinned .row[data-id="${N}"]`);
+  await rowN.locator('.title').dblclick();
+  const field = rowN.locator('input.tab-rename');
+  check(await poll(() => field.count()) === 1, 'item3: double-click on the row title opens the inline rename field');
+  check(await field.evaluate((el) => el.value === 'Original Page' && el.selectionStart === 0 && el.selectionEnd === el.value.length), 'item3: field starts with the title, all selected');
+  await field.pressSequentially('Reading list');
+  shotsTaken.push(await shot('tab-rename-field-light.png'));
+  await field.press('Enter');
+  await poll(async () => (await tab(N)).customTitle === 'Reading list');
+  check(await poll(async () => (await rowN.locator('.title').textContent()) === 'Reading list'), 'item3: enter keeps the custom title in the sidebar', await tab(N));
+  await main((w, id) => w.tabs.get(id).wc.executeJavaScript(`document.title = 'Page Retitled Itself'`), N);
+  await poll(async () => (await tab(N)).pageTitle === 'Page Retitled Itself');
+  await pause(100);
+  check((await rowN.locator('.title').textContent()) === 'Reading list' && (await tab(N)).title === 'Reading list', 'item3: custom title sticks over page title changes', await tab(N));
+  shotsTaken.push(await shot('tab-renamed-light.png'));
+  // escape cancels
+  await rowN.locator('.title').dblclick();
+  await field.fill('nope');
+  await field.press('Escape');
+  await pause(100);
+  check((await tab(N)).customTitle === 'Reading list', 'item3: escape cancels the edit', await tab(N));
+  // clearing the field resets to the page title
+  await rowN.locator('.title').dblclick();
+  await field.fill('');
+  await field.press('Enter');
+  await poll(async () => (await tab(N)).customTitle === '');
+  check(await poll(async () => (await rowN.locator('.title').textContent()) === 'Page Retitled Itself'), 'item3: clearing the field returns to the page title', await tab(N));
+  // context menu Rename Tab… on the pinned tab (menu item clicked from the template; native menus can't be driven headless)
+  await main((w, id) => w.tabMenuTemplate(id).find((x) => x.label === 'Rename Tab…').click(), P);
+  const fieldP = ui.locator(`#pinned .row[data-id="${P}"] input.tab-rename`);
+  check(await poll(() => fieldP.count()) === 1, 'item3: Rename Tab… opens the field on a pinned row');
+  await fieldP.fill('Pinned Mail');
+  await fieldP.press('Enter');
+  await poll(async () => (await tab(P)).customTitle === 'Pinned Mail');
+  check(await poll(async () => (await ui.locator(`#pinned .row[data-id="${P}"] .title`).textContent()) === 'Pinned Mail'), 'item3: pinned tab renamed', await tab(P));
+  // Reset Tab Name
+  await main((w, id) => w.renameTab(id, 'Temp name'), N);
+  await main((w, id) => w.tabMenuTemplate(id).find((x) => x.label === 'Reset Tab Name').click(), N);
+  check((await tab(N)).title === 'Page Retitled Itself', 'item3: Reset Tab Name returns to the page title', await tab(N));
+  await main((w, id) => w.renameTab(id, 'Reading list'), N);
+
   // ---------- restart: persisted state ----------
   await main((w, a) => { w.mgr.saveNow(); }, null);
   await app.close();
@@ -142,6 +187,10 @@ try {
   const after = await poll(async () => { const l = await tabs(); return l.length ? l : null; });
   const P2 = after.find((x) => x.pinned);
   check(P2 && P2.pinnedUrl === `${A}/home` && P2.url === `${A}/page2`, 'item2: pinned url persists across restart', after);
+  const N2 = after.find((x) => x.url.includes('/title?t='));
+  check(P2?.customTitle === 'Pinned Mail' && N2?.customTitle === 'Reading list' && N2?.title === 'Reading list', 'item3: custom titles persist across restart', after);
+  await poll(() => ui.locator(`#pinned .row[data-id="${P2?.id}"] .title`).count());
+  check(await poll(async () => (await ui.locator(`#pinned .row[data-id="${P2?.id}"] .title`).textContent()) === 'Pinned Mail'), 'item3: sidebar shows the custom title after restart');
 } catch (error) {
   results.push({ ok: false, label: 'test exception', detail: String(error.stack || error) });
   console.error(error);

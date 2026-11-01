@@ -572,5 +572,14 @@ body:not(.no-agent) #tablist, #agent.overflows {
   box-shadow: 0 0 0 1px var(--line), 0 0 0 3.5px color-mix(in srgb, var(--accent) 38%, transparent);
   user-select: text; cursor: text;
 }
+.row .tab-rename {
+  flex: 1; min-width: 0; height: 24px; margin: 0 0 0 -4px; padding: 0 4px;
+  border: 0; outline: 0; border-radius: 5px; background: var(--card); color: var(--text);
+  font: 13px/24px -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  box-shadow: 0 0 0 1px var(--line), 0 0 0 3.5px color-mix(in srgb, var(--accent) 38%, transparent);
+  user-select: text; cursor: text;
+}
+.row .tab-rename::selection { background: color-mix(in srgb, var(--accent) 32%, transparent); }
+.row.renaming .close, .row.renaming .reset, .row.renaming .audio { display: none !important; }
 .group-head .rename::selection { background: color-mix(in srgb, var(--accent) 32%, transparent); }
 .group-head:has(.rename) .close, .group-head:has(.rename) .count { display: none !important; } /* nothing else on the row while naming */

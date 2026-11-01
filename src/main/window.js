@@ -27,7 +27,8 @@ class Tab {
     this.id = nextTabId++;
     this.win = win;
     this.url = d.url || '';
-    this.title = d.title || '';
+    this.title = d.title || ''; // the page's title
+    this.customTitle = TM.cleanTitle(d.customTitle); // Rename Tab…: wins over the page title; '' = none
     this.favicon = d.favicon || '';
     this.pinned = !!d.pinned;
     // the url a pinned tab belongs to (domain lock, Reset Pinned Tab); '' when unpinned
@@ -55,7 +56,9 @@ class Tab {
     const wc = this.wc;
     return {
       id: this.id,
-      title: this.title || displayHost(this.url) || 'New Tab',
+      title: TM.shownTitle(this, displayHost(this.url) || 'New Tab'),
+      pageTitle: this.title,
+      customTitle: this.customTitle,
       url: this.url,
       host: displayHost(this.url),
       favicon: this.favicon,
@@ -211,7 +214,7 @@ class OliveWindow {
     for (const id of this.allIds()) {
       const t = this.tabs.get(id);
       if (!t || !t.url) continue;
-      tabs.push({ key: t.id, url: t.url, title: t.title, favicon: t.favicon, pinned: t.pinned, pinnedUrl: t.pinnedUrl || undefined, lastActive: t.lastActive, groupKey: t.groupId });
+      tabs.push({ key: t.id, url: t.url, title: t.title, favicon: t.favicon, pinned: t.pinned, pinnedUrl: t.pinnedUrl || undefined, customTitle: t.customTitle || undefined, lastActive: t.lastActive, groupKey: t.groupId });
     }
     const splits = [...this.splits.values()].map((sp) => ({ keys: sp.ids, ratios: sp.ratios }));
     const groups = [...this.groups.values()].map((g) => ({ key: g.id, name: g.name, agent: g.agent, status: g.status, collapsed: g.collapsed, renamedByUser: g.renamedByUser }));
@@ -625,6 +628,19 @@ class OliveWindow {
       tab.wc.loadURL(tab.url).catch(() => {});
     }
     this.activate(tab.id);
+  }
+
+  // Rename Tab… / double-click: '' (or only spaces) goes back to the page title
+  renameTab(id, name) {
+    const tab = this.tabs.get(id);
+    if (!tab) return false;
+    tab.customTitle = TM.cleanTitle(name);
+    this.changed();
+    return true;
+  }
+
+  resetTabName(id) {
+    return this.renameTab(id, '');
   }
 
   // Set Current URL as Pinned URL
@@ -1315,6 +1331,13 @@ class OliveWindow {
       t.push(sep, { label: 'Open in New Window', enabled: !!tab.url, click: () => { const url = tab.url; this.closeTab(id); this.mgr.newWindow({ url, private: this.isPrivate }); } });
       t.push(sep);
     }
+    if (n === 1) {
+      t.push(
+        { label: 'Rename Tab…', click: () => this.send('rename-tab', { id }) },
+        { label: 'Reset Tab Name', enabled: !!tab.customTitle, click: () => this.resetTabName(id) },
+        sep,
+      );
+    }
     if (n === 1 && tab.pinned) {
       const off = TM.drifted(tab.pinnedUrl, tab.errorFor || tab.url);
       t.push(
@@ -1442,6 +1465,8 @@ class OliveWindow {
       case 'newTabInGroup': return this.newTabInGroup(a.id);
       case 'mute': return this.toggleMute(a.id);
       case 'resetPinned': return this.resetPinned(a.id);
+      case 'renameTab': return this.renameTab(a.id, a.name);
+      case 'resetTabName': return this.resetTabName(a.id);
       case 'setPinnedUrl': return this.setPinnedUrl(a.id);
       case 'clearUnpinned': return this.clearUnpinned();
       case 'overlay': return this.setOverlay(a.kind || null);
@@ -1547,13 +1572,13 @@ class OliveWindow {
       if (w.isPrivate !== this.isPrivate) continue;
       for (const t of w.tabs.values()) {
         if (!t.url) continue;
-        if (!ql || t.title.toLowerCase().includes(ql) || t.url.toLowerCase().includes(ql)) tabs.push(t);
+        if (!ql || t.title.toLowerCase().includes(ql) || t.customTitle.toLowerCase().includes(ql) || t.url.toLowerCase().includes(ql)) tabs.push(t);
       }
     }
     tabs.sort((a, b) => b.lastActive - a.lastActive);
     for (const t of tabs.slice(0, q ? 4 : 5)) {
       if (t.id === this.activeId) continue;
-      out.push({ kind: 'tab', tabId: t.id, title: t.title || t.url, url: t.url, favicon: t.favicon, sub: 'Switch to Tab' });
+      out.push({ kind: 'tab', tabId: t.id, title: t.customTitle || t.title || t.url, url: t.url, favicon: t.favicon, sub: 'Switch to Tab' });
     }
     if (!this.isPrivate) {
       const seen = new Set(out.map((o) => o.url));

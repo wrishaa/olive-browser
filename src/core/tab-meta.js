@@ -1,6 +1,6 @@
 // pure tab metadata logic (no electron): which site a url belongs to, whether a pinned
-// tab should hand a navigation to a new tab (domain lock), and whether it drifted from
-// its pinned url.
+// tab should hand a navigation to a new tab (domain lock), whether it drifted from
+// its pinned url, and the user's custom tab title.
 
 // multi-label public suffixes we care about. not the full public suffix list: enough that
 // foo.co.uk, foo.github.io or foo.vercel.app are their own site and mail.google.com and
@@ -98,4 +98,14 @@ function drifted(pinnedUrl, url) {
   return normalizeUrl(pinnedUrl) !== normalizeUrl(url);
 }
 
-module.exports = { siteOf, sameSite, isAuthUrl, shouldOpenOutside, normalizeUrl, drifted };
+// the custom tab title the user typed: one line, trimmed, at most 200 chars. '' = none
+function cleanTitle(s) {
+  return String(s == null ? '' : s).replace(/\s+/g, ' ').trim().slice(0, 200);
+}
+
+// what the sidebar shows: the user's name wins over the page title
+function shownTitle({ customTitle, title }, fallback = 'New Tab') {
+  return cleanTitle(customTitle) || title || fallback;
+}
+
+module.exports = { siteOf, sameSite, isAuthUrl, shouldOpenOutside, normalizeUrl, drifted, cleanTitle, shownTitle };

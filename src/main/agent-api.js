@@ -388,6 +388,7 @@ async function describe(mgr, win, tab) {
     windowId: win.id,
     private: win.isPrivate,
     title: tab.title,
+    ...(tab.customTitle ? { customTitle: tab.customTitle } : {}), // the user's name for the tab (Rename Tab…)
     url: tab.errorFor || tab.url,
     active: win.activeId === tab.id,
     visible: win.visibleIds().includes(tab.id),
