@@ -5,7 +5,7 @@ const os = require('node:os');
 const path = require('node:path');
 const { EventEmitter } = require('node:events');
 const { Onboarding } = require('../src/main/onboarding');
-const { preparePackage, verifyPackage } = require('../src/main/extensions');
+const { preparePackage, verifyPackage, overlayFiles } = require('../src/main/extensions');
 const root = fs.mkdtempSync(path.join(os.tmpdir(), 'olive-setup-test-'));
 let prompts = [], opened = [], launched = 0, quit = 0, imported = [];
 const handlers = new Map();
@@ -72,9 +72,11 @@ const mgr = { dataPath: path.join(root, 'fresh'), profileInfo: { id: 'fresh', na
     const prepared = preparePackage(path.join(root, 'blocker'));
     assert(prepared.root.startsWith(root));
     fs.appendFileSync(path.join(prepared.root, 'manifest.json'), ' ');
-    assert.throws(() => verifyPackage(prepared.root, record), /integrity/);
+    // the profile copy carries olive's worker shim on top of the store files
+    const overlay = overlayFiles(path.join(bundle, 'unpacked'));
+    assert.throws(() => verifyPackage(prepared.root, record, overlay), /integrity/);
     preparePackage(path.join(root, 'blocker'));
-    assert.equal(verifyPackage(prepared.root, record).version, record.version, 'damaged profile copy repaired');
+    assert.equal(verifyPackage(prepared.root, record, overlay).version, record.version, 'damaged profile copy repaired');
     console.log('onboarding unit: PASS (first run, confirmations, import consent, profiles, legacy, bundled integrity)');
   } finally { fs.rmSync(root, { recursive: true, force: true }); }
 })().catch(error => { console.error(error); process.exitCode = 1; });
