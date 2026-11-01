@@ -1,0 +1,156 @@
+// pinned tabs, native: domain lock + reset, rename tab, pinned tabs never split.
+// Disposable Electron fixture only (temp OLIVE_USER_DATA_DIR, random cdp/api ports); never
+// attaches to the installed Olive or its profile, never focuses windows.
+// pages come from a local http server on 127.0.0.1; "localhost" on the same port is another site.
+// Run: node scripts/pinned-tabs-native-test.mjs
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import http from 'node:http';
+import { fileURLToPath } from 'node:url';
+import { _electron } from 'playwright-core';
+
+const repo = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const shots = path.join(repo, 'notes/test-shots');
+fs.mkdirSync(shots, { recursive: true });
+const root = fs.mkdtempSync(path.join(os.tmpdir(), 'olive-pinned-fixture-'));
+fs.writeFileSync(path.join(root, 'onboarding.json'), JSON.stringify({ version: 1, step: 'done', completed: true }));
+const results = [];
+const check = (yes, label, detail) => { results.push({ ok: !!yes, label, detail }); console.log((yes ? 'PASS ' : 'FAIL ') + label + (yes ? '' : ' ' + JSON.stringify(detail))); };
+const pause = (ms) => new Promise((r) => setTimeout(r, ms));
+const poll = async (fn, tries = 120) => { let v; for (let i = 0; i < tries; i++) { v = await fn(); if (v) return v; await pause(50); } return v; };
+
+// ---------- local sites ----------
+const page = (title, body) => `<!doctype html><meta charset=utf-8><title>${title}</title><body style="font:15px -apple-system;padding:24px">${body}</body>`;
+const server = http.createServer((req, res) => {
+  const host = req.headers.host;
+  const port = server.address().port;
+  const A = `http://127.0.0.1:${port}`;
+  const B = `http://localhost:${port}`;
+  const u = new URL(req.url, 'http://x');
+  const send = (title, body) => { res.writeHead(200, { 'content-type': 'text/html' }); res.end(page(title, body)); };
+  if (u.pathname === '/redirect-away') { res.writeHead(302, { location: `${B}/landed` }); return res.end(); }
+  if (u.pathname === '/home') return send('Pinned Home', `<h1>home on ${host}</h1>
+    <a id=same href="${A}/page2">same site</a> <a id=cross href="${B}/other">other site</a>
+    <a id=redir href="${A}/redirect-away">server redirect</a> <a id=auth href="${B}/oauth/authorize?client_id=1">sign in</a>`);
+  if (u.pathname === '/page2') return send('Page Two', `<h1>page2 on ${host}</h1><a id=back href="${A}/home">home</a>`);
+  if (u.pathname === '/title') return send(u.searchParams.get('t') || 'Title', `<h1>${u.searchParams.get('t') || 'title'}</h1>`);
+  return send(`${u.pathname.slice(1)} on ${host}`, `<h1>${u.pathname} on ${host}</h1>`);
+});
+await new Promise((r) => server.listen(0, '127.0.0.1', r));
+const PORT = server.address().port;
+const A = `http://127.0.0.1:${PORT}`;
+const B = `http://localhost:${PORT}`;
+
+let app, ui;
+const appPath = path.join(repo, 'node_modules/electron/dist/Electron.app');
+async function launch() {
+  app = await _electron.launch({
+    executablePath: path.join(appPath, 'Contents/MacOS/Electron'), args: [repo], cwd: repo, timeout: 30000,
+    env: { ...process.env, OLIVE_USER_DATA_DIR: root, OLIVE_PROFILE: 'pinned-tabs-fixture', OLIVE_CDP_PORT: '0', OLIVE_API_PORT: '0' },
+  });
+  await app.evaluate(async ({ nativeTheme }) => {
+    while (!global.olive?.ready) await new Promise((r) => setTimeout(r, 50));
+    global.olive.onboarding.close();
+    nativeTheme.themeSource = 'light';
+    const w = global.olive.focusedWindow() || global.olive.windows[0];
+    w.win.setTitle('Olive pinned tabs synthetic fixture');
+    w.win.setSize(1440, 900);
+    w.setSidebarWidth(252);
+    w.setOverlay(null);
+  });
+  ui = await poll(async () => (await app.windows()).find((p) => p.url().includes('/ui/index.html')));
+  await ui.emulateMedia({ colorScheme: 'light' });
+}
+// main-process helpers: w() is the window
+const main = (fn, arg) => app.evaluate(`(${fn.toString()})(global.olive.windows[0], ${JSON.stringify(arg ?? null)})`);
+const tabs = () => main((w) => w.allIds().map((id) => { const t = w.tabs.get(id); return { id, url: t.url, pinned: t.pinned, pinnedUrl: t.pinnedUrl, title: t.snapshot().title, pageTitle: t.title, customTitle: t.customTitle, splitId: t.splitId, loading: t.loading }; }));
+const tab = async (id) => (await tabs()).find((t) => t.id === id);
+const loaded = (id, re) => poll(async () => { const t = await tab(id); return t && !t.loading && re.test(t.url) && t; });
+const clickIn = (id, sel) => main((w, a) => w.tabs.get(a.id).wc.executeJavaScript(`document.querySelector(${JSON.stringify(a.sel)}).click()`), { id, sel });
+const shot = async (name) => {
+  await pause(250);
+  const file = path.join(shots, name);
+  await ui.screenshot({ path: file, clip: { x: 0, y: 0, width: 300, height: 420 } });
+  return file;
+};
+const shotsTaken = [];
+
+try {
+  await launch();
+  // a clean window: one pinned tab on 127.0.0.1/home
+  const P = await main((w, a) => {
+    for (const t of [...w.tabs.values()]) w.closeTab(t.id, { force: true });
+    w.setOverlay(null);
+    const p = w.createTab({ url: a.A + '/home', pinned: true, focusPage: false });
+    return p.id;
+  }, { A });
+  await loaded(P, /\/home$/);
+  let t = await tab(P);
+  check(t.pinned && t.pinnedUrl === `${A}/home`, 'item2: pinned tab remembers its pinned url', t);
+
+  // ---------- item 2: domain lock ----------
+  await clickIn(P, '#same');
+  t = await loaded(P, /\/page2$/);
+  check(t && (await tabs()).length === 1, 'item2: same-site link stays in the pinned tab', await tabs());
+  await poll(() => ui.locator(`#pinned .row[data-id="${P}"] .reset`).count());
+  check(await ui.locator(`#pinned .row[data-id="${P}"] .reset`).count() === 1, 'item2: drifted pinned row shows the reset affordance');
+  shotsTaken.push(await shot('pinned-reset-affordance-light.png'));
+  await ui.locator(`#pinned .row[data-id="${P}"] .reset`).click();
+  t = await loaded(P, /\/home$/);
+  check(!!t, 'item2: clicking reset navigates back to the pinned url', await tab(P));
+  await poll(async () => (await ui.locator(`#pinned .row[data-id="${P}"] .reset`).count()) === 0);
+  check(await ui.locator(`#pinned .row[data-id="${P}"] .reset`).count() === 0, 'item2: reset affordance gone once back home');
+
+  await clickIn(P, '#cross');
+  const opened = await poll(async () => (await tabs()).find((x) => !x.pinned && x.url.startsWith(B + '/other')));
+  t = await tab(P);
+  check(!!opened && t.url === `${A}/home`, 'item2: cross-site link opens a new normal tab, pinned tab stays put', { opened, pinned: t });
+  check(await main((w, id) => w.activeId === id, opened?.id), 'item2: the new tab is selected', null);
+  const list = await main((w) => ({ pinned: w.pinned, unpinned: w.unpinned }));
+  check(list.unpinned[0] === opened?.id, 'item2: new tab lands at the top of the list, next to the pinned strip', list);
+
+  await main((w, a) => { w.activate(a.P, { focusPage: false }); w.tabs.get(a.P).wc.executeJavaScript(`location.href=${JSON.stringify(a.B + '/scripted')}`); }, { P, B });
+  const scripted = await poll(async () => (await tabs()).find((x) => x.url.startsWith(B + '/scripted')));
+  check(scripted && !scripted.pinned && (await tab(P)).url === `${A}/home`, 'item2: scripted cross-site location change also opens a new tab', scripted);
+
+  await clickIn(P, '#redir');
+  t = await loaded(P, /\/landed$/);
+  check(!!t && t.url === `${B}/landed`, 'item2: same-site link with a cross-site server redirect completes in place (sso hops)', await tab(P));
+  await main((w, id) => w.resetPinned(id), P);
+  await loaded(P, /\/home$/);
+
+  await clickIn(P, '#auth');
+  t = await loaded(P, /oauth\/authorize/);
+  check(!!t && t.url.startsWith(B), 'item2: cross-site sign-in page (oauth path) loads in place', await tab(P));
+  await main((w, id) => w.navigate(w.tabs.get(id), w.tabs.get(id).pinnedUrl), P);
+  await loaded(P, /\/home$/);
+
+  // set current url as pinned url
+  await clickIn(P, '#same');
+  await loaded(P, /\/page2$/);
+  await main((w, id) => w.tabMenuTemplate(id).find((x) => x.label === 'Set Current URL as Pinned URL').click(), P);
+  t = await tab(P);
+  check(t.pinnedUrl === `${A}/page2`, 'item2: Set Current URL as Pinned URL', t);
+  await main((w, a) => w.setPinnedUrl(a.P, a.A + '/home'), { P, A });
+
+  // ---------- restart: persisted state ----------
+  await main((w, a) => { w.mgr.saveNow(); }, null);
+  await app.close();
+  app = null;
+  await launch();
+  const after = await poll(async () => { const l = await tabs(); return l.length ? l : null; });
+  const P2 = after.find((x) => x.pinned);
+  check(P2 && P2.pinnedUrl === `${A}/home` && P2.url === `${A}/page2`, 'item2: pinned url persists across restart', after);
+} catch (error) {
+  results.push({ ok: false, label: 'test exception', detail: String(error.stack || error) });
+  console.error(error);
+} finally {
+  fs.writeFileSync(path.join(shots, 'pinned-tabs-native-test.json'), JSON.stringify(results, null, 2));
+  if (app) await app.close().catch(() => {});
+  server.close();
+  fs.rmSync(root, { recursive: true, force: true });
+}
+console.log('screenshots:\n' + shotsTaken.map((f) => '  ' + f).join('\n'));
+console.log(`${results.filter((r) => r.ok).length}/${results.length} passed`);
+if (results.some((r) => !r.ok)) process.exitCode = 1;

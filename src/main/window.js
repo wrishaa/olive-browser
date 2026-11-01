@@ -8,6 +8,7 @@ const { matchesInput, holdForInput, holdReleased } = require('./shortcut-input')
 const { toUrl, displayHost, SEARCH } = require('../core/url');
 const { commandSuggestions, isAppCommand } = require('../core/app-commands');
 const TG = require('../core/tab-groups');
+const TM = require('../core/tab-meta');
 
 const UI_HTML = path.join(__dirname, '..', 'ui', 'index.html');
 const UI_PRELOAD = path.join(__dirname, '..', 'ui', 'preload.js');
@@ -29,6 +30,8 @@ class Tab {
     this.title = d.title || '';
     this.favicon = d.favicon || '';
     this.pinned = !!d.pinned;
+    // the url a pinned tab belongs to (domain lock, Reset Pinned Tab); '' when unpinned
+    this.pinnedUrl = this.pinned ? d.pinnedUrl || d.url || '' : '';
     this.view = null;
     this.loading = false;
     this.audible = false;
@@ -60,6 +63,8 @@ class Tab {
       audible: this.audible,
       muted: wc ? wc.isAudioMuted() : this.muted,
       pinned: this.pinned,
+      pinnedUrl: this.pinnedUrl,
+      drifted: this.pinned && TM.drifted(this.pinnedUrl, this.errorFor || this.url),
       splitId: this.splitId,
       groupId: this.groupId,
       crashed: this.crashed,
@@ -206,7 +211,7 @@ class OliveWindow {
     for (const id of this.allIds()) {
       const t = this.tabs.get(id);
       if (!t || !t.url) continue;
-      tabs.push({ key: t.id, url: t.url, title: t.title, favicon: t.favicon, pinned: t.pinned, lastActive: t.lastActive, groupKey: t.groupId });
+      tabs.push({ key: t.id, url: t.url, title: t.title, favicon: t.favicon, pinned: t.pinned, pinnedUrl: t.pinnedUrl || undefined, lastActive: t.lastActive, groupKey: t.groupId });
     }
     const splits = [...this.splits.values()].map((sp) => ({ keys: sp.ids, ratios: sp.ratios }));
     const groups = [...this.groups.values()].map((g) => ({ key: g.id, name: g.name, agent: g.agent, status: g.status, collapsed: g.collapsed, renamedByUser: g.renamedByUser }));
@@ -325,6 +330,19 @@ class OliveWindow {
           return t.view.webContents;
         },
       };
+    });
+
+    // domain lock (arc): a link or page-initiated navigation from a pinned tab to another
+    // site opens in a new tab next to it and the pinned tab stays put. will-navigate only
+    // fires for renderer-initiated main-frame navigations: server redirects (sso hops),
+    // back/forward, reload and loadURL (omnibar, reset) never come through here.
+    wc.on('will-navigate', (e, legacyUrl) => {
+      const url = e.url || legacyUrl;
+      if (!tab.pinned || e.isMainFrame === false || !url) return;
+      if (!TM.shouldOpenOutside({ pinnedUrl: tab.pinnedUrl || tab.url, currentUrl: tab.committedUrl || tab.url, targetUrl: url })) return;
+      e.preventDefault();
+      this.recordActivity('navigation', { tabId: tab.id, url, action: 'pinned-domain-lock' });
+      this.createTab({ url, activate: true, afterId: tab.id });
     });
 
     wc.on('page-title-updated', (_e, title) => {
@@ -554,6 +572,7 @@ class OliveWindow {
     TG.place(this, moving, { list: list === 'pinned' ? 'pinned' : list === 'agent' ? 'agent' : 'unpinned', index, groupId: list === 'pinned' ? null : groupId });
     for (const g of touched) TG.fixContiguity(this, g);
     TG.prune(this, { by: 'user' });
+    this.syncPinnedUrls();
     this.changed();
   }
 
@@ -583,6 +602,39 @@ class OliveWindow {
     const tab = this.tabs.get(id);
     if (!tab || tab.pinned === pinned) return;
     this.moveTabs([id], pinned ? 'pinned' : 'unpinned', pinned ? this.pinned.length : 0, null);
+  }
+
+  // pinning remembers the url the tab is on; unpinning forgets it (re-pinning takes the
+  // current url again)
+  syncPinnedUrls() {
+    for (const t of this.tabs.values()) {
+      if (t.pinned && !t.pinnedUrl) t.pinnedUrl = t.errorFor || t.url || '';
+      else if (!t.pinned && t.pinnedUrl) t.pinnedUrl = '';
+    }
+  }
+
+  // Reset Pinned Tab / the sidebar's ↺: back to the pinned url, in place
+  resetPinned(id) {
+    const tab = this.tabs.get(id);
+    if (!tab?.pinned || !tab.pinnedUrl) return;
+    this.recordActivity('navigation', { tabId: tab.id, url: tab.pinnedUrl, action: 'reset-pinned' });
+    tab.url = tab.pinnedUrl;
+    tab.errorFor = null;
+    if (tab.wc) {
+      this.mgr.applyUserAgent(tab.wc, tab.url);
+      tab.wc.loadURL(tab.url).catch(() => {});
+    }
+    this.activate(tab.id);
+  }
+
+  // Set Current URL as Pinned URL
+  setPinnedUrl(id, url = null) {
+    const tab = this.tabs.get(id);
+    if (!tab?.pinned) return;
+    const next = url || tab.errorFor || tab.url;
+    if (!next) return;
+    tab.pinnedUrl = next;
+    this.changed();
   }
 
   duplicate(id) {
@@ -1263,6 +1315,14 @@ class OliveWindow {
       t.push(sep, { label: 'Open in New Window', enabled: !!tab.url, click: () => { const url = tab.url; this.closeTab(id); this.mgr.newWindow({ url, private: this.isPrivate }); } });
       t.push(sep);
     }
+    if (n === 1 && tab.pinned) {
+      const off = TM.drifted(tab.pinnedUrl, tab.errorFor || tab.url);
+      t.push(
+        { label: 'Reset Pinned Tab', enabled: off, click: () => this.resetPinned(id) },
+        { label: 'Set Current URL as Pinned URL', enabled: off, click: () => this.setPinnedUrl(id) },
+        sep,
+      );
+    }
     if (allPinned) t.push({ label: n === 1 ? 'Unload' : `Unload ${tabsWord}`, enabled: sel.some((x) => x.wc), click: () => this.closeTabs(selIds) }, { label: n === 1 ? 'Remove Pinned Tab' : `Remove ${tabsWord}`, click: () => { for (const x of sel) { this.setPinned(x.id, false); this.closeTab(x.id); } } });
     else t.push(
       { label: 'Unload (Free Memory)', enabled: sel.some((x) => x.wc && !this.visibleIds().includes(x.id)), click: () => { for (const x of sel) if (!this.visibleIds().includes(x.id)) this.unload(x); this.changed(); } },
@@ -1381,6 +1441,8 @@ class OliveWindow {
       case 'ungroup': return this.ungroup(a.id);
       case 'newTabInGroup': return this.newTabInGroup(a.id);
       case 'mute': return this.toggleMute(a.id);
+      case 'resetPinned': return this.resetPinned(a.id);
+      case 'setPinnedUrl': return this.setPinnedUrl(a.id);
       case 'clearUnpinned': return this.clearUnpinned();
       case 'overlay': return this.setOverlay(a.kind || null);
       case 'submit': return this.submit(a);
