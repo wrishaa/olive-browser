@@ -14,11 +14,14 @@ class TabMRU {
       this.index = Math.max(0, this.walk.indexOf(active));
     } else {
       const current = this.walk[this.index];
+      const before = this.walk.slice(0, this.index).filter(id => live.has(id)).length;
       this.walk = this.walk.filter(id => live.has(id));
-      this.index = Math.max(0, this.walk.indexOf(current));
+      const at = this.walk.indexOf(current);
+      // previewed tab closed mid-walk: continue from its old slot, not from the top
+      this.index = at >= 0 ? at : dir > 0 ? before - 1 : before;
     }
     if (!this.walk.length) return null;
-    this.index = (this.index + dir + this.walk.length) % this.walk.length;
+    this.index = (((this.index + dir) % this.walk.length) + this.walk.length) % this.walk.length;
     return this.walk[this.index];
   }
   finish(active) { this.walk = null; this.index = 0; this.touch(active); }

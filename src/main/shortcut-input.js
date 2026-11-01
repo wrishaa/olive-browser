@@ -31,4 +31,9 @@ function holdReleased(hold, input) {
   // its own keyUp event. Flags catch releases that happened outside this view.
   return hold.modifiers.some(flag => released === flag || !input[flag]);
 }
-module.exports = { matchesInput, holdForInput, holdReleased };
+// A keyDown of one of the hold's own modifier keys: it was released and pressed again.
+function holdRepressed(hold, input) {
+  if (!hold?.modifiers.length || input.type !== 'keyDown') return false;
+  return hold.modifiers.includes(RELEASE_KEYS[input.key]);
+}
+module.exports = { matchesInput, holdForInput, holdReleased, holdRepressed };

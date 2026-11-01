@@ -4,7 +4,7 @@ const { BaseWindow, WebContentsView, Menu, clipboard, shell, nativeTheme, app } 
 const path = require('path');
 const { TabMRU } = require('./tab-mru');
 const { COMMANDS } = require('./shortcuts');
-const { matchesInput, holdForInput, holdReleased } = require('./shortcut-input');
+const { matchesInput, holdForInput, holdReleased, holdRepressed } = require('./shortcut-input');
 const { toUrl, displayHost, SEARCH } = require('../core/url');
 const { commandSuggestions, isAppCommand } = require('../core/app-commands');
 const TG = require('../core/tab-groups');
@@ -1354,8 +1354,10 @@ class OliveWindow {
       case 'findPrev': if (!this.find.open) return this.openFind(); return this.doFind(this.find.query, { forward: false, findNext: true });
       case 'closeFind': return this.closeFind();
       case 'copyUrl': if (active) clipboard.writeText(active.url); return this.send('toast', 'Copied URL');
-      case 'mruNext': this.walkTabs(1); return this.finishTabWalk();
-      case 'mruPrev': this.walkTabs(-1); return this.finishTabWalk();
+      // native menu dispatch has no keyUp to wait for: always a fresh single step, and
+      // never a continuation of a walk whose release we may have missed
+      case 'mruNext': this.finishTabWalk(); this.walkTabs(1); return this.finishTabWalk();
+      case 'mruPrev': this.finishTabWalk(); this.walkTabs(-1); return this.finishTabWalk();
       case 'nextTab': return this.cycle(1);
       case 'prevTab': return this.cycle(-1);
       case 'selectIndex': return this.selectIndex(a.index);
@@ -1427,7 +1429,12 @@ class OliveWindow {
 
   wireTabKeys(wc) {
     wc.on('before-input-event', (event, input) => {
-      if (this.tabMRU.walk && holdReleased(this.tabWalkHold, input)) this.finishTabWalk();
+      if (this.tabMRU.walk) {
+        if (holdReleased(this.tabWalkHold, input)) this.finishTabWalk();
+        // A fresh press of the hold modifier means it was released since the walk
+        // began, even if that keyUp never reached us (see primeTabWalkKeys).
+        else if (input.type === 'keyDown' && !input.isAutoRepeat && wc !== this.tabWalkPriming && holdRepressed(this.tabWalkHold, input)) this.finishTabWalk();
+      }
       if (input.type !== 'keyDown') return;
       // Resolve on every keystroke: remapping and profile switches take effect live.
       for (const [command, dir] of [['mruNext', 1], ['mruPrev', -1]]) {
@@ -1437,15 +1444,39 @@ class OliveWindow {
         if (!matchesInput(accelerator, input)) continue;
         event.preventDefault(); // suppress both the page key and native menu accelerator
         if (!this.tabMRU.walk) this.tabWalkHold = holdForInput(input);
-        this.walkTabs(dir);
+        this.walkTabs(dir, wc);
         break;
       }
     });
   }
 
-  walkTabs(dir) {
+  // source: the webcontents whose keyDown started/continued the walk (null: menu)
+  walkTabs(dir, source = null) {
     const id = this.tabMRU.step(this.allIds(), this.activeId, dir);
     if (id != null) this.activate(id, { mruPreview: true });
+    if (source && this.tabMRU.walk) this.primeTabWalkKeys(source);
+  }
+
+  // Chromium drops every keyUp sent to a webcontents after a keyDown that
+  // before-input-event preventDefault()ed, until that webcontents sees its next
+  // keyDown (RenderWidgetHostImpl::suppress_events_until_keydown_). That flag
+  // outlives focus changes: walking A -> B leaves it set on A, and the next tap
+  // B -> A then loses the modifier keyUp in A, so the walk never commits and the
+  // following tap drifts down the stale list. So after each walk step, hand the
+  // keyboard owner (the previewed page, or the source if focus stayed put) a keyDown
+  // for the still-held modifier: it clears the flag, and the page sees a coherent
+  // Control down/up pair around the walk.
+  primeTabWalkKeys(source) {
+    const tab = this.tabs.get(this.activeId);
+    // activate() moved focus into the previewed page unless the palette holds it
+    const target = this.overlay !== 'palette' && tab?.wc ? tab.wc : source;
+    const modifiers = this.tabWalkHold?.modifiers || [];
+    if (!modifiers.length || typeof target?.sendInputEvent !== 'function' || target.isDestroyed?.()) return;
+    const keyCode = { control: 'Control', meta: 'Meta', alt: 'Alt' };
+    this.tabWalkPriming = target;
+    try {
+      for (const flag of modifiers) target.sendInputEvent({ type: 'keyDown', keyCode: keyCode[flag], modifiers });
+    } finally { this.tabWalkPriming = null; }
   }
 
   finishTabWalk() {
