@@ -36,4 +36,8 @@ function holdRepressed(hold, input) {
   if (!hold?.modifiers.length || input.type !== 'keyDown') return false;
   return hold.modifiers.includes(RELEASE_KEYS[input.key]);
 }
-module.exports = { matchesInput, holdForInput, holdReleased, holdRepressed };
+// Escape keyDown cancels an open walk (whatever modifiers are still down).
+function cancelsWalk(input) {
+  return input.type === 'keyDown' && (input.key === 'Escape' || input.key === 'Esc' || input.code === 'Escape');
+}
+module.exports = { matchesInput, holdForInput, holdReleased, holdRepressed, cancelsWalk };

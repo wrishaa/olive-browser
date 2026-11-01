@@ -2,7 +2,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const { TabMRU } = require('../src/main/tab-mru');
-const { holdForInput, holdReleased, holdRepressed } = require('../src/main/shortcut-input');
+const { holdForInput, holdReleased, holdRepressed, cancelsWalk } = require('../src/main/shortcut-input');
 
 // drive TabMRU the way window.js does: active follows previews, finish commits
 function harness(ids, active) {
@@ -13,6 +13,7 @@ function harness(ids, active) {
   h.release = () => m.finish(h.active);
   h.tap = (dir = 1) => { h.press(dir); h.release(); return h.active; };
   h.activate = id => { m.finish(h.active); h.active = id; m.touch(id); };
+  h.cancel = () => { const start = m.cancel(); if (start != null) h.active = start; return start; };
   return h;
 }
 
@@ -113,4 +114,36 @@ test('hold detection: release, re-press and shift', () => {
   assert.equal(holdRepressed(hold, { type: 'keyDown', key: 'Shift', control: true, shift: true }), false);
   assert.equal(holdRepressed(hold, { type: 'keyUp', key: 'Control', control: false }), false);
   assert.equal(holdRepressed(holdForInput({ type: 'keyDown', key: 'F5' }), { type: 'keyDown', key: 'Control', control: true }), false);
+});
+
+test('a5: esc cancels a walk back to its start, recency untouched', () => {
+  const h = harness([1, 2, 3, 4], 1);
+  h.press(); h.press();
+  assert.equal(h.active, 3);
+  assert.equal(h.cancel(), 1, 'cancel returns the start tab');
+  assert.equal(h.active, 1);
+  assert.equal(h.m.walk, null);
+  assert.deepEqual(h.m.order, [1, 2, 3, 4], 'mru unchanged');
+  assert.equal(h.m.cancel(), null, 'no walk: nothing to cancel');
+  assert.equal(h.tap(), 2, 'next tap toggles normally');
+  // after a commit, a later cancel goes back to the new start
+  h.press(); h.press();
+  assert.equal(h.cancel(), 2);
+  assert.deepEqual(h.m.order, [2, 1, 3, 4]);
+  // reversed (shift) walk cancels the same way
+  h.press(-1);
+  assert.equal(h.active, 4);
+  assert.equal(h.cancel(), 2);
+  // start tab closed mid-walk: no start to go back to
+  h.press();
+  h.ids = h.ids.filter(x => x !== 2); h.m.remove(2);
+  assert.equal(h.m.cancel(), null);
+  assert.equal(h.m.walk, null);
+});
+
+test('a5: esc keyDown cancels, whatever modifiers are down', () => {
+  assert.equal(cancelsWalk({ type: 'keyDown', key: 'Escape', code: 'Escape', control: true }), true);
+  assert.equal(cancelsWalk({ type: 'keyDown', key: 'Escape', code: 'Escape', meta: true, alt: true }), true);
+  assert.equal(cancelsWalk({ type: 'keyUp', key: 'Escape', code: 'Escape', control: true }), false);
+  assert.equal(cancelsWalk({ type: 'keyDown', key: 'Tab', code: 'Tab', control: true }), false);
 });
