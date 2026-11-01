@@ -10,6 +10,9 @@ const labels = { media: 'camera / microphone', geolocation: 'your location', not
 // src/ui/site-permissions-preload.js shows these names to the page as 'prompt' instead.
 const queryKeys = { camera:'media:video', microphone:'media:audio', notifications:'notifications', push:'notifications', geolocation:'geolocation', 'clipboard-read':'clipboard-read', 'display-capture':'display-capture', 'speaker-selection':'speaker-selection', 'local-network-access':'local-network-access', 'window-management':'window-management', 'idle-detection':'idle-detection', 'storage-access':'storage-access', 'top-level-storage-access':'top-level-storage-access' };
 const settingsPermissions = [['media:audio','Microphone'],['media:video','Camera'],['display-capture','Screen sharing'],['notifications','Notifications'],['geolocation','Location'],['speaker-selection','Audio output devices'],['clipboard-read','Clipboard'],['local-network-access','Local network']];
+// did-start-navigation fires for every frame and for pushState; only a new main document
+// (reload, link, close) means the page that asked is gone.
+const leavesDocument = e => e?.isMainFrame !== false && !e?.isSameDocument;
 class Permissions {
   constructor(mgr) {
     this.mgr = mgr; this.pending = new Map(); this.views = new Map(); this.seq = 0; this.privateChoices = {}; this.once = new WeakMap(); this.settings = new Map(); this.pickers = new Map(); this.osRequests = new Map(); this.screenSetupRequested = false; this.sessionChoices = new WeakMap();
@@ -121,18 +124,23 @@ class Permissions {
       const kind = permission === 'media' && Array.isArray(details.mediaTypes) && details.mediaTypes.length === 0 ? 'display-capture' : permission;
       this.request(wc, kind, details.securityOrigin || details.requestingUrl || wc?.getURL(), details, choices, persist, callback);
     });
-    ses.setDisplayMediaRequestHandler((request, callback) => {
+    ses.setDisplayMediaRequestHandler((request, rawCallback) => {
+      // Answer chromium exactly once. Electron throws from the callback when it is
+      // given no video for a video request, and a second answer used to follow from
+      // the catch below, so a cancel surfaced as AbortError "Invalid capture constraints".
+      let answered = false;
+      const callback = streams => { if (answered) return; answered = true; try { rawCallback(streams); } catch {} };
       const wc = request.frame && webContents.fromFrame(request.frame);
-      if (!wc || !request.videoRequested || !request.userGesture) return callback({});
+      if (!wc || !request.videoRequested || !request.userGesture) return callback(null);
       this.request(wc, 'display-capture', request.securityOrigin, {}, choices, persist, async allowed => {
-        if (!allowed || !request.frame || wc.isDestroyed()) return callback({});
+        if (!allowed || !request.frame || wc.isDestroyed()) return callback(null);
         try {
           const origin = this.origin(request.securityOrigin);
           const source = await this.pickSource(this.windowFor(wc), wc, origin);
-          if (!source || !request.frame || wc.isDestroyed()) return callback({});
+          if (!source || !request.frame || wc.isDestroyed()) return callback(null);
           // Never select a screen automatically. No system-audio loopback on macOS.
           callback({ video: source });
-        } catch { try { callback({}); } catch {} }
+        } catch { callback(null); }
       });
     }, { useSystemPicker: false });
   }
@@ -143,7 +151,9 @@ class Permissions {
     if (keys.some(k => choices[k] === false)) return callback(false);
     const p = { id: ++this.seq, wc, win, origin, keys, callback, choices, persist, permission, details,
       label: permission === 'media' ? (details.mediaTypes || []).map(t => t === 'audio' ? 'microphone' : t === 'video' ? 'camera' : t).join(' and ') || labels.media : labels[permission] || permission };
-    p.navigate = e => { if (!e.isSameDocument) this.finish(p, false, false); };
+    // Only a new main document ends the request. Subframe loads and pushState (meet does
+    // both around its present button) must not cancel the prompt the user is answering.
+    p.navigate = e => { if (leavesDocument(e)) this.finish(p, false, false); };
     p.destroy = () => this.finish(p, false, false);
     wc.on('did-start-navigation', p.navigate); wc.once('destroyed', p.destroy); this.pending.set(p.id, p);
     if (keys.every(k => choices[k] === true || this.grants(wc).has(k))) this.finish(p, true, false);
@@ -190,7 +200,7 @@ class Permissions {
     const view = new AppPanel(win, { width:480,height:520, title:'Site settings', resizable:false, minimizable:false, fullscreenable:false, webPreferences:{ preload:path.join(__dirname,'../ui/site-settings-preload.js'), sandbox:true,contextIsolation:true,nodeIntegration:false } });
     const entry = { view,win,wc,origin,choices:win.isPrivate ? this.privateChoices : this.mgr.perms.data };
     this.settings.set(view.webContents.id,entry);
-    const close = e => { if (!e || !e.isSameDocument) { if (!view.isDestroyed()) view.close(); } };
+    const close = e => { if (!e || leavesDocument(e)) { if (!view.isDestroyed()) view.close(); } };
     wc.on('did-start-navigation',close); wc.once('destroyed',close);
     const id = view.webContents.id;
     view.on('closed',()=>{ this.settings.delete(id); wc.removeListener('did-start-navigation',close); wc.removeListener('destroyed',close); });
@@ -199,14 +209,16 @@ class Permissions {
   }
   async pickSource(win, wc, origin) {
     if (!win || wc.isDestroyed()) return null;
-    const url = wc.getURL();
-    let canceled = false; const abort = () => { canceled = true; };
-    wc.once('did-start-navigation',abort); wc.once('destroyed',abort);
+    // Cancel only when the requesting page goes away (new main document or tab closed).
+    // A subframe load or a same-document URL change (pushState) during the slow first
+    // getSources call used to cancel the share, so the first "present" click failed.
+    let canceled = false; const abort = e => { if (!e || leavesDocument(e)) canceled = true; };
+    wc.on('did-start-navigation',abort); wc.once('destroyed',abort);
     let sources;
     try { sources = await this.registerScreenAccess(); }
     catch { sources = []; }
     finally { wc.removeListener('did-start-navigation',abort); wc.removeListener('destroyed',abort); }
-    if (canceled || wc.isDestroyed() || wc.getURL() !== url) return null;
+    if (canceled || wc.isDestroyed()) return null;
     if (['denied','restricted','not-determined'].includes(this.status('screen')) || !sources?.length) {
       win.send('toast','Enable Olive in macOS Screen & System Audio Recording, then relaunch Olive.');
       this.showSettings(win, wc); return null;
@@ -215,8 +227,8 @@ class Permissions {
       const view = new AppPanel(win, {width:720,height:520,title:'Choose what to share',webPreferences:{preload:path.join(__dirname,'../ui/capture-preload.js'),sandbox:true,contextIsolation:true,nodeIntegration:false} });
       const id = view.webContents.id; let done = false;
       const finish = source => { if (done) return; done=true; this.pickers.delete(id); wc.removeListener('did-start-navigation',cancel); wc.removeListener('destroyed',cancel); if (!view.isDestroyed()) view.close(); resolve(source); };
-      const cancel = () => finish(null);
-      this.pickers.set(id,{view,origin,sources,finish}); wc.once('did-start-navigation',cancel); wc.once('destroyed',cancel); view.once('closed',cancel);
+      const cancel = e => { if (!e || leavesDocument(e)) finish(null); };
+      this.pickers.set(id,{view,origin,sources,finish}); wc.on('did-start-navigation',cancel); wc.once('destroyed',cancel); view.once('closed',()=>finish(null));
       view.webContents.on('will-navigate',e=>e.preventDefault()); view.webContents.setWindowOpenHandler(()=>({action:'deny'})); view.loadFile(path.join(__dirname,'../ui/capture.html'));
     });
   }

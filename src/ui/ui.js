@@ -898,7 +898,9 @@ palInput.addEventListener('keydown', (e) => {
     renderSuggestions();
   } else if (e.key === 'Enter') {
     e.preventDefault();
-    submitPalette(e.shiftKey);
+    if (e.isComposing) return; // IME candidate confirm, not a submit
+    // ↵ current tab (edit) / new tab (cmd+t), ⇧↵ split, ⌘↵ new foreground tab
+    submitPalette(e.shiftKey, e.metaKey);
   } else if (e.key === 'Escape') {
     e.preventDefault();
     if (pal.completion && palInput.selectionStart !== palInput.selectionEnd) {
@@ -914,12 +916,12 @@ palInput.addEventListener('keydown', (e) => {
   }
 });
 
-function submitPalette(split) {
+function submitPalette(split, newTab = false) {
   const value = palInput.value.trim();
   const item = pal.sel >= 0 ? pal.items[pal.sel] : null;
   if (!value && !item) return;
   hidePalette();
-  olive.cmd('submit', { mode: pal.mode, input: value, item, split });
+  olive.cmd('submit', { mode: pal.mode, input: value, item, split, newTab: !!newTab && !split });
 }
 
 $('#palette-results').addEventListener('mousemove', (e) => {
@@ -932,7 +934,7 @@ $('#palette-results').addEventListener('click', (e) => {
   const el = e.target.closest('.sug');
   if (!el) return;
   pal.sel = Number(el.dataset.i);
-  submitPalette(e.shiftKey);
+  submitPalette(e.shiftKey, e.metaKey);
 });
 $('#palette-scrim').addEventListener('mousedown', (e) => {
   if (e.target.id === 'palette-scrim') closePalette();

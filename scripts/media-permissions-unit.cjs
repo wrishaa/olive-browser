@@ -29,7 +29,7 @@ const last = ()=>[...p.pending.values()].at(-1);
   result=request('media',{mediaTypes:['video']}); wc.emit('did-start-navigation',{isMainFrame:true,isSameDocument:false}); assert.equal(result(),false);assert.equal(p.pending.size,0);
   status='denied'; result=request('media',{mediaTypes:['video']}); await p.finish(last(),true,true);assert.equal(result(),false);assert.equal(choices['https://meet.google.com|media:video'],true);
   choices['https://meet.google.com|display-capture']=false; let display;
-  handlers.display({frame:{wc},securityOrigin:'https://meet.google.com',userGesture:true,videoRequested:true},v=>display=v);assert.deepEqual(Object.keys(display),[]);assert.equal(captures,0);
+  handlers.display({frame:{wc},securityOrigin:'https://meet.google.com',userGesture:true,videoRequested:true},v=>display=v);assert.equal(display,null);assert.equal(captures,0);
   delete choices['https://meet.google.com|display-capture'];
   handlers.display({frame:{wc},securityOrigin:'https://meet.google.com',userGesture:false,videoRequested:true},v=>display=v);assert.equal(p.pending.size,0);assert.equal(captures,0);
   result=request('media',{mediaTypes:[]});assert.equal(last().permission,'display-capture');assert.equal(last().label,'screen sharing');await p.finish(last(),false,false);assert.equal(result(),false);
@@ -41,5 +41,14 @@ const last = ()=>[...p.pending.values()].at(-1);
   electron.systemPreferences.askForMediaAccess=()=>new Promise(r=>release=r);
   result=request('media',{mediaTypes:['audio']}); const awaiting=p.finish(last(),true,false);
   wc.emit('did-start-navigation',{isMainFrame:true,isSameDocument:false});release(true);await awaiting;assert.equal(result(),false);assert.equal(p.pending.size,0);
-  console.log('ok: media allow once, origin isolation, navigation expiry, remembered block/allow, macOS ask/denial, screen denial/gesture, cancellation during OS prompt');
+  // Meet's first "present" click: subframe loads and pushState while the prompt / picker is up must not cancel it.
+  result=request('media',{mediaTypes:[]});
+  wc.emit('did-start-navigation',{isMainFrame:false,isSameDocument:false});wc.emit('did-start-navigation',{isMainFrame:true,isSameDocument:true});
+  assert.equal(p.pending.size,1);await p.finish(last(),true,false);assert.equal(result(),true);
+  wc.emit('did-start-navigation',{isMainFrame:true,isSameDocument:false});
+  // Exactly one answer to chromium, even when electron's callback throws on a no-video answer.
+  let answers=0; p.pickSource=async()=>null;
+  handlers.display({frame:{wc},securityOrigin:'https://meet.google.com',userGesture:true,videoRequested:true},()=>{answers++;throw new TypeError('Video was requested, but no video stream was provided');});
+  await p.finish(last(),true,false);await new Promise(r=>setTimeout(r,0));assert.equal(answers,1);
+  console.log('ok: media allow once, origin isolation, navigation expiry, remembered block/allow, macOS ask/denial, screen denial/gesture, cancellation during OS prompt, subframe/pushState keep screen prompt, one display answer');
 })().catch(e=>{console.error(e);process.exitCode=1;});
