@@ -19,3 +19,11 @@ local metadata: `~/Library/Application Support/Olive Extensions/ublock.json`; un
 - source references: electron v44.7.2 `docs/api/extensions.md`, `docs/api/extensions-api.md`; downloaded original uBO Lite manifest/background/popup. native APIs tested, not inferred from documentation coverage.
 
 final rerun: integrated CNN off 263 requests / 0 blocked, on 108 / 19 blocked; all 27 existing UI checks + CDP smoke passed. rebuilt and installed `~/Applications/Olive.app`; native sidebar button and basic popup verified, six enabled rulesets, toggled off/on successfully and left on. CDP port remains off in the installed app. existing authenticated google page still loaded after relaunch. no user document edits or cookie manipulation. compatibility remains partial, not full extension success.
+
+## 2026-11-02: worker runs via an Olive API shim
+
+- Cause of the blank Options… page: Electron's extension worker exposes `self.browser`/`chrome` without `permissions`, `windows`, `commands`; uBOL's background.js threw at :871 so the dashboard never got a reply (body.loading forever).
+- Fix: vendored CWS bytes unchanged; the profile-local copy gets an overlay (`olive/worker-shim.js`, `olive/worker.js`, manifest `service_worker` → `/olive/worker.js`), hash-verified like the rest (`overlayFiles` + `verifyPackage(root, record, overlay)`). Shim stand-ins only report what the manifest grants.
+- Olive's on/off stays authoritative: while off (`chrome.storage.local.oliveBlocking = {enabled:false, rulesets}`), the worker sees a virtual ruleset list and real static rulesets stay off; turning on restores uBOL's own list (`rulesetConfig.enabledRulesets`, else manifest defaults).
+- Still missing: `userScripts` (custom scriptlets). Official popup not re-checked.
+- Test: scripts/extension-settings-native-test.mjs (dashboard renders with worker data, dark theme, off survives worker session start).

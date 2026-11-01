@@ -39,7 +39,7 @@ class ExtensionSettings {
     }
     if (action === 'options') {
       const owner = this.view.owner;
-      if (!(await x.probeOptions())) return { ok: false, message: `${x.status.name}’s options page can’t start in Olive yet: it needs the extension’s background worker. Blocking is unaffected.` };
+      if (!(await x.probeOptions())) return { ok: false, message: `${x.status.name}’s options page didn’t finish loading. Blocking is unaffected.` };
       if (this.view?.owner !== owner || owner.destroyed) return { ok: false, message: '' };
       x.openOptions(owner);
       return { ok: true };

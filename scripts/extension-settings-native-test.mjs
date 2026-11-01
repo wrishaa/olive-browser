@@ -199,24 +199,40 @@ try {
   });
   check(guard === false, 'extensions IPC rejects senders other than the page itself');
 
-  // options: uBOL's dashboard needs its background worker (broken in Electron), so the
-  // button probes it hidden first and explains instead of showing a blank pane.
+  // options: uBOL's dashboard used to stay blank (body.loading) because its worker
+  // died on chrome.permissions; with Olive's worker shim it now renders inline.
   await page.locator('button.options').click();
-  await page.locator('.notice').waitFor({ timeout: 15000 });
-  s = await mainState(app);
-  const notice = await page.locator('.notice').innerText();
-  check(s.panel === 'Extensions' && /background worker/.test(notice) && /Blocking is unaffected/.test(notice), 'Options… on uBO Lite: no blank dashboard; page stays and explains why', { s, notice });
-  check(await page.evaluate(() => !document.querySelector('button.options').disabled && document.querySelector('button.options').textContent === 'Options…'), 'options button re-enabled after the probe');
-  if (wantShots) for (const theme of ['light', 'dark']) { await page.mouse.move(5, 5); await setTheme(app, ui, theme); await page.emulateMedia({ colorScheme: theme }); await pause(150); written.push(await composite(app, path.join(shots, `extensions-settings-options-notice-${theme}.png`), theme)); }
-  const direct = await app.evaluate(async () => {
-    const w = global.olive.focusedWindow(), v = global.olive.extensions.openOptions(w);
+  await poll(async () => (await mainState(app)).panel === 'uBO Lite options', 'options panel', 300);
+  const dash = await app.evaluate(async () => {
+    const w = global.olive.focusedWindow(), v = w.appPanel;
     if (v.webContents.isLoading()) await new Promise(r => v.webContents.once('did-stop-loading', r));
-    const out = { url: v.webContents.getURL(), title: w.appPanel?.options.title, loading: await v.webContents.executeJavaScript(`document.body.classList.contains('loading')`) };
-    w.cmd('extensions');
-    return out;
+    for (let i = 0; i < 100; i++) {
+      const ok = await v.webContents.executeJavaScript(`!document.body.classList.contains('loading')`);
+      if (ok) break;
+      await new Promise(r => setTimeout(r, 50));
+    }
+    return { url: v.webContents.getURL(), dump: await v.webContents.executeJavaScript(`JSON.stringify({loading:document.body.classList.contains('loading'),tabs:[...document.querySelectorAll('.tabButton')].map(e=>e.textContent.trim()),mode:document.querySelector('.filteringModeCard input[type=radio]:checked')?.value||null,lists:(self.cachedRulesetData?.enabledRulesets||[]).length,text:document.body.innerText.slice(0,600)})`) };
   });
-  check(/^chrome-extension:\/\/[a-p]{32}\/dashboard\.html$/.test(direct.url) && direct.title === 'uBO Lite options', 'openOptions loads the manifest options_page (dashboard.html) inline in the extension session', direct);
-  check(direct.loading === true, 'confirmed: dashboard stays in body.loading without the worker (why the probe exists)', direct);
+  const d = JSON.parse(dash.dump);
+  console.log('DASH', JSON.stringify(d).slice(0, 900));
+  check(/^chrome-extension:\/\/[a-p]{32}\/dashboard\.html$/.test(dash.url), 'Options… opens uBO Lite dashboard.html inline in the extension session', dash.url);
+  check(!d.loading && d.text.trim().length > 40 && d.tabs.includes('Filter lists'), 'uBO Lite options page renders (no blank body.loading page)', d);
+  // The filtering mode and enabled lists come from the worker's reply, so they prove it ran.
+  check(['1', '2', '3'].includes(d.mode) && d.lists === 6, 'dashboard shows worker data: default filtering mode selected, the 6 enabled filter lists match Olive', { mode: d.mode, lists: d.lists });
+  // uBOL picks light/dark once at page load (theme.js), so reload after switching.
+  // (playwright pins prefers-color-scheme per attached page; set it like the other shots.)
+  const dashPage = await poll(async () => (await app.windows()).find(p => p.url().endsWith('/dashboard.html')), 'dashboard page');
+  const dashTheme = async theme => {
+    await dashPage.emulateMedia({ colorScheme: theme });
+    await dashPage.reload();
+    await dashPage.waitForFunction(() => !document.body.classList.contains('loading'));
+    return dashPage.evaluate(t => document.documentElement.classList.contains(t), theme);
+  };
+  await setTheme(app, ui, 'dark');
+  check(await dashTheme('dark'), 'dashboard picks the dark theme when the system is dark (html.dark)');
+  if (wantShots) for (const theme of ['light', 'dark']) { await setTheme(app, ui, theme); await dashTheme(theme); await pause(300); written.push(await composite(app, path.join(shots, `extensions-options-dashboard-${theme}.png`), theme)); }
+  await setTheme(app, ui, 'light');
+  await app.evaluate(() => global.olive.focusedWindow().cmd('extensions'));
   page = await settingsPage(app); await page.locator('.ext').first().waitFor();
 
   // toggles: show in toolbar → sidebar button appears; enabled off → blocking stops
@@ -239,6 +255,11 @@ try {
   s = await mainState(app);
   b = await uboButton(ui);
   check(s.installed && !s.enabled && s.rulesets === 0 && s.showInToolbar === true && !b.hidden, 'after relaunch: blocking stays off and the button stays shown', { s, b });
+  // uBOL's worker re-applies its own ruleset list at session start; Olive's off must win.
+  await openFixtureTab(app); await pause(1500);
+  const real = await app.evaluate(() => global.olive.extensions.helper.webContents.executeJavaScript('chrome.declarativeNetRequest.getEnabledRulesets()'));
+  const n0 = adRequests;
+  check(real.length === 0 && (await fetchAd(app)) && adRequests === n0 + 1, 'after relaunch with blocking off, the running uBOL worker does not turn rulesets back on', { real, adRequests });
   await app.evaluate(() => global.olive.focusedWindow().cmd('extensions'));
   page = await settingsPage(app); await page.locator('.ext').first().waitFor();
   r = await row();
@@ -249,7 +270,6 @@ try {
   await app.close(); app = null;
   ({ app, ui } = await launch(repo, data));
   await openFixtureTab(app);
-  // uBOL's worker restarts once ~200ms after load (unload → ready → rules re-applied); wait it out.
   s = await poll(async () => { const v = await mainState(app); return v.enabled && v.rulesets === 6 && v; }, 'blocking re-applied after relaunch', 200).catch(() => mainState(app));
   b = await uboButton(ui);
   const m = adRequests;
