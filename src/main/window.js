@@ -1398,7 +1398,9 @@ class OliveWindow {
     }
   }
 
-  submit({ mode, input, item, split: inSplit }) {
+  // ↵ follows the palette mode (edit = current tab, new = new tab), ⇧↵ (split) opens in
+  // split view, ⌘↵ (newTab) opens a new foreground tab and leaves the current one alone.
+  submit({ mode, input, item, split: inSplit, newTab = false }) {
     this.setOverlay(null);
     const pendingGroup = this.pendingGroup;
     this.pendingGroup = null;
@@ -1417,9 +1419,10 @@ class OliveWindow {
     const raw = item?.url || input;
     if (!raw) return;
     const url = toUrl(raw);
-    if (url.startsWith(SEARCH) && mode !== 'edit') this.recordActivity('search', { url, engine: 'google' });
+    if (url.startsWith(SEARCH) && (mode !== 'edit' || newTab)) this.recordActivity('search', { url, engine: 'google' });
     const active = this.tabs.get(this.activeId);
     if (inSplit || mode === 'split') return this.openInSplit(url, active);
+    if (newTab === true) return this.createTab(pendingGroup != null && this.groups.has(pendingGroup) ? { url, groupId: pendingGroup } : { url });
     if (mode === 'edit' && active) return this.navigate(active, url);
     if (pendingGroup != null && this.groups.has(pendingGroup)) return this.createTab({ url, groupId: pendingGroup });
     this.createTab({ url });
