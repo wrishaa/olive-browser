@@ -4,6 +4,7 @@ const { AppPanel } = require('./app-panel');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const { parsePrefs, serializePrefs } = require('../core/extension-prefs');
 const STORE_ID = 'ddkjiahejlhfcafbddmgiahcphecmpfh';
 
 // CWS bytes are pinned in the app, never fetched or patched at first run.
@@ -87,10 +88,13 @@ class Extensions {
       this.helper.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
       this.ext = await ses.extensions.loadExtension(root);
       this.status = { installed: true, enabled: false, name: 'uBO Lite', version: manifest.version, id: this.ext.id, storeId: STORE_ID, gap: 'Basic network rules only. Electron lacks chrome.permissions in the extension worker: the official popup, per-site modes, cosmetic filtering and picker are not working.' };
-      const prefs = this.prefs;
-      let enabled = true;
-      try { enabled = JSON.parse(fs.readFileSync(prefs, 'utf8')).enabled !== false; } catch {}
-      await this.setEnabled(enabled);
+      let saved = parsePrefs(null);
+      try { saved = parsePrefs(fs.readFileSync(this.prefs, 'utf8')); } catch {}
+      // The sidebar button is opt-in; blocking itself does not depend on it.
+      this.status.showInToolbar = saved.showInToolbar;
+      this.status.optionsPage = typeof manifest.options_page === 'string' ? manifest.options_page : null;
+      this.icon = iconData(root, manifest);
+      await this.setEnabled(saved.enabled);
       this.initialized = true;
     } catch (e) { this.fail(e); }
     return this.status;
@@ -175,7 +179,19 @@ class Extensions {
     this.status.enabled = result.length > 0;
     this.status.rulesets = result;
     delete this.status.error;
-    fs.writeFileSync(this.prefs, JSON.stringify({ enabled: this.status.enabled }), { mode: 0o600 });
+    this.savePrefs();
+    this.mgr.broadcast();
+    return this.status;
+  }
+  savePrefs() {
+    if (!this.prefs) return;
+    fs.writeFileSync(this.prefs, serializePrefs({ enabled: typeof this.desiredEnabled === "boolean" ? this.desiredEnabled : this.status.enabled, showInToolbar: this.status.showInToolbar === true }), { mode: 0o600 });
+  }
+  setShowInToolbar(show) {
+    if (typeof show !== 'boolean') throw new Error('extension setting must be boolean');
+    if (!this.status.installed) throw new Error('extension not loaded');
+    this.status.showInToolbar = show;
+    this.savePrefs();
     this.mgr.broadcast();
     return this.status;
   }
@@ -206,4 +222,14 @@ class Extensions {
     popup.on('closed', () => { if (this.originalPopup === popup) this.originalPopup = null; });
   }
 }
-module.exports = { Extensions, verifyPackage, preparePackage };
+// Extension icon as a data URL from the verified local copy (never a remote fetch).
+function iconData(root, manifest) {
+  const icons = manifest.icons || manifest.action?.default_icon || {};
+  const size = Object.keys(icons).map(Number).filter(n => n >= 32).sort((a, b) => a - b)[0] || Object.keys(icons).map(Number).sort((a, b) => b - a)[0];
+  const rel = icons[size];
+  if (typeof rel !== 'string' || !/\.png$/i.test(rel)) return null;
+  const file = path.resolve(root, rel.replace(/^\/+/, ''));
+  if (!file.startsWith(path.resolve(root) + path.sep)) return null;
+  try { return 'data:image/png;base64,' + fs.readFileSync(file).toString('base64'); } catch { return null; }
+}
+module.exports = { Extensions, iconData, verifyPackage, preparePackage };

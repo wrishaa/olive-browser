@@ -15,7 +15,7 @@ const ui=pages().find(p=>p.url().includes('/ui/index.html'));
 let tab,control;
 try {
   await ui.evaluate(async()=>{if((await olive.invoke('state')).sidebarHidden)olive.cmd('toggleSidebar')});
-  await ui.locator('#btn-ublock').click();
+  await ui.evaluate(()=>olive.cmd('ublock')); // sidebar button is hidden by default
   for(let i=0;i<30;i++){control=pages().find(p=>p.url().endsWith('/ui/extension.html'));if(control)break;await sleep(100)}
   assert(control,'toolbar opens controls');
   await control.locator('#status').filter({hasText:'Blocking on'}).waitFor();

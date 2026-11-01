@@ -228,7 +228,8 @@ function render() {
   $('#setup-row').hidden = !S.onboarding;
   $('#setup-row').classList.toggle('active',!!S.onboarding?.active);
   $('#setup-left').textContent = S.onboarding?.step && S.onboarding.step!=='welcome' ? `${S.onboarding.remaining} left` : '';
-  $('#btn-ublock').hidden = S.private;
+  // extension buttons are opt-in per extension (Extensions settings); hidden by default
+  $('#btn-ublock').hidden = S.private || S.extension?.showInToolbar !== true;
   $('#btn-ledger').hidden = S.private;
   $('#btn-ublock').textContent = S.extension?.enabled ? 'uBO Lite · on' : 'uBO Lite · off';
   $('#btn-ublock').onclick = () => olive.cmd('ublock');
