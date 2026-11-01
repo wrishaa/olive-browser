@@ -99,6 +99,11 @@ try {
   input('Control',{type:'keyUp',control:false}); assert.equal(w.tabMRU.walk,null); assert.deepEqual(w.tabMRU.order,[2,1,3]);
   input('Tab'); assert.equal(w.activeId,1); input('Control',{type:'keyUp',control:false});
   input('Tab'); assert.equal(w.activeId,2); input('Control',{type:'keyUp',control:false});
+  // missed ctrl keyUp (chromium drops keyUps after a handled keyDown): a fresh ctrl press ends the stale walk,
+  // and a menu-dispatched step never continues one
+  { const start = w.activeId; input('Tab'); const prev = w.activeId; input('Control'); input('Tab'); assert.equal(w.activeId,start); input('Control',{type:'keyUp',control:false});
+    input('Tab'); assert.equal(w.activeId,prev); input('Control',{control:true,isAutoRepeat:true}); assert.ok(w.tabMRU.walk); w.cmd('mruNext'); assert.equal(w.activeId,start); assert.equal(w.tabMRU.walk,null);
+    w.cmd('mruNext'); assert.equal(w.activeId,prev); w.cmd('mruNext'); assert.equal(w.activeId,start); }
   const active = w.activeId; input('Tab',{meta:true}); assert.equal(w.activeId,active);
   w.mgr.shortcuts = s;
   s.set('mruNext','Cmd+Alt+K'); s.set('mruPrev','Cmd+Alt+Shift+K');
