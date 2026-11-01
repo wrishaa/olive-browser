@@ -1,0 +1,33 @@
+/* Layout only; settings-base.css owns app colors and controls. */
+main { max-width: 720px; }
+#list { margin-top: 18px; }
+.ext { margin: 0 0 22px; }
+.ext .head { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; gap: 12px; align-items: center; }
+.ext .icon { width: 44px; height: 44px; object-fit: contain; }
+.ext .icon:not([src]) { border-radius: 10px; background: var(--kbd); }
+.ext .name { font-size: 14px; font-weight: 600; color: var(--text); }
+.ext .version { color: var(--text-dim); font-size: 12px; margin-left: 6px; font-weight: 400; font-variant-numeric: tabular-nums; }
+.ext .description { margin: 2px 0 0; font-size: 12px; }
+/* base hover (--pill-hover) is near-white on the white card; keep the button visible */
+.ext .head button:hover:not(:disabled) { background: color-mix(in srgb, var(--text) 14%, transparent); }
+.ext .head button { height: 26px; min-width: 0; padding: 0 12px; border-radius: 13px; font-size: 12px; white-space: nowrap; }
+.ext .group { margin: 12px 0 0; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.ext .setting { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 40px; padding: 0 12px; }
+.ext .setting + .setting { border-top: 1px solid var(--line); }
+.ext .setting .label { color: var(--text); }
+.ext .setting .hint { display: block; font-size: 11px; color: var(--text-dim); margin-top: 1px; }
+.ext .limits { margin: 8px 2px 0; font-size: 11px; line-height: 1.45; }
+.ext .error { color: var(--text); font-size: 12px; margin: 8px 2px 0; }
+.ext .notice { display: flex; gap: 8px; align-items: flex-start; margin: 10px 0 0; padding: 9px 12px; border-radius: 8px; border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent); background: var(--palette-sel); color: var(--text); font-size: 12px; line-height: 1.45; }
+.ext .notice::before { content: 'i'; flex: none; width: 16px; height: 16px; margin-top: 1px; border-radius: 50%; background: var(--accent); color: var(--card); font: 600 11px/16px Georgia, serif; font-style: italic; text-align: center; }
+/* macOS-style switch; a visible track in both states and both themes */
+/* beats settings-base.css input[type=checkbox] sizing */
+.ext input.switch[type="checkbox"] { appearance: none; position: relative; flex: none; width: 32px; height: 19px; margin: 0; padding: 0; border: 0; border-radius: 10px;
+  background: color-mix(in srgb, var(--text) 32%, transparent); transition: background .15s; }
+@media (prefers-color-scheme: dark) { .ext input.switch[type="checkbox"]:not(:checked) { background: color-mix(in srgb, var(--text) 26%, transparent); } }
+.ext input.switch[type="checkbox"]::after { content: ''; position: absolute; top: 2px; left: 2px; width: 15px; height: 15px; border-radius: 50%; background: #fff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 0 0 .5px rgba(0, 0, 0, .08); transition: transform .15s; }
+.ext input.switch[type="checkbox"]:checked { background: var(--accent); }
+.ext input.switch[type="checkbox"]:checked::after { transform: translateX(13px); }
+.ext input.switch[type="checkbox"]:disabled { opacity: .45; }
+#status { min-height: 15px; font-size: 12px; color: var(--text); margin: 10px 0 0; }

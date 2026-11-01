@@ -4,6 +4,7 @@ const { AppPanel } = require('./app-panel');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const { parsePrefs, serializePrefs } = require('../core/extension-prefs');
 const STORE_ID = 'ddkjiahejlhfcafbddmgiahcphecmpfh';
 
 // CWS bytes are pinned in the app, never fetched or patched at first run.
@@ -87,10 +88,15 @@ class Extensions {
       this.helper.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
       this.ext = await ses.extensions.loadExtension(root);
       this.status = { installed: true, enabled: false, name: 'uBO Lite', version: manifest.version, id: this.ext.id, storeId: STORE_ID, gap: 'Basic network rules only. Electron lacks chrome.permissions in the extension worker: the official popup, per-site modes, cosmetic filtering and picker are not working.' };
-      const prefs = this.prefs;
-      let enabled = true;
-      try { enabled = JSON.parse(fs.readFileSync(prefs, 'utf8')).enabled !== false; } catch {}
-      await this.setEnabled(enabled);
+      let saved = parsePrefs(null);
+      try { saved = parsePrefs(fs.readFileSync(this.prefs, 'utf8')); } catch {}
+      // The sidebar button is opt-in; blocking itself does not depend on it.
+      this.status.showInToolbar = saved.showInToolbar;
+      this.status.optionsPage = typeof manifest.options_page === 'string' ? manifest.options_page : null;
+      this.status.description = 'Blocks ads and trackers with uBO Lite’s built-in filter lists.';
+      this.status.limits = 'Network blocking only for now. uBO Lite’s own popup, options page, per-site modes and element picker need its background worker, which Olive can’t run yet.';
+      this.icon = iconData(root, manifest);
+      await this.setEnabled(saved.enabled);
       this.initialized = true;
     } catch (e) { this.fail(e); }
     return this.status;
@@ -138,9 +144,10 @@ class Extensions {
     this.operation = null;
     if (this.popup && !this.popup.isDestroyed()) this.popup.close();
     if (this.originalPopup && !this.originalPopup.isDestroyed()) this.originalPopup.close();
+    if (this.optionsPage && !this.optionsPage.isDestroyed()) this.optionsPage.close();
     if (this.helper && !this.helper.isDestroyed()) this.helper.destroy();
     if (this.ext && this.ses) { try { await this.ses.extensions.removeExtension(this.ext.id); } catch {} }
-    this.popup = this.originalPopup = this.helper = this.ext = this.ses = null;
+    this.popup = this.originalPopup = this.optionsPage = this.helper = this.ext = this.ses = null;
     this.status = { installed: false, enabled: false, name: 'uBO Lite', gap: 'Starting the bundled network blocker…' };
   }
   setEnabled(enabled) {
@@ -175,8 +182,21 @@ class Extensions {
     this.status.enabled = result.length > 0;
     this.status.rulesets = result;
     delete this.status.error;
-    fs.writeFileSync(this.prefs, JSON.stringify({ enabled: this.status.enabled }), { mode: 0o600 });
-    this.mgr.broadcast();
+    this.savePrefs();
+    this.notify();
+    return this.status;
+  }
+  notify() { this.mgr.broadcast(); this.mgr.extensionSettings?.push?.(); }
+  savePrefs() {
+    if (!this.prefs) return;
+    fs.writeFileSync(this.prefs, serializePrefs({ enabled: typeof this.desiredEnabled === "boolean" ? this.desiredEnabled : this.status.enabled, showInToolbar: this.status.showInToolbar === true }), { mode: 0o600 });
+  }
+  setShowInToolbar(show) {
+    if (typeof show !== 'boolean') throw new Error('extension setting must be boolean');
+    if (!this.status.installed) throw new Error('extension not loaded');
+    this.status.showInToolbar = show;
+    this.savePrefs();
+    this.notify();
     return this.status;
   }
   open(win) {
@@ -193,6 +213,40 @@ class Extensions {
     popup.loadFile(path.join(__dirname, '../ui/extension.html'));
     popup.on('closed', () => { if (this.popup === popup) this.popup = null; });
   }
+  // Load the options page in a hidden window first: uBOL's dashboard stays blank
+  // (body.loading) without its background worker, which Electron can't start.
+  async probeOptions(timeoutMs = 3000) {
+    const page = this.status.optionsPage;
+    if (!this.ext || !page || !this.ses) return false;
+    if (this.optionsProbe && this.optionsProbe.context === this.context) return this.optionsProbe.ok;
+    const context = this.context;
+    const probe = new BrowserWindow({ show: false, webPreferences: { session: this.ses, sandbox: true, contextIsolation: true, nodeIntegration: false } });
+    probe.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
+    let ok = false;
+    try {
+      await probe.loadURL(`chrome-extension://${this.ext.id}/${page.replace(/^\/+/, '')}`);
+      const until = Date.now() + timeoutMs;
+      do {
+        ok = await probe.webContents.executeJavaScript(`!!document.body && !document.body.classList.contains('loading') && document.body.innerText.trim().length > 0`).catch(() => false);
+        if (ok) break;
+        await new Promise(r => setTimeout(r, 100));
+      } while (Date.now() < until);
+    } catch { ok = false; }
+    finally { if (!probe.isDestroyed()) probe.destroy(); }
+    this.optionsProbe = { context, ok };
+    return ok;
+  }
+  // The extension's own options page (uBO Lite: dashboard.html), inline in the pane.
+  openOptions(win = this.mgr.focusedWindow()) {
+    const page = this.status.optionsPage;
+    if (!this.ext || !page || !win || win.isPrivate || win.win.isDestroyed()) return null;
+    if (this.optionsPage && !this.optionsPage.isDestroyed()) this.optionsPage.close();
+    const view = this.optionsPage = new AppPanel(win, { title: `${this.status.name} options`, webPreferences: { session: this.ses, sandbox: true, contextIsolation: true, nodeIntegration: false } });
+    view.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
+    view.webContents.loadURL(`chrome-extension://${this.ext.id}/${page.replace(/^\/+/, '')}`);
+    view.on('closed', () => { if (this.optionsPage === view) this.optionsPage = null; });
+    return view;
+  }
   openOriginal() {
     const win = this.mgr.focusedWindow();
     if (!this.ext || !win || win.isPrivate || win.win.isDestroyed()) return;
@@ -206,4 +260,14 @@ class Extensions {
     popup.on('closed', () => { if (this.originalPopup === popup) this.originalPopup = null; });
   }
 }
-module.exports = { Extensions, verifyPackage, preparePackage };
+// Extension icon as a data URL from the verified local copy (never a remote fetch).
+function iconData(root, manifest) {
+  const icons = manifest.icons || manifest.action?.default_icon || {};
+  const size = Object.keys(icons).map(Number).filter(n => n >= 32).sort((a, b) => a - b)[0] || Object.keys(icons).map(Number).sort((a, b) => b - a)[0];
+  const rel = icons[size];
+  if (typeof rel !== 'string' || !/\.png$/i.test(rel)) return null;
+  const file = path.resolve(root, rel.replace(/^\/+/, ''));
+  if (!file.startsWith(path.resolve(root) + path.sep)) return null;
+  try { return 'data:image/png;base64,' + fs.readFileSync(file).toString('base64'); } catch { return null; }
+}
+module.exports = { Extensions, iconData, verifyPackage, preparePackage };

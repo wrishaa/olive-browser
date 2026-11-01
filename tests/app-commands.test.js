@@ -18,3 +18,9 @@ test('only allowlisted local actions execute', () => {
   assert.equal(isAppCommand('activities'),true);
   for(const id of ['closeWindow','submit','eval','__proto__',null]) assert.equal(isAppCommand(id),false);
 });
+test('extensions page is a palette destination', () => {
+  for (const q of ['extensions', 'extension', 'ext', 'ublock', 'ubo', 'ad blocker', 'adblock']) assert.equal(commandSuggestions(q)[0].commandId, 'extensions', q);
+  assert.equal(isAppCommand('extensions'), true);
+  assert.ok(commandSuggestions('settings').some(c => c.commandId === 'extensions'));
+  assert.ok(commandSuggestions('settings').some(c => c.commandId === 'sitePermissions'));
+});

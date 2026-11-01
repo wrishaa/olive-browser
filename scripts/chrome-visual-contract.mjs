@@ -94,7 +94,9 @@ try{
     executablePath=path.join(clone,'Contents/MacOS/Electron');
   }
   app=await _electron.launch({executablePath,args:['.'],env:{...process.env,OLIVE_USER_DATA_DIR:root,OLIVE_PROFILE:'chrome-visual-contract',OLIVE_CDP:'1',OLIVE_CDP_PORT:'0',OLIVE_API_PORT:'0'},timeout:30000});
-  await app.evaluate(async()=>{while(!global.olive?.ready||!global.olive.apiPort)await new Promise(r=>setTimeout(r,50));global.olive.onboarding.close();});
+  await app.evaluate(async()=>{while(!global.olive?.ready||!global.olive.apiPort)await new Promise(r=>setTimeout(r,50));global.olive.onboarding.close();
+    // The uBO sidebar button is hidden by default; opt in so its contrast contract still runs.
+    if(global.olive.extensions?.status.installed)global.olive.extensions.setShowInToolbar(true);});
   ui=await renderer('index');
   const synthetic='data:text/html,'+encodeURIComponent(`<!doctype html><meta charset="utf-8"><title>Reading room</title><style>:root{color-scheme:light dark}body{margin:0;background:light-dark(#fafbf8,#202522);color:light-dark(#26332a,#e4ece4);font:17px/1.65 system-ui}main{max-width:660px;margin:100px auto;padding:40px}small{letter-spacing:.16em;color:light-dark(#526b49,#b4ceab)}h1{font-size:42px;line-height:1.15;letter-spacing:-1.5px}p{max-width:570px}hr{border:0;border-top:1px solid light-dark(#dce4d7,#3c483f);margin:32px 0}</style><main><small>OLIVE / READING ROOM</small><h1>A quieter place to browse.</h1><p>A synthetic page for checking browser chrome. No browsing history, account details, or private content.</p><hr><p>Keep the useful things close. Leave a little room to think.</p></main>`);
   await app.evaluate(async(_,url)=>{const m=global.olive,w=m.focusedWindow();for(const t of [...w.tabs.values()])w.closeTab(t.id,{force:true});const t=w.createTab({url,activate:true});w.setOverlay(null);w.win.setTitle('Olive visual contract synthetic fixture');await new Promise(r=>t.wc.once('did-finish-load',r));},synthetic);

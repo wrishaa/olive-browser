@@ -458,6 +458,7 @@ app.whenReady().then(async () => {
   mgr.session; // init persistent session
   mgr.onboarding = new (require('./onboarding').Onboarding)(mgr);
   mgr.extensions = new (require('./extensions').Extensions)(mgr);
+  mgr.extensionSettings = new (require('./extension-settings').ExtensionSettings)(mgr);
   await mgr.extensions.load(mgr.session);
   mgr.restore();
   mgr.ready = true;
