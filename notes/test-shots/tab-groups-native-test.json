@@ -226,7 +226,7 @@
   },
   {
     "ok": true,
-    "label": "agent section sits below the tab list and above the uBO pill",
+    "label": "agent section sits below the tab list and above the footer (uBO pill is hidden by default)",
     "detail": {
       "noAgent": false,
       "collapsed": true,
@@ -676,12 +676,12 @@
       {
         "name": "Stripe webhooks",
         "working": false,
-        "top": 638
+        "top": 674
       },
       {
         "name": "Flights to Lisbon",
         "working": true,
-        "top": 676
+        "top": 712
       }
     ]
   },
