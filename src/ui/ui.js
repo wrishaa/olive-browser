@@ -971,6 +971,30 @@ olive.invoke('state').then((s) => { if (s) { S = s; render(); } });
 window.addEventListener('keydown', (e) => {
   if (e.key === 'Escape' && !pal.open && S?.overlay === 'peek') olive.cmd('overlay', { kind: null });
   if (e.key === 'Escape' && !pal.open && !renaming && sel.length) setSelection([]);
+  const id = enterRenameTarget(e);
+  if (id != null) {
+    e.preventDefault();
+    // document.hasFocus() can be true in a ui view that isn't the focused webcontents;
+    // main knows for sure
+    olive.invoke('uiFocused').then((yes) => { if (yes && enterRenameTarget(e, true) === id) startTabRename(id); });
+  }
 });
+
+// enter renames the selected tab (finder), but only when the keyboard is really in the
+// sidebar: the ui webcontents has focus (a plain row click hands it to the page), no
+// field / palette / find bar has it, no rename is open, and exactly one tab is selected.
+// notes/tab-rename-spec.md
+function enterRenameTarget(e, again = false) {
+  const el = document.activeElement;
+  return enterRenameId(again ? { ...pick(e), repeat: false, isComposing: false } : pick(e), {
+    uiFocused: document.hasFocus(),
+    paletteOpen: pal.open,
+    renaming: !!(renaming || renamingTab),
+    editableFocused: !!el && (el.matches('input, textarea, select, button, [contenteditable]') || el.isContentEditable),
+    selection: sel,
+    exists: (id) => !!findTab(id),
+  });
+}
+const pick = (e) => ({ key: e.key, repeat: e.repeat, isComposing: e.isComposing, shiftKey: e.shiftKey, metaKey: e.metaKey, ctrlKey: e.ctrlKey, altKey: e.altKey });
 
 $('#btn-ledger').onclick = () => olive.cmd('activities');
