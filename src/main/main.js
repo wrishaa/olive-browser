@@ -1,5 +1,5 @@
 // olive: app bootstrap + window manager
-const { app, session, ipcMain, dialog, nativeTheme, Notification, protocol } = require('electron');
+const { app, session, ipcMain, dialog, nativeTheme, Notification, protocol, webContents } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const { execFileSync } = require('child_process');
@@ -42,6 +42,11 @@ const cdpEnabled = settings.cdp || process.env.OLIVE_CDP === '1' || process.argv
 const wantCdp = Number(process.env.OLIVE_CDP_PORT || 9222);
 const cdpPortArg = wantCdp && portFree(wantCdp) ? wantCdp : 0; // 0 = let chromium pick, read DevToolsActivePort
 if (cdpEnabled) app.commandLine.appendSwitch('remote-debugging-port', String(cdpPortArg));
+// passkeys: touch id platform authenticator when the signed app carries the keychain group
+// (src/main/webauthn.js). off in dev electron / unsigned builds.
+const webauthn = require('./webauthn');
+const webauthnState = webauthn.configure(app);
+if (!webauthnState.enabled && app.isPackaged) console.log('[olive] passkeys off:', webauthnState.reason);
 // plain chrome user agent: some sites (google sign-in) block "Electron" in the UA
 const chromeMajor = process.versions.chrome.split('.')[0];
 const UA = `Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${chromeMajor}.0.0.0 Safari/537.36`;
@@ -160,6 +165,8 @@ class Manager {
     // Google keeps its honest Electron UA through applyUserAgent() on navigation.
     ses.setSpellCheckerLanguages(['en-US']);
     this.permissions.install(ses, !ses.isPersistent || ses.isPersistent());
+    // several passkeys for one site: let the user pick (else electron cancels the get())
+    webauthn.installAccountPicker(ses, { dialog, windowFor: frame => { let wc = null; try { wc = frame && webContents.fromFrame(frame); } catch {} return this.permissions.windowFor(wc)?.win || null; } });
     // alert / confirm / prompt in every page frame go to olive's popup (src/main/page-dialogs.js)
     if (!ses.__olivePageDialogs) {
       ses.__olivePageDialogs = true;
@@ -167,6 +174,8 @@ class Manager {
       // camera / mic / notifications / location: the page sees 'prompt' (not 'denied') until the
       // user decides in olive's prompt (src/main/permissions.js, queryKeys)
       ses.registerPreloadScript({ type: 'frame', id: 'olive-site-permissions', filePath: path.join(__dirname, '../ui/site-permissions-preload.js') });
+      // passkey requests nobody can answer end at their timeout like in chrome (src/ui/webauthn-preload.js)
+      ses.registerPreloadScript({ type: 'frame', id: 'olive-webauthn', filePath: path.join(__dirname, '../ui/webauthn-preload.js') });
     }
     // olive:// pages: profile sessions only (a private window opens them in a normal one)
     if (!ses.__oliveInternal && ses.isPersistent()) {
@@ -441,6 +450,7 @@ class Manager {
 
 const mgr = new Manager();
 global.olive = mgr; // handy from the main-process inspector
+mgr.webauthn = webauthnState;
 
 // ---------- ipc from the ui views ----------
 

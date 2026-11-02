@@ -10,6 +10,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { passkeySigning } from './passkey-signing.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const pkg = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'));
@@ -49,7 +50,7 @@ const [appDir] = await packager({
   // Keep verified bundled extension bytes on disk for profile-local installation.
   asar: { unpackDir: 'vendor/ublock' },
   prune: true,
-  ignore: [/^\/dist($|\/)/, /^\/scripts($|\/)/, /^\/assets\/icon\.(svg|png)$/, /^\/\.git($|\/)/, /^\/notes($|\/)/],
+  ignore: [/^\/dist($|\/)/, /^\/scripts($|\/)/, /^\/assets\/icon\.(svg|png)$/, /^\/assets\/embedded\.provisionprofile$/, /^\/\.git($|\/)/, /^\/notes($|\/)/],
   protocols: [{ name: 'Web site URL', schemes: ['http', 'https'] }],
   extendInfo: {
     CFBundleDocumentTypes: [
@@ -83,6 +84,9 @@ for (const file of Object.keys(blockerRecord.files)) {
 // files and Finder xattrs from an interrupted run also break the seal; clear them first.
 const entitlements = path.join(root, 'assets', 'entitlements.plist');
 const timestamp = release ? '--timestamp' : '--timestamp=none';
+// touch id passkeys: keychain-access-groups on the main app only, and only with an embedded
+// Developer ID provisioning profile (else amfi refuses to launch the app). helpers keep the base set.
+const passkeys = passkeySigning({ root, app, bundleId: 'com.reframe.olive', baseEntitlements: entitlements });
 run('/usr/bin/xattr', ['-cr', app]);
 const walk = dir => fs.readdirSync(dir, { withFileTypes: true }).flatMap(e => {
   const p = path.join(dir, e.name);
@@ -102,11 +106,11 @@ const contents = path.join(app, 'Contents');
 const looseFiles = walk(contents).filter(p => fs.statSync(p).isFile() && !/\/(Contents\/)?MacOS\/[^/]+$/.test(p.slice(contents.length)) && isMachO(p))
   .filter(p => !/\.framework\/Versions\/[^/]+\/[^/]+$/.test(p) || /\/(Libraries|Helpers)\//.test(p));
 const nestedBundles = walk(contents).filter(p => bundle(p) && fs.statSync(p).isDirectory());
-const sign = (target, withEntitlements) => run('/usr/bin/codesign', ['--force', '--options', 'runtime', timestamp,
-  ...(withEntitlements ? ['--entitlements', entitlements] : []), '--sign', identity, target]);
-for (const file of looseFiles.sort((a, b) => depth(b) - depth(a))) sign(file, false);
-for (const nested of nestedBundles.sort((a, b) => depth(b) - depth(a))) sign(nested, nested.endsWith('.app'));
-sign(app, true);
+const sign = (target, ents) => run('/usr/bin/codesign', ['--force', '--options', 'runtime', timestamp,
+  ...(ents ? ['--entitlements', ents] : []), '--sign', identity, target]);
+for (const file of looseFiles.sort((a, b) => depth(b) - depth(a))) sign(file, null);
+for (const nested of nestedBundles.sort((a, b) => depth(b) - depth(a))) sign(nested, nested.endsWith('.app') ? entitlements : null);
+sign(app, passkeys.entitlements);
 run('/usr/bin/codesign', ['--verify', '--deep', '--strict', '--verbose=2', app]);
 // Every Mach-O must carry our Developer ID (notarization rejects ad-hoc/upstream signatures).
 const authority = f => execFileSync('/bin/sh', ['-c', '/usr/bin/codesign -dvv "$1" 2>&1', 'sh', f]).toString();
