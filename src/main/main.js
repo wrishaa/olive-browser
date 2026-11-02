@@ -117,7 +117,7 @@ class Manager {
     this.switchingProfile = true;
     this.siteTime?.pause();
     try {
-      this.saveNow(); this.history.flush(); this.perms.flush(); this.ledgerUI.close(); this.ledger.close(); this.shortcuts.flush();
+      this.saveNow(); this.history.flush(); this.perms.flush(); this.ledgerUI.close(); this.settingsPage?.close(); this.ledger.close(); this.shortcuts.flush();
       await this.session.cookies.flushStore();
       this.onboarding?.close?.();
       await this.extensions?.dispose?.();
@@ -487,6 +487,7 @@ app.whenReady().then(async () => {
   mgr.onboarding = new (require('./onboarding').Onboarding)(mgr);
   mgr.extensions = new (require('./extensions').Extensions)(mgr);
   mgr.extensionSettings = new (require('./extension-settings').ExtensionSettings)(mgr);
+  mgr.settingsPage = new (require('./settings-page').SettingsPage)(mgr);
   await mgr.extensions.load(mgr.session);
   mgr.restore();
   mgr.ready = true;

@@ -7,6 +7,7 @@ const { COMMANDS } = require('./shortcuts');
 const { matchesInput, holdForInput, holdReleased, holdRepressed, cancelsWalk } = require('./shortcut-input');
 const { toUrl, displayHost, SEARCH } = require('../core/url');
 const { commandSuggestions, isAppCommand } = require('../core/app-commands');
+const { parseSettingsUrl, settingsUrl, TAB_TITLES } = require('../core/settings-url');
 const TG = require('../core/tab-groups');
 const TM = require('../core/tab-meta');
 
@@ -1428,13 +1429,14 @@ class OliveWindow {
       case 'onboarding': return this.mgr.onboarding?.show();
       case 'importBrowser': return this.mgr.onboarding?.showImport();
       case 'onboardingLater': return this.mgr.onboarding?.command('later');
-      case 'shortcuts': return this.mgr.shortcuts?.showSettings(this);
-      case 'activities': return this.mgr.siteTime?.show(this);
-      case 'settings': return this.mgr.shortcuts?.showSettings(this);
+      // one Settings page; the old page names open its tabs (src/main/settings-page.js)
+      case 'settings': return this.mgr.settingsPage?.show(this, a.tab || 'general', { section: a.section || null });
+      case 'shortcuts': return this.mgr.settingsPage?.show(this, 'shortcuts');
+      case 'activities': return this.mgr.settingsPage?.show(this, 'activities');
       case 'ledger': return this.mgr.ledgerUI ? this.mgr.ledgerUI.show(this) : require('./ledger-review').show(this);
       case 'ublock': return this.mgr.extensions?.open(this);
-      case 'extensions': return this.mgr.extensionSettings?.show(this);
-      case 'sitePermissions': return this.mgr.permissions.showSettings(this);
+      case 'extensions': return this.mgr.settingsPage?.show(this, 'extensions');
+      case 'sitePermissions': return this.mgr.settingsPage?.show(this, 'general', { section: 'permissions' });
       case 'resetPermissions': this.mgr.permissions.reset(this); break;
       case 'newTab': return this.openPalette('new');
       case 'splitNew': return this.openPalette('split');
@@ -1529,9 +1531,16 @@ class OliveWindow {
     const pendingGroup = this.pendingGroup;
     this.pendingGroup = null;
     if (item?.kind === 'command') {
+      if (item.commandId === 'settings') {
+        const target = parseSettingsUrl(item.url || '') || { tab: 'general' };
+        return this.cmd('settings', target);
+      }
       if (isAppCommand(item.commandId)) return this.cmd(item.commandId);
       return;
     }
+    // olive://settings[/tab] (and the old page names) typed or pasted: the Settings page
+    const settingsTarget = parseSettingsUrl(item?.url || input);
+    if (settingsTarget) return this.cmd('settings', settingsTarget);
     if (item && item.kind === 'tab') {
       const w = this.mgr.windows.find((x) => x.tabs.has(item.tabId));
       if (w) {
@@ -1677,7 +1686,10 @@ class OliveWindow {
   suggest(query) {
     const q = (query || '').trim();
     const out = commandSuggestions(q);
-    if (q) {
+    const settingsTarget = parseSettingsUrl(q);
+    if (settingsTarget) {
+      out.unshift({ kind: 'command', commandId: 'settings', title: settingsTarget.tab === 'general' ? 'Settings' : `Settings — ${TAB_TITLES[settingsTarget.tab]}`, sub: settingsUrl(settingsTarget.tab), url: settingsUrl(settingsTarget.tab) });
+    } else if (q) {
       const url = toUrl(q);
       const isSearch = url.startsWith(SEARCH);
       out.push(isSearch ? { kind: 'search', title: q, url, sub: 'Search Google' } : { kind: 'url', title: url.replace(/^https?:\/\//, ''), url, sub: 'Open' });

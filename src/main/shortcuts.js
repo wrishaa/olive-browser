@@ -18,7 +18,7 @@ const COMMANDS = [
   ['newGroup','New Group with Selection','Ctrl+Cmd+N'],
   ['back','Back','Cmd+['], ['forward','Forward','Cmd+]'],
   ['devtools','Developer Tools','Cmd+Alt+I'], ['console','JavaScript Console','Cmd+Alt+J'],
-  ['settings','Keyboard Shortcuts','Cmd+,'],
+  ['settings','Settings','Cmd+,'],
 ].map(([id,label,accelerator]) => ({ id, label, accelerator }));
 const RESERVED = [
   'Cmd+Shift+]','Cmd+Shift+[','Cmd+Plus','Ctrl+Shift+Plus','F12',
@@ -103,35 +103,26 @@ class Shortcuts {
     this.store.flush();
     this.onChange();
   }
-  showSettings(win) {
-    if (this.view && !this.view.isDestroyed()) { this.view.show(); this.view.focus(); return this.view; }
+  // the remapping UI is the Keyboard Shortcuts tab of Settings (src/main/settings-page.js)
+  showSettings(win) { return this.mgr.settingsPage?.show(win || this.mgr.focusedWindow(), 'shortcuts'); }
+  // Only the settings page's own main-frame document may read or change shortcuts.
+  // Returns an unbind function. One page at a time (ipcMain.handle is one per channel).
+  bind(view) {
     const { ipcMain } = require('electron');
-    const { AppPanel } = require('./app-panel');
-    const view = new AppPanel(win || this.mgr.focusedWindow(), { width: 660, height: 760, title: 'Keyboard Shortcuts', captureEscape:true,
-      webPreferences: { preload: path.join(__dirname,'../ui/shortcuts-preload.js'), sandbox:true, contextIsolation:true, nodeIntegration:false } });
-    this.view = view;
-    // Let the recorder receive combinations instead of firing the app menu while editing.
-    view.webContents.setIgnoreMenuShortcuts(true);
     const channel = 'olive:shortcuts';
-    // Only this local, main-frame settings document is allowed to update profile settings.
-    const handle = (e, action, payload = {}) => {
-      if (e.sender !== view.webContents || e.senderFrame !== view.webContents.mainFrame) return null;
+    ipcMain.removeHandler(channel);
+    this.view = view;
+    ipcMain.handle(channel, (e, action, payload = {}) => {
+      if (this.view !== view || view.isDestroyed() || e.sender !== view.webContents || e.senderFrame !== view.webContents.mainFrame) return null;
       try {
         if (action === 'close') { view.close(); return null; }
-        if (action === 'set') this.set(payload.id, payload.value);
+        if (action === 'set') this.set(payload?.id, payload?.value);
         else if (action === 'reset') this.reset();
         else if (action !== 'get') return null;
         return { commands: this.state() };
       } catch (error) { return { commands: this.state(), error: error.message }; }
-    };
-    ipcMain.handle(channel, handle);
-    view.on('closed', () => { ipcMain.removeHandler(channel); this.view = null; });
-    view.webContents.setWindowOpenHandler(() => ({ action:'deny' }));
-    view.webContents.on('will-navigate', e => e.preventDefault());
-    view.loadFile(path.join(__dirname,'../ui/shortcuts.html')).then(() => {
-      if (!view.isDestroyed()) { view.show(); view.focus(); }
     });
-    return view;
+    return () => { if (this.view === view) { ipcMain.removeHandler(channel); this.view = null; } };
   }
   flush() { this.store.flush(); }
 }
