@@ -23,3 +23,19 @@ input: real macOS input via Computer Use (cua) for keys, clicks, double-clicks a
 - cancel in the share picker gives the page `AbortError: Invalid capture constraints`. notes/media-permissions.md links that message to the old double answer, but this isn't that: a throwaway in-memory session whose handler calls `callback(null)` exactly once gets the same error in Electron 44. olive answers once.
 - `npm test` was red at 7b05bd3: onboarding-unit verified the prepared uBO copy without olive's worker-shim overlay (stale since 4415549). fixed the test in ecf0da1; `npm test` green. pinned-tabs-native-test 32/32 with the new focus check.
 - a10 (two windows, checked with the a5 fix, not changed): each window keeps its own mru. tabs opened interleaved A1 B1 A2 B2 A3 B3 across two windows; ctrl+tab in window 2 toggled B3 → B2 and a hold walk covered only [B2, B3, B1], window 1 stayed [A3, A2, A1] untouched; a tap in window 1 toggled A3 → A2 without touching window 2; `cmd('mruNext')` per window likewise.
+
+## rename triggers (2026-11-02, branch overnight-rename-triggers)
+
+fixture: `scripts/tab-rename-native-test.mjs` (temp profile, ports 0, 1440x900, local http). input via `webContents.sendInputEvent` (mouse down/up with clickCount 2, keyDown/char/keyUp), not DOM events. the fixture window is in the background, so keyboard focus is tracked as "the webcontents olive last focused" (electron's isFocused follows the os key window). spec + gaps: notes/tab-rename-spec.md. shots are the ui view (sidebar + chrome; page cards are separate views), screencapture -l had no permission.
+
+| # | check | result | shot |
+|---|-------|--------|------|
+| r1 | dblclick unpinned title → field, keyboard to ui; enter commits, esc cancels | pass | rename-dblclick-1440.png |
+| r2 | dblclick pinned title → field; dblclick title in a split → field | pass | |
+| r3 | dblclick favicon, dblclick close x → no rename | pass | |
+| r4 | dblclick group head → group field (esc keeps the name) | pass | |
+| r5 | ⌘-click one row, enter → field; enter commits (no reopen), esc cancels; shift/cmd+enter, two selected → nothing | pass (new) | rename-enter-1440.png |
+| r6 | clash: one row selected, keyboard in the page, enter → no rename (also a stray enter into the unfocused ui) | pass | |
+| r7 | clash: enter in a page textarea → newline, no rename | pass | |
+| r8 | clash: cmd+l enter navigates, shift+enter splits, cmd+enter new foreground tab, no rename | pass | |
+| r9 | clash: enter in the find bar → no rename | pass | |
