@@ -52,21 +52,24 @@ async function newTab(name) {
 }
 async function openSettings() {
   await ui.evaluate(()=>olive.cmd('shortcuts'));
-  return wait(()=>pages().find(p=>p.url().includes('/shortcuts.html')), 'embedded shortcut settings');
+  // Settings > Keyboard Shortcuts is a normal tab at olive://settings/shortcuts
+  return wait(()=>pages().filter(p=>!p.isClosed()&&p.url()==='olive://settings/shortcuts').pop(), 'shortcut settings tab');
 }
-async function closeSettings(method='sidebar') {
+// Esc never closes the tab; cmd+w (or the sidebar row ×) does, like any tab
+async function closeSettings(method='cmdw') {
   try {
-    if (method==='escape') {await settings.locator('header p').first().click();await settings.keyboard.press('Escape');}
-    else {
-      await app.evaluate((_,id)=>{const w=global.olive.windows.find(w=>w.id===id);if(w.sidebarHidden)w.toggleSidebar();w.win.focus();},win.id);
-      await ui.locator('#settings-row').hover();
-      await ui.locator('#settings-close').click();
+    if (method==='escape') {
+      await settings.locator('header p').first().click();await settings.keyboard.press('Escape');
+      await new Promise(r=>setTimeout(r,300));
+      assert.equal(settings.isClosed(),false,'Escape does not close the Settings tab');
+      assert.equal((await structure()).settingsTab,true);
     }
+    await app.evaluate((_,id)=>{const w=global.olive.windows.find(w=>w.id===id);const t=[...w.tabs.values()].find(t=>/^olive:\/\/settings/.test(t.url));w.activate(t.id);w.cmd('closeTab');},win.id);
   } catch(error) { if(!String(error).includes('has been closed')) throw error; }
   await wait(()=>settings.isClosed(),'settings closed by '+method);
   const closed=await structure();
-  assert.equal(closed.inline,false);assert.equal(closed.contentAttached,false);
-  assert.equal(closed.children,baselineChildren,'sidebar ×/Escape removes the single inline content view');
+  assert.equal(closed.settingsTab,false);assert.equal(closed.inline,false);
+  assert.equal(closed.children,baselineChildren,'closing the tab removes its view');
   settings=null;
 }
 async function remap(id, label, chord, expected) {
@@ -80,32 +83,33 @@ async function remap(id, label, chord, expected) {
 }
 async function structure() {
   return app.evaluate(({BaseWindow},id)=>{
-    const w=global.olive.windows.find(w=>w.id===id),p=w.appPanel;
+    const w=global.olive.windows.find(w=>w.id===id);
+    const t=[...w.tabs.values()].find(t=>/^olive:\/\/settings/.test(t.url));
     const {width,height}=w.win.getContentBounds();
     const x=w.sidebarHidden?8:w.sidebarWidth;
     const children=w.win.contentView.children;
     return {
       windows:BaseWindow.getAllWindows().length,
       visible:BaseWindow.getAllWindows().filter(w=>w.isVisible()).length,
-      inline:!!p && p.owner===w && w.inlinePage===p,
-      shell:!!p?.shell,
-      contentAttached:!!p && children.includes(p.content),
+      inline:!!w.inlinePage||!!w.appPanel,
+      settingsTab:!!t, active:!!t&&w.activeId===t.id, url:t?.url||null,
+      tabVisible:!!t?.view?.getVisible(),
       children:children.length,
-      bounds:p?.content.getBounds()||null,
-      expected:{x,y:8,width:Math.max(100,width-x-8),height:Math.max(100,height-16)},
+      bounds:t?.view?.getBounds()||null,
       pane:w.panes[0]?.rect||null,
-      webTabsVisible:[...w.tabs.values()].some(t=>t.view?.getVisible()),
+      otherTabsVisible:[...w.tabs.values()].some(x=>x!==t&&x.view?.getVisible()),
     };
   },win.id);
 }
-function assertInlinePane(state,baseline) {
+// Settings is the active tab: its own view in the web-content pane, no overlay
+function assertTabPane(state,baseline) {
   assert.equal(state.windows,baseline.windows);assert.equal(state.visible,1);
-  assert.equal(state.inline,true);assert.equal(state.shell,false,'no floating shell or scrim view');
-  assert.equal(state.contentAttached,true);
-  assert.equal(state.children,baseline.children+1,'exactly one inline content view');
-  assert.deepEqual(state.bounds,state.expected,'settings fills the pane beside the sidebar');
-  assert.deepEqual(state.bounds,state.pane,'settings and web-content pane geometry match');
-  assert.equal(state.webTabsVisible,false,'inline settings replaces web content, not an overlay');
+  assert.equal(state.inline,false,'no inline page / app panel');
+  assert.equal(state.settingsTab,true);assert.equal(state.active,true);assert.equal(state.url,'olive://settings/shortcuts');
+  assert.equal(state.tabVisible,true);
+  assert.equal(state.children,baseline.children+1,'exactly one more view: the tab');
+  assert.deepEqual(state.bounds,state.pane,'the Settings tab fills the web-content pane');
+  assert.equal(state.otherTabsVisible,false,'the other tabs are hidden behind it like any tab switch');
 }
 
 
@@ -144,12 +148,12 @@ try {
   original = await settings.evaluate(()=>shortcuts.get());
   assert.ok(original.commands.some(c=>c.id==='mruNext'), 'fixture needs relaunch: current MRU catalog not loaded');
   const embedded=await structure();
-  assertInlinePane(embedded,baseline);
+  assertTabPane(embedded,baseline);
   await app.evaluate((_,id)=>{const w=global.olive.windows.find(w=>w.id===id);w.toggleSidebar();},win.id);
-  assertInlinePane(await structure(),baseline);
+  assertTabPane(await structure(),baseline);
   await app.evaluate((_,id)=>{const w=global.olive.windows.find(w=>w.id===id);w.toggleSidebar();},win.id);
-  assertInlinePane(await structure(),baseline);
-  console.log('ok: full inline pane exact bounds (sidebar shown/hidden), no shell, web content hidden; BaseWindow count unchanged');
+  assertTabPane(await structure(),baseline);
+  console.log('ok: Settings is a normal tab: olive://settings/shortcuts fills the pane (sidebar shown/hidden), no overlay; BaseWindow count unchanged');
   await remap('mruNext','Next Recently Used Tab','Meta+Alt+k','Cmd+Alt+K');
   await remap('mruPrev','Previous Recently Used Tab','Meta+Alt+Shift+k','Cmd+Alt+Shift+K');
   // Conflicts are shown inline without replacing the existing binding.
@@ -160,8 +164,8 @@ try {
   const shot = path.resolve('notes/test-shots/shortcuts.png'); fs.mkdirSync(path.dirname(shot),{recursive:true});
   await settings.screenshot({path:shot,fullPage:true});
 
-  await closeSettings('sidebar');
-  console.log('ok: actual sidebar × removes the single inline content view');
+  await closeSettings('cmdw');
+  console.log('ok: cmd+w closes the Settings tab and removes its view');
   await activate(c); await activate(a);
   await key('k','KeyK',5,'keyDown',75); await expectActive(c);
   await key('k','KeyK',13,'keyDown',75); await expectActive(a);
@@ -201,7 +205,7 @@ try {
   assert.equal(await settings.locator('#mruNext').inputValue(),'⌃⇥');
   assert.equal(await settings.locator('#mruPrev').inputValue(),'⌃⇧⇥');
   await closeSettings('escape');
-  console.log('ok: actual Escape closes embedded settings outside recorder');
+  console.log('ok: Escape outside the recorder does not close the Settings tab; cmd+w does');
   await activate(a); await tab(); await expectActive(c); await releaseControl();
   assert.deepEqual(JSON.parse(fs.readFileSync(path.join(dir,'shortcuts.json'),'utf8')),{});
   console.log(`ok: reset persisted and default Ctrl+Tab works again; screenshot ${shot}`);
@@ -217,7 +221,7 @@ try {
       }
     }, original.commands);
   }
-  if (settings && !settings.isClosed()) await app.evaluate(()=>global.olive.shortcuts.view?.close());
+  if (settings && !settings.isClosed()) await app.evaluate(()=>{for(const w of global.olive.windows)for(const t of [...w.tabs.values()])if(/^olive:/.test(t.url))w.closeTab(t.id,{force:true});});
   for (const id of owned) await api(`/tabs/${id}/close`,{}).catch(()=>{});
   if (ui && !ui.isClosed()) await ui.evaluate(()=>{olive.cmd('overlay',{kind:null});olive.cmd('closeTab');}).catch(()=>{});
   await browser.close();

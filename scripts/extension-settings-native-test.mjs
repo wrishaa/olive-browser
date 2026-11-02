@@ -73,7 +73,7 @@ async function launch(root, userData) {
 }
 const mainState = app => app.evaluate(() => {
   const w = global.olive.focusedWindow(), x = global.olive.extensions;
-  return { installed: x.status.installed, enabled: x.status.enabled, rulesets: (x.status.rulesets || []).length, showInToolbar: x.status.showInToolbar, panel: w.appPanel?.options.title || null, panelURL: w.appPanel?.webContents.getURL() || null };
+  return { installed: x.status.installed, enabled: x.status.enabled, rulesets: (x.status.rulesets || []).length, showInToolbar: x.status.showInToolbar, activeUrl: w.tabs.get(w.activeId)?.url || null, activeTitle: w.tabs.get(w.activeId)?.title || null, pageURL: w.tabs.get(w.activeId)?.wc?.getURL() || null, panel: !!w.appPanel || !!w.inlinePage };
 });
 const uboButton = ui => ui.evaluate(() => { const e = document.querySelector('#btn-ublock'), r = e.getBoundingClientRect(); return { hidden: e.hidden, display: getComputedStyle(e).display, width: r.width, height: r.height, text: e.textContent }; });
 async function openFixtureTab(app) {
@@ -88,10 +88,12 @@ async function openFixtureTab(app) {
   }, pageURL);
 }
 const fetchAd = app => app.evaluate(async (_, url) => {
-  const w = global.olive.focusedWindow(), wc = w.tabs.get(w.activeId).wc;
+  // from the fixture web tab (Settings is its own tab now, often the active one)
+  const w = global.olive.focusedWindow(), wc = [...w.tabs.values()].find(t => /^http/.test(t.url) && t.wc)?.wc || w.tabs.get(w.activeId).wc;
   return wc.executeJavaScript(`fetch(${JSON.stringify(url)}, {cache:'no-store'}).then(r=>r.ok&&r.url===${JSON.stringify(url)},()=>false)`);
 }, adURL);
-const settingsPage = app => poll(async () => (await app.windows()).find(p => p.url().endsWith('/ui/extensions.html')), 'extensions page');
+// Settings > Extensions is a tab at olive://settings/extensions
+const settingsPage = app => poll(async () => (await app.windows()).filter(p => !p.isClosed() && p.url() === 'olive://settings/extensions').pop(), 'extensions page');
 
 // Full-window composite of the native views (ui chrome + page/panel), in-process:
 // capturePage per WebContentsView, drawn at its bounds in a hidden canvas window.
@@ -180,15 +182,15 @@ try {
   let page = await settingsPage(app);
   await page.locator('.ext').first().waitFor();
   s = await mainState(app);
-  check(s.panel === 'Settings' && /\/extensions\.html/.test(s.panelURL), 'cmd "extensions" opens Settings > Extensions inline', s);
+  check(s.activeUrl === 'olive://settings/extensions' && !s.panel, 'cmd "extensions" opens Settings > Extensions as a tab (olive://settings/extensions, no overlay)', s);
   const sw = await page.evaluate(() => [...document.querySelectorAll('input.switch')].map(e => { const r = e.getBoundingClientRect(), c = getComputedStyle(e); return { w: Math.round(r.width), h: Math.round(r.height), bg: c.backgroundColor }; }));
   check(sw.length === 2 && sw.every(x => x.w === 32 && x.h === 19 && x.bg !== 'rgba(0, 0, 0, 0)'), 'switches render as 32x19 tracks with a visible background', sw);
   const row = () => page.evaluate(() => { const r = document.querySelector('.ext'), img = r.querySelector('img.icon'); return { count: document.querySelectorAll('.ext').length, name: r.querySelector('.name').textContent, version: r.querySelector('.version').textContent, icon: img.complete && img.naturalWidth > 0, enabled: r.querySelector('[data-key=enabled]').checked, toolbar: r.querySelector('[data-key=showInToolbar]').checked, options: !r.querySelector('button.options').disabled }; });
   let r = await row();
   check(r.count === 1 && r.name === 'uBO Lite' && /^Version \d{4}\.\d+\.\d+$/.test(r.version) && r.icon, 'page lists uBO Lite with version and icon', r);
   check(r.enabled && !r.toolbar && r.options, 'enabled on, show-in-toolbar off, options button available', r);
-  const sideRow = await ui.evaluate(() => !document.querySelector('#settings-row').hidden && document.querySelector('#settings-row .title').textContent);
-  check(sideRow === 'Settings', 'sidebar shows the Settings app-page row', sideRow);
+  const sideRow = await ui.evaluate(() => document.querySelector('#settings-row').hidden);
+  check(sideRow && /Extensions/.test(s.activeTitle || ''), 'sidebar shows it as a normal tab row (no app-page row)', { sideRow, title: s.activeTitle });
   if (wantShots) for (const theme of ['light', 'dark']) { await setTheme(app, ui, theme); await page.emulateMedia({ colorScheme: theme }); await pause(150); written.push(await composite(app, path.join(shots, `extensions-settings-${theme}.png`), theme)); }
 
   // IPC guard: the web tab cannot call the page's channel (no preload there) and
@@ -197,14 +199,14 @@ try {
     const es = global.olive.extensionSettings;
     return es.trusted({ sender: { id: -1 }, senderFrame: null });
   });
-  check(guard === false, 'extensions IPC rejects senders other than the page itself');
+  check(!guard, 'extensions IPC rejects senders other than a Settings > Extensions tab');
 
   // options: uBOL's dashboard used to stay blank (body.loading) because its worker
   // died on chrome.permissions; with Olive's worker shim it now renders inline.
   await page.locator('button.options').click();
-  await poll(async () => (await mainState(app)).panel === 'uBO Lite options', 'options panel', 300);
+  await poll(async () => (await mainState(app)).activeUrl === 'olive://extensions/ublock/options', 'options tab', 300);
   const dash = await app.evaluate(async () => {
-    const w = global.olive.focusedWindow(), v = w.appPanel;
+    const w = global.olive.focusedWindow(), v = { webContents: w.tabs.get(w.activeId).wc };
     if (v.webContents.isLoading()) await new Promise(r => v.webContents.once('did-stop-loading', r));
     for (let i = 0; i < 100; i++) {
       const ok = await v.webContents.executeJavaScript(`!document.body.classList.contains('loading')`);
@@ -215,7 +217,7 @@ try {
   });
   const d = JSON.parse(dash.dump);
   console.log('DASH', JSON.stringify(d).slice(0, 900));
-  check(/^chrome-extension:\/\/[a-p]{32}\/dashboard\.html$/.test(dash.url), 'Options… opens uBO Lite dashboard.html inline in the extension session', dash.url);
+  check(/^chrome-extension:\/\/[a-p]{32}\/dashboard\.html$/.test(dash.url), 'Options… opens uBO Lite dashboard.html in a tab (address olive://extensions/ublock/options)', dash.url);
   check(!d.loading && d.text.trim().length > 40 && d.tabs.includes('Filter lists'), 'uBO Lite options page renders (no blank body.loading page)', d);
   // The filtering mode and enabled lists come from the worker's reply, so they prove it ran.
   check(['1', '2', '3'].includes(d.mode) && d.lists === 6, 'dashboard shows worker data: default filtering mode selected, the 6 enabled filter lists match Olive', { mode: d.mode, lists: d.lists });

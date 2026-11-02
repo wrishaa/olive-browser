@@ -59,6 +59,8 @@ async function launch() {
   return a;
 }
 async function renderer(a, name) {
+  // setup is a tab at olive://onboarding/<step>; the browser chrome is ui/index.html
+  if (name === 'onboarding') return poll(async () => (await a.windows()).filter(p => !p.isClosed() && p.url().startsWith('olive://onboarding')).pop(), name);
   return poll(async () => (await a.windows()).find(p => { try { return new URL(p.url()).pathname.endsWith(`/ui/${name}.html`); } catch { return false; } }), name);
 }
 async function shoot(page, chrome, label, appearance) {
@@ -126,21 +128,24 @@ try {
   app = await launch();
   page = await renderer(app, 'onboarding');
   await page.locator('#done-title').waitFor({ state: 'visible' });
-  const resumed = await app.evaluate(() => ({ step: global.olive.onboarding.state().step, view: !!global.olive.onboarding.view, embedded: global.olive.onboarding.view === global.olive.focusedWindow()?.inlinePage }));
-  check(resumed.step === 'done' && resumed.view && resumed.embedded, 'after the tcc relaunch setup reappears inline at the step after screen (done)', resumed);
+  await poll(async () => (await app.evaluate(() => global.olive.onboarding.view?.tab?.url)) === 'olive://onboarding/done', 'address follows the step');
+  const resumed = await app.evaluate(() => { const v = global.olive.onboarding.view, w = global.olive.focusedWindow();
+    return { step: global.olive.onboarding.state().step, view: !!v, tab: !!v?.tab && w?.tabs.get(v.tab.id) === v.tab, active: w?.activeId === v?.tab?.id, url: v?.tab?.url,
+      setupTabs: global.olive.windows.reduce((n, x) => n + [...x.tabs.values()].filter(t => /^olive:\/\/onboarding/.test(t.url)).length, 0), overlay: !!w?.inlinePage }; });
+  check(resumed.step === 'done' && resumed.view && resumed.tab && resumed.active && resumed.url === 'olive://onboarding/done' && resumed.setupTabs === 1 && !resumed.overlay, 'after the tcc relaunch setup reappears as its tab at the step after screen (olive://onboarding/done), one tab, no overlay', resumed);
   check(readSaved(file).step === 'done' && readSaved(file).paused !== true && readSaved(file).completed === false, 'resumed step persisted, not yet completed', readSaved(file));
   check(await page.locator('#steps').getAttribute('aria-label') === 'Step 5 of 5', 'done dots read Step 5 of 5');
   check((await page.locator('#summary-screen').textContent()) === 'Allowed', 'done summary shows screen sharing allowed');
   const chrome = await renderer(app, 'index');
   for (const appearance of ['light', 'dark']) await shoot(page, chrome, `resumed-done-${appearance}`, appearance);
-  // 5. Mid-flow: close setup by hand (sidebar ×) → Set Up Olive… reopens it at the same step.
-  await chrome.locator('#setup-row').hover(); await chrome.locator('#setup-close').click();
-  await poll(async () => await app.evaluate(() => !global.olive.onboarding.view), 'sidebar close');
+  // 5. Mid-flow: close the setup tab by hand (cmd+w) → Set Up Olive… reopens it at the same step.
+  await app.evaluate(() => { const w = global.olive.focusedWindow(); w.activate(global.olive.onboarding.view.tab.id); w.cmd('closeTab'); });
+  await poll(async () => await app.evaluate(() => !global.olive.onboarding.view), 'tab close');
   check(readSaved(file).paused === true, 'closing setup by hand pauses it');
   await clickMenu('Set Up Olive…');
   page = await renderer(app, 'onboarding');
   await page.locator('#done-title').waitFor({ state: 'visible' });
-  check(true, 'Set Up Olive… reopens paused setup mid-flow at its saved step');
+  check(await app.evaluate(() => global.olive.focusedWindow().tabs.get(global.olive.focusedWindow().activeId)?.url) === 'olive://onboarding/done', 'Set Up Olive… reopens paused setup mid-flow at its saved step (olive://onboarding/done)');
   // 6. Finish setup; Set Up Olive… still opens it; Import from Browser… opens the import step directly.
   await page.locator('#done-title').waitFor({ state: 'visible' });
   await page.locator('#next').click(); // Start Browsing

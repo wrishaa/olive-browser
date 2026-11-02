@@ -15,7 +15,7 @@ let app, checks = 0, appPath;
 const check = (value, label) => { assert.ok(value,label); ++checks; console.log('ok:',label); };
 const wait = ms => new Promise(resolve => setTimeout(resolve,ms));
 const poll = async (fn, label='condition', count=120) => { for(let n=0;n<count;n++){if(await fn())return;await wait(50);}throw new Error('Timed out: '+label); };
-const renderer = async () => { let page; await poll(async()=>{page=(await app.windows()).find(p=>p.url().endsWith('/ui/site-time.html'));return page;},'activities renderer'); await page.locator('#seg-week[aria-selected=true]').waitFor(); return page; };
+const renderer = async () => { let page; await poll(async()=>{page=(await app.windows()).filter(p=>!p.isClosed()&&p.url()==='olive://settings/activities').pop();return page;},'activities renderer'); await page.locator('#seg-week[aria-selected=true]').waitFor(); return page; };
 const state = () => app.evaluate(()=>global.olive.siteTime.state('all'));
 function clearOwnCue() {
   if (!cua || !app) return;
@@ -55,10 +55,10 @@ try {
   catch(error) { console.error('foreground diagnostics:',await app.evaluate(()=>{const m=global.olive,w=m.focusedWindow();return {state:m.siteTime.state('all'),suspended:m.siteTime.suspended,locked:m.siteTime.locked,overlay:w?.overlay,inline:w?.inlinePage?.kind,focused:w?.win.isFocused(),visible:w?.win.isVisible(),minimized:w?.win.isMinimized(),activeURL:w?.tabs.get(w.activeId)?.wc?.getURL()};}));throw error; }
   check(true,'real focused visible HTTP page accrues time');
   let page=await show(); const before=(await state()).totalSeconds; await wait(1200);
-  check((await state()).totalSeconds===before,'inline activities excludes underlying page time');
-  const layout=await app.evaluate(({BaseWindow})=>{const w=global.olive.focusedWindow(),p=w.inlinePage,{width,height}=w.win.getContentBounds();return {count:BaseWindow.getAllWindows().filter(w=>w.isVisible()).length,embedded:w.win.contentView.children.includes(p.content),bounds:p.content.getBounds(),expected:{x:w.sidebarWidth,y:8,width:width-w.sidebarWidth-8,height:height-16}};});
-  assert.deepEqual(layout.bounds,layout.expected);check(layout.count===1&&layout.embedded,'activities is full browser-pane inline view, never a popup');
-  check(await app.evaluate(()=>global.olive.focusedWindow().snapshot().appPage?.title==='Settings'),'activities (Settings > Activities) snapshot exposes inline title and close row');
+  check((await state()).totalSeconds===before,'the Activities tab in front accrues nothing (the web tab is in the background)');
+  const layout=await app.evaluate(({BaseWindow})=>{const w=global.olive.focusedWindow(),t=w.tabs.get(w.activeId);return {count:BaseWindow.getAllWindows().filter(w=>w.isVisible()).length,embedded:!w.inlinePage&&!w.appPanel&&w.win.contentView.children.includes(t.view)&&t.view.getVisible(),bounds:t.view.getBounds(),expected:w.panes[0]?.rect};});
+  assert.deepEqual(layout.bounds,layout.expected);check(layout.count===1&&layout.embedded,'activities is a normal tab filling the browser pane, never a popup or overlay');
+  check(await app.evaluate(()=>{const s=global.olive.focusedWindow().snapshot();return s.active?.url==='olive://settings/activities'&&!s.appPage;}),'Settings > Activities is a tab: the address bar shows olive://settings/activities, no app-page row');
   check((await page.evaluate(()=>window.oliveSiteTime.get('all'))).siteCount===1,'trusted renderer main-frame IPC returns host-only data');
   check(!(await page.locator('#time-rows').innerText()).includes('private-path'),'UI never contains a path or query');
   await page.locator('#seg-today').click();await poll(async()=>await page.locator('#seg-today').getAttribute('aria-selected')==='true');
@@ -70,11 +70,14 @@ try {
   const dialogCheck=await app.evaluate(()=>global.siteTimeDialogCheck);check(dialogCheck.parent&&dialogCheck.options.defaultId===0&&dialogCheck.options.cancelId===0,'reset is a native attached confirmation with Cancel default');check((await state()).totalSeconds===before,'cancel preserves all tracked time');
   await app.evaluate(({dialog})=>{dialog.showMessageBox=async()=>({response:1});});await page.evaluate(()=>window.oliveSiteTime.reset('all'));check((await state()).totalSeconds===0,'confirmed reset clears site time only');
   await app.evaluate(({dialog})=>{dialog.showMessageBox=global.siteTimeDialog;delete global.siteTimeDialog;});
+  // back to the web tab: the exclusions below are measured against a page that would accrue
+  await app.evaluate(()=>{const w=global.olive.focusedWindow();w.activate([...w.tabs.values()].find(t=>/^http/.test(t.url)).id);});
   await app.evaluate(()=>{const m=global.olive,w=m.focusedWindow();w.openPalette('new');m.siteTime.refresh();});const palette=(await state()).totalSeconds;await wait(1100);check((await state()).totalSeconds===palette,'palette overlay excludes page time');
   await app.evaluate(()=>{const w=global.olive.focusedWindow();w.overlay=null;w.win.minimize();global.olive.siteTime.refresh();});const minimized=(await state()).totalSeconds;await wait(1100);check((await state()).totalSeconds===minimized,'minimized native window excludes page time');
   await app.evaluate(()=>{const m=global.olive,w=m.focusedWindow();w.win.restore();w.win.show();w.win.focus();m.siteTime.refresh();process.mainModule.require('electron').powerMonitor.emit('suspend');});const suspend=(await state()).totalSeconds;await wait(1100);check((await state()).totalSeconds===suspend,'suspend excludes foreground time');
   await app.evaluate(()=>{process.mainModule.require('electron').powerMonitor.emit('resume');const m=global.olive,w=m.focusedWindow();w.isPrivate=true;m.siteTime.refresh();});const priv=(await state()).totalSeconds;await wait(1100);check((await state()).totalSeconds===priv,'private owner never contributes time');
-  await app.evaluate(()=>{const m=global.olive,w=m.focusedWindow();w.isPrivate=false;m.siteTime.show();});page=await renderer();await seed();
+  // Activities is still open as a tab: show() focuses it; reload for a fresh page (default range)
+  await app.evaluate(()=>{const m=global.olive,w=m.focusedWindow();w.isPrivate=false;m.siteTime.show();w.reload(w.tabs.get(w.activeId));});await new Promise(r=>setTimeout(r,500));page=await renderer();await seed();
   await page.locator('#seg-week').click();await poll(async()=>await page.locator('.site-row').count()===4);check(true,'synthetic seven-day chart and ranked site list render');
   await app.evaluate(()=>{const w=global.olive.focusedWindow();w.win.setSize(1280,800);w.layout();});
   for(const theme of ['light','dark']){

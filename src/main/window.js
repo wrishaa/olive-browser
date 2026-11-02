@@ -423,6 +423,9 @@ class OliveWindow {
     });
     wc.on('did-fail-load', (_e, code, desc, url, isMainFrame) => {
       if (!isMainFrame || code === -3) return; // -3 = aborted
+      // the error page itself failing must not load another error page about it (that loops
+      // and grows the url without end)
+      if (String(url).startsWith('data:text/html;olive-error')) return;
       tab.errorFor = url;
       tab.url = url;
       tab.title = displayHost(url);
@@ -1299,7 +1302,8 @@ class OliveWindow {
   }
 
   sendState() {
-    if (!this.uiReady) return;
+    // a late timer after the window closed (a setup tab closing with its window broadcasts)
+    if (!this.uiReady || this.destroyed || this.win.isDestroyed()) return;
     this.send('state', this.snapshot());
   }
 

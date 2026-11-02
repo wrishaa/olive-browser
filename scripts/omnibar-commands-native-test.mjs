@@ -16,17 +16,20 @@ try {
   assert.ok(ui,'browser chrome loaded');
   await ui.waitForFunction(()=>window.olive && document.querySelector('#palette-input'));
   const baseline=await app.evaluate(()=>global.olive.focusedWindow().tabs.size);
-  for(const [word,pageName,title] of [['shortcuts','shortcuts','Keyboard Shortcuts'],['settings','settings-general','Settings'],['activities','site-time','Site Time']]){
+  // the commands open Settings as one normal tab (olive://settings...): the first opens it, the
+  // next ones reuse it. "settings" acts like cmd+, (focuses it as it is), a named section navigates it.
+  for(const [word,url,title] of [['shortcuts','olive://settings/shortcuts','Keyboard Shortcuts'],['settings','olive://settings/shortcuts','Settings'],['activities','olive://settings/activities','Site Time']]){
     await app.evaluate(()=>global.olive.focusedWindow().cmd('openLocation'));
     await ui.locator('#palette-input').fill(word);
     await ui.locator('.sug').first().filter({hasText:title}).waitFor();
     check(await ui.locator('.sug').first().getAttribute('class').then(v=>v.includes('sel')),word+' command is selected before web search');
     await ui.locator('#palette-input').press('Enter');
-    let dest;
-    for(let i=0;i<100;i++){dest=(await app.windows()).find(p=>p.url().includes('/ui/'+pageName+'.html'));if(dest)break;await new Promise(r=>setTimeout(r,30));}
-    check(!!dest,word+' opens inline '+pageName+' (Settings page)');
-    check(await app.evaluate(()=>global.olive.focusedWindow().tabs.size)===baseline,word+' does not navigate/create a web tab');
+    let active;
+    for(let i=0;i<100;i++){active=await app.evaluate(()=>{const w=global.olive.focusedWindow();return w.tabs.get(w.activeId)?.url;});if(active===url)break;await new Promise(r=>setTimeout(r,30));}
+    check(active===url,word+' shows '+url+' in a tab');
+    check(await app.evaluate(()=>[...global.olive.focusedWindow().tabs.values()].filter(t=>/^olive:/.test(t.url)).length)===1 && await app.evaluate(()=>global.olive.focusedWindow().tabs.size)===baseline+1,word+' uses the one Settings tab (no web tab, no second Settings tab)');
     check(await app.evaluate(({BaseWindow})=>BaseWindow.getAllWindows().filter(w=>w.isVisible()).length)===1,word+' creates no popup window');
+    check(await app.evaluate(()=>{const w=global.olive.focusedWindow();return !w.inlinePage&&!w.appPanel;}),word+' uses no overlay');
   }
   const menu=await app.evaluate(({Menu})=>Menu.getApplicationMenu().items[0].submenu.items.map(x=>x.label));
   check(menu.some(x=>x.includes('Site Time')),'activities reachable from native menu');
