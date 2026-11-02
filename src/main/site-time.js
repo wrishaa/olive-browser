@@ -1,17 +1,21 @@
-// Foreground accounting and trusted inline Activities page. No network requests.
+// Foreground accounting and the Activities section of Settings (olive://settings/activities,
+// a normal tab). No network requests.
 const { ipcMain, dialog, powerMonitor } = require('electron');
 const path = require('node:path');
 const { SiteTime, siteForURL, validSite, RANGES } = require('../core/site-time');
 
-const entries = new Map();
+// live controllers (one per manager; a test may make several). the sender picks its own.
+const controllers = new Set();
 let installed = false;
 function installIPC() {
   if (installed) return;
   installed = true;
   ipcMain.handle('olive:site-time', async (event, action, payload = {}) => {
-    const controller = entries.get(event.sender.id);
-    if (!controller?.trusted(event)) return null;
-    return controller.handle(event, action, payload && typeof payload === 'object' ? payload : {});
+    for (const controller of controllers) {
+      const from = controller.trusted(event);
+      if (from) return controller.handle(event, action, payload && typeof payload === 'object' ? payload : {}, from);
+    }
+    return null;
   });
 }
 function rasterData(value) {
@@ -50,11 +54,11 @@ class SiteTimeController {
     this.disposed = false;
     this.suspended = false;
     this.locked = false;
-    this.view = null;
     this.windowListeners = new Map();
     this.tabListeners = new Map();
     this.powerListeners = [];
     installIPC();
+    controllers.add(this);
     this.loadTracker();
     for (const [name, handler] of [
       ['suspend', () => { this.pause(); this.suspended = true; }],
@@ -131,7 +135,7 @@ class SiteTimeController {
   }
   reload() {
     if (this.disposed) return;
-    this.closeView();
+    // an open Activities tab of the old profile is refused by trusted() (dataPath check)
     this.tracker.close();
     this.loadTracker();
     this.refresh();
@@ -143,61 +147,43 @@ class SiteTimeController {
     state.entries = state.entries.map(entry => ({ ...entry, favicon: icons.get(entry.site) || null }));
     return state;
   }
+  // only the main frame of a Settings > Activities tab in a normal window of this profile
   trusted(event) {
-    const view = this.view, owner = view?.owner;
-    return !!(!this.disposed && view && !view.isDestroyed() && owner && !owner.isPrivate && !owner.destroyed && !owner.win.isDestroyed() &&
-      owner.mgr === this.mgr && this.mgr.dataPath === this.dataPath && !this.mgr.switchingProfile &&
-      event.sender === view.webContents && event.senderFrame === view.webContents.mainFrame);
+    if (this.disposed || this.mgr.dataPath !== this.dataPath || this.mgr.switchingProfile) return null;
+    const from = this.mgr.internal?.sender(event, 'settings', { tab: 'activities' });
+    return from && from.win.mgr === this.mgr && !from.win.win.isDestroyed() ? from : null;
   }
-  async handle(event, action, payload) {
-    const view = this.view;
+  async handle(event, action, payload, from) {
     const range = RANGES.includes(payload.range) ? payload.range : 'today';
     if (action === 'get') return this.state(range);
-    if (action === 'close') { this.closeView(); return null; }
     if (action === 'open') {
       const site = payload.site;
       if (!validSite(site) || !this.tracker.hasSite(site)) return null;
-      const owner = view.owner;
-      this.closeView();
-      owner.createTab({ url: `https://${site}/`, activate: true });
+      // a new tab next to Activities; Settings stays where it is (back is one click away)
+      from.win.createTab({ url: `https://${site}/`, activate: true, afterId: from.tab.id });
       return null;
     }
     if (action !== 'reset') return null;
     const tracker = this.tracker;
-    const answer = await dialog.showMessageBox(view.owner.win, {
+    const answer = await dialog.showMessageBox(from.win.win, {
       type: 'warning', message: 'Reset all site time?',
       detail: 'This deletes site time for this profile on this device. Browsing history, cookies, tabs, and the activity event log are not affected. This cannot be undone.',
       buttons: ['Cancel', 'Reset Site Time'], defaultId: 0, cancelId: 0, noLink: true,
     });
     // A sheet may outlive a profile switch, owner close, or replacement page.
-    if (this.tracker !== tracker || this.view !== view || !this.trusted(event)) return null;
+    if (this.tracker !== tracker || !this.trusted(event)) return null;
     if (answer.response === 1) tracker.reset();
     return this.state(range);
   }
   // the Activities tab of Settings (src/main/settings-page.js)
   show(owner = this.mgr.focusedWindow?.()) { return this.mgr.settingsPage?.show(owner, 'activities'); }
-  // the settings page hosts the Activities document: answer its main frame
-  adopt(view) {
-    if (this.disposed) return;
-    if (this.view && this.view !== view) entries.delete(this.view.webContents?.id);
-    this.view = view;
-    entries.set(view.webContents.id, this);
-    const id = view.webContents.id;
-    view.once('closed', () => {
-      entries.delete(id);
-      if (this.view === view) this.view = null;
-      this.refresh();
-    });
-    this.refresh();
-  }
-  closeView() { if (this.view && !this.view.isDestroyed()) this.view.close(); }
   dispose() {
     if (this.disposed) return;
     // Mark disposed before closing a view: close/layout events must not restart.
     this.tracker.update({ active: false });
     this.disposed = true;
+    controllers.delete(this);
     clearInterval(this.timer);
-    this.closeView();
     for (const owner of [...this.windowListeners.keys()]) this.detachWindow(owner);
     for (const [wc, listeners] of this.tabListeners) for (const [name, handler] of listeners) wc.removeListener(name, handler);
     this.tabListeners.clear();

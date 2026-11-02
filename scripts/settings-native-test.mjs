@@ -62,15 +62,20 @@ async function launch(userData) {
   return { app, ui };
 }
 const profileDir = name => { const d = path.join(tmp, name); fs.mkdirSync(d); fs.writeFileSync(path.join(d, 'onboarding.json'), JSON.stringify({ version: 1, step: 'done', completed: true })); return d; };
+// Settings is a normal tab now (olive://settings[/section]); "panel" is the active tab
 const panel = app => app.evaluate(({ BaseWindow }) => {
-  const w = global.olive.focusedWindow(), p = w.appPanel;
-  return { title: p?.options.title || null, url: p?.webContents.getURL() || null, kind: w.inlinePage?.kind || null, same: !!p && p === global.__lastPanel, windows: BaseWindow.getAllWindows().length,
-    activeUrl: w.tabs.get(w.activeId)?.url || null, tab: global.olive.settingsPage.tab, ignoreMenus: null };
+  const w = global.olive.focusedWindow(), t = w.tabs.get(w.activeId);
+  // url: the committed address once loading settles (a just-replaced navigation can still report in)
+  const committed = t?.wc && !t.wc.isLoading() ? t.wc.getURL().replace(/^(olive:\/\/[a-z-]+)\/(?=$|[?#])/, '$1') : null;
+  return { title: t?.title || null, url: committed === t?.url ? t.url : null, tabUrl: t?.url || null, kind: /^olive:\/\/settings/.test(t?.url || '') ? 'settings' : null, same: !!t && t.id === global.__lastPanel,
+    windows: BaseWindow.getAllWindows().length, activeUrl: t?.url || null, overlay: !!w.appPanel || !!w.inlinePage,
+    settingsTabs: global.olive.windows.reduce((n, x) => n + [...x.tabs.values()].filter(y => /^olive:\/\/settings/.test(y.url)).length, 0) };
 });
-const remember = app => app.evaluate(() => { global.__lastPanel = global.olive.focusedWindow().appPanel; });
-// newest match: a just-closed page with the same url can still be listed for a moment
-const page = (app, file) => poll(async () => (await app.windows()).filter(p => !p.isClosed() && p.url().includes('/ui/' + file)).pop(), file);
-const fileOf = url => (url || '').replace(/[?#].*$/, '').split('/').pop();
+const remember = app => app.evaluate(() => { const w = global.olive.focusedWindow(); global.__lastPanel = w.activeId; });
+const URL_OF = { 'settings-general.html': u => /^olive:\/\/settings\/?(general\/?)?([?#]|$)/.test(u), 'shortcuts.html': u => u === 'olive://settings/shortcuts', 'site-time.html': u => u === 'olive://settings/activities', 'extensions.html': u => u === 'olive://settings/extensions', 'ledger.html': u => /^olive:\/\/ledger\/?$/.test(u) };
+// newest open page showing that olive:// address
+const page = (app, file) => poll(async () => (await app.windows()).filter(p => !p.isClosed() && URL_OF[file](p.url())).pop(), file);
+const fileOf = url => Object.keys(URL_OF).find(f => URL_OF[f](url || '')) || null;
 
 async function composite(app, file, theme, crop = null) {
   const png = await app.evaluate(async ({ BrowserWindow }, theme) => {
@@ -170,13 +175,13 @@ try {
   let gen = await page(app, 'settings-general.html');
   await gen.locator('#unloadAfterMinutes').waitFor();
   let p = await panel(app);
-  check(p.title === 'Settings' && fileOf(p.url) === 'settings-general.html' && p.kind === 'settings', 'palette opens Settings > General inline', p);
+  check(fileOf(p.url) === 'settings-general.html' && p.kind === 'settings' && !p.overlay && p.settingsTabs === 1, 'palette opens Settings > General as a tab (olive://settings)', p);
   await remember(app);
   const windowsAtStart = p.windows;
   const tabsUi = await gen.evaluate(() => [...document.querySelectorAll('#settings-tabs [role=tab]')].map(b => [b.textContent, b.getAttribute('aria-selected')]));
   check(JSON.stringify(tabsUi) === JSON.stringify([['General', 'true'], ['Keyboard Shortcuts', 'false'], ['Activities', 'false'], ['Extensions', 'false']]), 'tab bar: General | Keyboard Shortcuts | Activities | Extensions', tabsUi);
-  const sideOpen = await ui.evaluate(() => !document.querySelector('#settings-row').hidden && document.querySelector('#settings-row .title').textContent);
-  check(sideOpen === 'Settings', 'while open, the app-page row reads Settings (same as other inline pages)', sideOpen);
+  const sideOpen = await ui.evaluate(() => document.querySelector('#settings-row').hidden);
+  check(sideOpen && /^Settings/.test(p.title || ''), 'while open, Settings is a normal tab row (no app-page row)', { sideOpen, title: p.title });
 
   // every old entry point lands in the same page, on the right tab
   const routes = [
@@ -209,12 +214,16 @@ try {
       else if (kind === 'url') { const item = w.suggest(arg)[0]; w.submit({ mode: 'edit', input: arg, item }); }
       else if (kind === 'new') w.submit({ mode: 'new', input: arg });
     }, how);
-    await poll(async () => fileOf((await panel(app)).url) === file, label);
+    await poll(async () => fileOf((await panel(app)).url) === file && (how.startsWith('new:') ? !(await panel(app)).same : true), label);
     p = await panel(app);
-    check(fileOf(p.url) === file && p.same && p.windows === windowsAtStart && p.activeUrl === activeBefore, `${label} -> ${file} (same page, no new window, tab not navigated)`, p);
+    if (how.startsWith('new:')) {
+      // typed into a new tab (cmd+t): a second Settings tab, like any url
+      check(fileOf(p.url) === file && !p.same && p.settingsTabs === 2 && p.windows === windowsAtStart && !p.overlay, `${label} -> a new tab at ${p.url}`, p);
+      await app.evaluate(() => { const w = global.olive.focusedWindow(); w.closeTab(w.activeId, { force: true }); w.activate(global.__lastPanel); });
+    } else check(fileOf(p.url) === file && p.same && p.settingsTabs === 1 && p.windows === windowsAtStart && !p.overlay, `${label} -> ${p.url} (the same Settings tab, no new window, no overlay)`, p);
   }
   const oliveSugg = await app.evaluate(() => global.olive.focusedWindow().suggest('olive://settings/extensions')[0]);
-  check(oliveSugg?.commandId === 'settings' && oliveSugg.title === 'Settings — Extensions', 'palette shows a Settings suggestion for a typed olive:// url', oliveSugg);
+  check(oliveSugg?.kind === 'url' && oliveSugg.url === 'olive://settings/extensions', 'a typed olive:// url is an ordinary address in the palette', oliveSugg);
   const ledger = await app.evaluate(() => { const w = global.olive.focusedWindow(); w.cmd('activities'); return true; });
   let act = await page(app, 'site-time.html');
   await act.locator('#open-ledger').waitFor();
@@ -223,23 +232,26 @@ try {
   check(ledger && fileOf((await panel(app)).url) === 'ledger.html', 'Activities tab links to the Activity Event Log');
 
   // each tab renders (clicking the tab bar)
-  await app.evaluate(() => global.olive.focusedWindow().cmd('settings'));
+  await app.evaluate(() => global.olive.focusedWindow().cmd('settings', { tab: 'general' })); // a named section: General (cmd+, alone keeps the tab's section)
   gen = await page(app, 'settings-general.html');
   for (const [tab, file, sel] of [['shortcuts', 'shortcuts.html', '#commands .row'], ['activities', 'site-time.html', '#time-total'], ['extensions', 'extensions.html', '.ext'], ['general', 'settings-general.html', '#sites']]) {
-    const cur = (await app.windows()).find(x => !x.isClosed() && /\/ui\/(settings-general|shortcuts|site-time|extensions)\.html/.test(x.url()));
+    const cur = (await app.windows()).filter(x => !x.isClosed() && /^olive:\/\/settings/.test(x.url())).pop();
     await cur.click(`#settings-tabs [data-tab=${tab}]`);
     const pg = await page(app, file);
     await pg.locator(sel).first().waitFor();
     const info = await pg.evaluate(s => ({ count: document.querySelectorAll(s).length, sel: document.querySelector('#settings-tabs [aria-selected=true]')?.dataset.tab, url: document.querySelector('.settings-url')?.textContent }), sel);
     check(info.count > 0 && info.sel === tab, `tab ${tab} renders (${sel})`, info);
   }
-  const shortcutIgnore = await app.evaluate(async () => { const s = global.olive.settingsPage; s.show(undefined, 'shortcuts'); return s.view.options.captureEscape; });
-  check(shortcutIgnore === true, 'shortcuts tab captures Escape for the key recorder');
+  await app.evaluate(() => global.olive.settingsPage.show(undefined, 'shortcuts'));
+  const scPage = await page(app, 'shortcuts.html'); await scPage.locator('#commands input').first().focus();
+  const recording = await poll(() => app.evaluate(() => { const w = global.olive.focusedWindow(); return !!w.tabs.get(w.activeId).wc.__oliveRecordingKeys; }), 'recording');
+  check(recording, 'a focused shortcut field gets every key (menu keys pause while recording)');
+  await scPage.evaluate(() => document.activeElement.blur());
   const cmdRow = await (await page(app, 'shortcuts.html')).evaluate(() => [...document.querySelectorAll('#commands .row')].find(r => r.querySelector('label').textContent === 'Settings')?.querySelector('input').value);
   check(cmdRow === '⌘,', 'Shortcuts tab lists Settings on ⌘, (remappable)', cmdRow);
 
   // ---------- General: edit the three unloading values in the page ----------
-  await app.evaluate(() => global.olive.focusedWindow().cmd('settings'));
+  await app.evaluate(() => global.olive.focusedWindow().cmd('settings', { tab: 'general' })); // a named section: General (cmd+, alone keeps the tab's section)
   gen = await page(app, 'settings-general.html');
   await gen.locator('#unloadAfterMinutes').waitFor();
   await poll(() => gen.evaluate(() => document.querySelector('#unloadAfterMinutes').value === '120'), 'values');
@@ -250,7 +262,7 @@ try {
     for (const theme of ['light', 'dark']) { await setTheme(app, ui, gen, theme); await composite(app, path.join(shots, `settings-general-${theme}.png`), theme); }
     await setTheme(app, ui, gen, 'light');
     const r = await gen.evaluate(() => { const b = document.querySelector('#unloading').getBoundingClientRect(); return { x: b.x, y: b.y, w: b.width, h: b.height }; });
-    const pb = await app.evaluate(() => global.olive.focusedWindow().appPanel.content.getBounds());
+    const pb = await app.evaluate(() => { const w = global.olive.focusedWindow(); return w.tabs.get(w.activeId).view.getBounds(); });
     await composite(app, path.join(shots, 'settings-unloading-1440.png'), 'light', { x: pb.x + r.x - 24, y: pb.y + r.y - 18, w: r.w + 48, h: r.h + 36 });
   }
   await gen.click('#capOn');
@@ -260,7 +272,7 @@ try {
   if (wantShots) {
     await gen.evaluate(() => document.activeElement?.blur());
     const r = await gen.evaluate(() => { const b = document.querySelector('#unloading').getBoundingClientRect(); return { x: b.x, y: b.y, w: b.width, h: b.height }; });
-    const pb = await app.evaluate(() => global.olive.focusedWindow().appPanel.content.getBounds());
+    const pb = await app.evaluate(() => { const w = global.olive.focusedWindow(); return w.tabs.get(w.activeId).view.getBounds(); });
     await composite(app, path.join(shots, 'settings-unloading-cap-on-1440.png'), 'light', { x: pb.x + r.x - 24, y: pb.y + r.y - 18, w: r.w + 48, h: r.h + 36 });
   }
   await gen.click('#capOn');
@@ -282,11 +294,12 @@ try {
   check(file.unloadAfterMinutes === 7 && file.pinnedUnloadAfterMinutes === 11 && file.maxLoadedTabs === 5 && !('discardMinutes' in file), 'settings.json has 7 / 11 / 5', file);
   // the api can't reach the page channel: an untrusted sender gets null
   const guard = await app.evaluate(() => global.olive.settingsPage.trusted({ sender: { id: -1 }, senderFrame: null }));
-  check(guard === false, 'settings IPC rejects senders other than the page itself');
+  check(!guard, 'settings IPC rejects senders other than a Settings tab main frame');
 
   // ---------- site permissions folded into General ----------
   await app.evaluate((_, origin) => { global.olive.perms.data[`${origin}|media:video`] = true; global.olive.perms.data[`${origin}|notifications`] = false; }, 'https://meet.example');
-  await app.evaluate(() => { global.olive.settingsPage.close(); global.olive.focusedWindow().cmd('sitePermissions'); });
+  // from the web page: its site comes first in Settings > General > Site permissions
+  await app.evaluate(() => { const w = global.olive.focusedWindow(); w.activate([...w.tabs.values()].find(t => /^http/.test(t.url)).id); w.cmd('sitePermissions'); });
   await pause(300);
   gen = await page(app, 'settings-general.html');
   await gen.locator('.site').first().waitFor();
@@ -419,7 +432,7 @@ try {
   ({ app, ui } = await launch(data));
   st = await app.evaluate(() => global.olive.unloadState());
   check(st.unloadAfterMinutes === 7 && st.pinnedUnloadAfterMinutes === 11 && st.maxLoadedTabs === 5, 'after relaunch: 7 / 11 / 5 kept', st);
-  await app.evaluate(() => global.olive.focusedWindow().cmd('settings'));
+  await app.evaluate(() => global.olive.focusedWindow().cmd('settings', { tab: 'general' })); // a named section: General (cmd+, alone keeps the tab's section)
   gen = await page(app, 'settings-general.html');
   await poll(() => gen.evaluate(() => document.querySelector('#unloadAfterMinutes').value === '7'), 'relaunch values');
   f = await gen.evaluate(() => ({ u: unloadAfterMinutes.value, p: pinnedUnloadAfterMinutes.value, cap: maxLoadedTabs.value, capOn: capOn.checked }));

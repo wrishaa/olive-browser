@@ -12,19 +12,21 @@ const check = (value, message) => { assert.ok(value, message); console.log(`ok  
 const poll = async fn => { for (let n = 0; n < 100; n++) { if (await fn()) return; await new Promise(r => setTimeout(r, 75)); } throw new Error('Fixture condition timed out'); };
 const renderer = async name => {
   let found;
-  await poll(async () => { found = (await app.windows()).find(p => { try { return new URL(p.url()).pathname.endsWith(`/ui/${name}.html`); } catch { return false; } }); return found; });
+  // these pages are tabs now: olive://ledger, olive://profiles, olive://settings/shortcuts
+  const url = name === 'shortcuts' ? 'olive://settings/shortcuts' : `olive://${name}`;
+  await poll(async () => { found = (await app.windows()).filter(p => !p.isClosed() && p.url().replace(/\/$/, '') === url).pop(); return found; });
   return found;
 };
 const structure = () => app.evaluate(({BaseWindow}) => {
-  const w=global.olive.focusedWindow(),p=w.appPanel,{width,height}=w.win.getContentBounds();
-  const x=w.sidebarHidden?8:w.sidebarWidth;
+  const w=global.olive.focusedWindow(),t=w.tabs.get(w.activeId);
   return {count:BaseWindow.getAllWindows().filter(v=>v.isVisible()).length,
-    embedded:!!p && p===w.inlinePage && p.owner===w && !('shell' in p) && w.win.contentView.children.includes(p.content),
-    bounds:p?.content.getBounds(),expected:{x,y:8,width:Math.max(100,width-x-8),height:Math.max(100,height-16)}};
+    // the active tab is an olive:// page in the web-content pane; no inline page / app panel
+    embedded:!!t && /^olive:/.test(t.url) && !w.inlinePage && !w.appPanel && !!t.view?.getVisible() && w.win.contentView.children.includes(t.view),
+    url:t?.url||null, bounds:t?.view?.getBounds(), expected:w.panes[0]?.rect};
 });
 const inlineContract = async (page,name) => {
   const state=await structure(); assert.deepEqual(state.bounds,state.expected,`${name}: exact browser pane bounds`);
-  check(state.count===1 && state.embedded,`${name} is a full inline browser page with no shell or extra visible window`);
+  check(state.count===1 && state.embedded,`${name} is a normal tab filling the browser pane, no overlay or extra visible window`);
   for(const theme of ['light','dark']){
     await page.emulateMedia({colorScheme:theme});
     const result=await page.evaluate(()=>{
@@ -89,7 +91,7 @@ try {
   await ledger.locator('#retention option').first().waitFor({state:'attached'});
   let state = await structure();
   await inlineContract(ledger,'activity');await responsiveContract(ledger,'activity');
-  check((await ledger.evaluate(() => window.ledger.call('get'))).events.some(e=>e.type==='visit'), 'embedded ledger authenticates its own main frame and loads timeline');
+  check((await ledger.evaluate(() => window.ledger.call('get'))).events.some(e=>e.type==='visit'), 'ledger tab authenticates its own main frame and loads timeline');
   await ledger.locator('#query').fill('example.org');
   await poll(async () => (await ledger.locator('#events tr').count())===1);
   check(!(await ledger.locator('#events').textContent()).includes('omitted'), 'embedded filter and URL redaction work');
@@ -111,7 +113,8 @@ try {
   await app.evaluate(()=>global.olive.profileControls.show());
   const profiles=await renderer('profiles'); await profiles.getByRole('heading',{name:'Profiles',exact:true}).waitFor(); await profiles.getByText('Separate tabs, sign-ins and site settings.',{exact:true}).waitFor(); await profiles.locator('#list .profile').first().waitFor();
   state=await structure();
-  check(state.count===1 && state.embedded && ledger.isClosed(), 'profiles replace ledger in the same app window; prior sender is destroyed');
+  const both=await app.evaluate(()=>[...global.olive.focusedWindow().tabs.values()].map(t=>t.url).filter(u=>/^olive:/.test(u)));
+  check(state.count===1 && state.embedded && state.url==='olive://profiles' && !ledger.isClosed() && both.includes('olive://ledger'), 'profiles open in their own tab next to the ledger tab (both stay, like sites)');
   const data=await profiles.evaluate(()=>window.oliveProfiles.get());check(data.profiles.length===1 && data.profiles[0].active,'embedded profiles trusted IPC works');
   await profiles.locator('#list input').first().fill('Fixture renamed');
   await profiles.getByRole('button',{name:'rename',exact:true}).click();
@@ -119,27 +122,32 @@ try {
   check(true,'embedded profile rename updates fixture only');
   await inlineContract(profiles,'profiles');await responsiveContract(profiles,'profiles');
   await shot('profiles','profiles-embedded-native.png');
-  await app.evaluate(()=>{const panel=global.olive.focusedWindow().appPanel;panel.focus();panel.webContents.sendInputEvent({type:'keyDown',keyCode:'Escape'});});
-  await poll(async()=>!(await app.evaluate(()=>!!global.olive.focusedWindow().appPanel)));
-  check((await structure()).count===1,'escape removes panel and leaves native window alive');
+  await app.evaluate(()=>{const w=global.olive.focusedWindow(),t=w.tabs.get(w.activeId);t.wc.focus();t.wc.sendInputEvent({type:'keyDown',keyCode:'Escape'});t.wc.sendInputEvent({type:'keyUp',keyCode:'Escape'});});
+  await new Promise(r=>setTimeout(r,300));
+  check(!profiles.isClosed() && (await structure()).url==='olive://profiles','Escape does not close the profiles tab');
+  const why=await app.evaluate(()=>{const w=global.olive.focusedWindow();const r={overlay:w.overlay,find:w.find.open};w.setOverlay(null);w.cmd('closeTab');return r;});
+  await poll(()=>profiles.isClosed()).catch(e=>{throw new Error('profiles tab not closed '+JSON.stringify(why));});
+  check((await structure()).count===1,'cmd+w closes the profiles tab and leaves the native window alive');
   await app.evaluate(()=>global.olive.ledgerUI.show());
   const reopened=await renderer('ledger'); await reopened.locator('#retention option').first().waitFor({state:'attached'});
   assert.equal(await reopened.locator('#done, input[type=date]').count(),0,'activity has no dialog Done or HTML date controls');
-  await app.evaluate(()=>global.olive.ledgerUI.close());
+  check(reopened===ledger || !ledger.isClosed(),'Activity Event Log… focuses the open ledger tab');
+  const closedLedger=await app.evaluate(()=>{const w=global.olive.focusedWindow();const t=[...w.tabs.values()].find(t=>t.url==='olive://ledger');w.closeTab(t.id);return {id:t.id,left:[...w.tabs.values()].map(x=>x.url)};});
+  if(closedLedger.left.includes('olive://ledger'))throw new Error('ledger tab still open '+JSON.stringify(closedLedger));
   await poll(()=>reopened.isClosed());
-  check(reopened.isClosed() && !(await app.evaluate(()=>!!global.olive.focusedWindow().appPanel)),'activity page closes and reopens without a dialog footer');
+  check(reopened.isClosed() && !(await app.evaluate(()=>!!global.olive.focusedWindow().appPanel)),'activity tab closes and reopens without a dialog footer');
   // Creating a profile through the embedded UI closes its owner during switching.
   await app.evaluate(()=>global.olive.profileControls.show());
   const create=await renderer('profiles'); await create.locator('#name').fill('Panel isolation');
   await create.locator('#create button').click();
   await poll(async()=>await app.evaluate(()=>global.olive.profileInfo.id!=='default' && !global.olive.switchingProfile));
-  const isolated=await app.evaluate(()=>({events:global.olive.ledger.events,profileView:global.olive.profileControls.view}));
-  check(!isolated.events.some(e=>e.details.url?.includes('example.org')) && isolated.profileView===null, 'profile creation/switch destroys old embedded settings and isolates ledger');
+  const isolated=await app.evaluate(()=>({events:global.olive.ledger.events,tabs:global.olive.windows.flatMap(w=>[...w.tabs.values()].map(t=>t.url))}));
+  check(!isolated.events.some(e=>e.details.url?.includes('example.org')) && !isolated.tabs.includes('olive://profiles') && create.isClosed(), 'profile creation/switch closes the old profile\'s tabs (profiles page too) and isolates ledger');
   await app.evaluate(async()=>{await global.olive.switchProfile('default');const ui=global.olive.focusedWindow().ui.webContents;if(ui.isLoading())await new Promise(resolve=>ui.once('did-finish-load',resolve));global.olive.onboarding.close();global.olive.profileControls.show();});
   const restored=await renderer('profiles');await restored.locator('#list .profile').first().waitFor();
   check((await restored.evaluate(()=>window.oliveProfiles.get())).profiles.length===2 && (await structure()).count===1,'profiles reopen in restored profile with no detached native windows');
   assert.equal(await restored.locator('#done').count(),0,'profiles is a persistent page without a Done button');
-  await app.evaluate(()=>global.olive.profileControls.view.close());
+  await app.evaluate(()=>{const w=global.olive.focusedWindow();const t=[...w.tabs.values()].find(t=>t.url==='olive://profiles');w.closeTab(t.id);});
   await poll(()=>restored.isClosed());
   check(!(await app.evaluate(()=>!!global.olive.focusedWindow().appPanel)) && (await structure()).count===1,'leaving profiles keeps the app window alive');
   if(process.argv.includes('--cua-shots')){

@@ -116,63 +116,21 @@ try {
     finally { wc.executeJavaScript = original; }
   });
   check(raced, 'single event-driven retry recovers an invalidation during the DNR command');
-  const inline = await app.evaluate(async ({ BaseWindow }) => {
-    const x = global.extensions;
-    const owner = {
-      win:new BaseWindow({ show:true, width:1000, height:800 }),
-      sidebarHidden:false, sidebarWidth:240, tabs:new Map(),
-      cmd:global.OliveWindow.prototype.cmd,
-      setOverlay(value) { this.overlay = value; }, sendState() {},
-      layout() { this.inlinePage?.layout(); }
-    };
-    const originalFocusedWindow = x.mgr.focusedWindow;
+  // the shield, uBO options and uBO's own popup are tabs at olive:// urls (src/main/internal-pages.js);
+  // the tab behaviors themselves are in scripts/internal-tabs-native-test.mjs
+  const tabs = await app.evaluate(async () => {
+    const x = global.extensions, opened = [];
+    const owner = { id: 1, isPrivate: false };
+    x.mgr.internal = { open: (url, opts) => { opened.push({ url, win: opts?.win === owner, reuse: typeof opts?.reuse }); return { url }; } };
     x.mgr.focusedWindow = () => owner;
-    const windowCount = BaseWindow.getAllWindows().length;
-    const exactPane = panel => {
-      const { width, height } = owner.win.getContentBounds();
-      const sidebar = owner.sidebarHidden ? 8 : owner.sidebarWidth;
-      const bounds = panel.content.getBounds();
-      return bounds.x === sidebar && bounds.y === 8 && bounds.width === width - sidebar - 8 && bounds.height === height - 16;
-    };
-    const singleInlineView = panel => !panel.shell && owner.win.contentView.children.length === 1 && owner.win.contentView.children[0] === panel.content;
-    const oneWindow = () => BaseWindow.getAllWindows().length === windowCount && BaseWindow.getAllWindows().filter(win => win.isVisible()).length === 1;
     try {
-      x.open(owner);
-      const panel = x.popup;
-      await new Promise(resolve => panel.webContents.once('did-finish-load', resolve));
-      const fullPane = exactPane(panel) && singleInlineView(panel) && oneWindow();
-      owner.sidebarHidden = true;
-      owner.layout();
-      const hiddenSidebar = exactPane(panel);
-      owner.win.setContentSize(1200, 900);
-      owner.layout();
-      const resized = exactPane(panel);
-      const noDialogClose = await panel.webContents.executeJavaScript("!document.querySelector('#close')");
-      const closed = new Promise(resolve => panel.once('closed', resolve));
-      owner.cmd('closePanel');
-      await closed;
-      const sidebarClose = noDialogClose && panel.isDestroyed() && !owner.appPanel && !owner.inlinePage && !x.popup;
-      x.open(owner);
-      const basic = x.popup;
-      x.openOriginal();
-      const official = x.originalPopup;
-      await new Promise(resolve => official.webContents.once('did-finish-load', resolve));
-      const officialPane = basic.isDestroyed() && !x.popup && exactPane(official) && singleInlineView(official) && oneWindow() && official.webContents.session === x.ses;
-      const escaped = new Promise(resolve => official.once('closed', resolve));
-      official.webContents.sendInputEvent({type:'keyDown',keyCode:'Escape'});
-      await escaped;
-      const escape = !owner.appPanel && !owner.inlinePage && !x.originalPopup && !owner.win.isDestroyed();
-      return {fullPane, hiddenSidebar, resized, sidebarClose, officialPane, escape};
-    } finally {
-      x.mgr.focusedWindow = originalFocusedWindow;
-      owner.appPanel?.close();
-      owner.win.destroy();
-    }
+      x.open(owner); x.openOptions(owner); x.openOriginal(owner);
+      const idOk = /^[a-p]{32}$/.test(x.ext?.id || '');
+      return { opened, idOk, noPanels: !('popup' in x && x.popup) && !x.optionsPage && !x.originalPopup };
+    } finally { delete x.mgr.internal; }
   });
-  check(inline.fullPane, 'basic controls occupy the exact web-content pane: one visible window, one inline view, no shell/card');
-  check(inline.hiddenSidebar && inline.resized, 'inline bounds track hidden sidebar and resized content pane exactly');
-  check(inline.sidebarClose, 'basic page has no dialog close button; sidebar closePanel command closes it and clears references');
-  check(inline.officialPane && inline.escape, 'official popup replaces basic page in the same exact pane/session/window; Escape closes only the page');
+  check(JSON.stringify(tabs.opened.map(o => o.url)) === JSON.stringify(['olive://extensions/ublock', 'olive://extensions/ublock/options', 'olive://extensions/ublock/popup']) && tabs.opened.every(o => o.win), 'shield, options and official popup open olive:// tabs in the owner window (no panels)');
+  check(tabs.idOk && tabs.noPanels, 'no AppPanel references left on the controller');
   const cleanup = await app.evaluate(async () => {
     const x = global.extensions, ses = x.ses, helper = x.helper;
     const before = ses.extensions.listenerCount('extension-ready');

@@ -57,6 +57,8 @@ function render(nextState) {
   if (!nextState) return;
   const previousStep = state?.step, previousResult = state?.result;
   state = nextState;
+  // the address follows the step main saved (olive://onboarding/<step>), without a reload
+  if (location.protocol === 'olive:' && location.pathname !== '/' + state.step) history.replaceState(null, '', 'olive://onboarding/' + state.step);
   for (const step of steps) $(step).hidden = step !== state.step;
   const index = steps.indexOf(state.step);
   $('steps').hidden = !!state.only;
@@ -117,8 +119,8 @@ $('later').onclick = () => command(state.only ? 'skip' : state.step === 'welcome
 $('mic-settings').onclick = () => command('system', { kind: 'microphone' });
 $('camera-settings').onclick = () => command('system', { kind: 'camera' });
 window.addEventListener('keydown', event => {
-  if (event.key === 'Escape') { event.preventDefault(); command(state?.only ? 'skip' : state?.step === 'done' ? 'finish' : 'later'); }
-  else if (event.key === 'Enter' && !['BUTTON', 'INPUT'].includes(document.activeElement?.tagName)) { event.preventDefault(); continueSetup(); }
+  // Escape does nothing here: setup is a tab (Set Up Later / Skip are the buttons)
+  if (event.key === 'Enter' && !['BUTTON', 'INPUT'].includes(document.activeElement?.tagName)) { event.preventDefault(); continueSetup(); }
   else if (event.metaKey && event.key === '[' && !$('back').hidden) { event.preventDefault(); command('back'); }
 });
 window.oliveSetup.onState(render);

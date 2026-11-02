@@ -1,5 +1,5 @@
 // olive: app bootstrap + window manager
-const { app, session, ipcMain, dialog, nativeTheme, Notification } = require('electron');
+const { app, session, ipcMain, dialog, nativeTheme, Notification, protocol } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const { execFileSync } = require('child_process');
@@ -19,6 +19,11 @@ function portFree(port) {
     return true;
   }
 }
+
+// olive:// is Olive's own pages as normal tabs (src/main/internal-pages.js). standard +
+// secure: real origins per page (olive://settings, olive://ledger), relative css/js, history
+// and back/forward like any site. no fetch/cors/service workers: web pages can't read it.
+protocol.registerSchemesAsPrivileged([{ scheme: 'olive', privileges: { standard: true, secure: true } }]);
 
 // settings that must be read before chromium starts
 const SETTINGS_FILE = path.join(app.getPath('userData'), 'settings.json');
@@ -93,7 +98,9 @@ class Manager {
     this.ledger = new (require('../core/ledger').Ledger)(path.join(ud, 'activity.json'));
     this.ledgerUI = new (require('./ledger-review').LedgerUI)(this);
     this.siteTime = new (require('./site-time').SiteTimeController)(this);
+    this.internal = new (require('./internal-pages').InternalPages)(this);
     this.shortcuts = new (require('./shortcuts').Shortcuts)(this);
+    this.shortcuts.installIpc();
     this.profileControls = new (require('./profile-controls').ProfileControls)(this);
   }
 
@@ -160,6 +167,12 @@ class Manager {
       // camera / mic / notifications / location: the page sees 'prompt' (not 'denied') until the
       // user decides in olive's prompt (src/main/permissions.js, queryKeys)
       ses.registerPreloadScript({ type: 'frame', id: 'olive-site-permissions', filePath: path.join(__dirname, '../ui/site-permissions-preload.js') });
+    }
+    // olive:// pages: profile sessions only (a private window opens them in a normal one)
+    if (!ses.__oliveInternal && ses.isPersistent()) {
+      ses.__oliveInternal = true;
+      ses.protocol.handle('olive', (request) => this.internal.respond(request));
+      ses.registerPreloadScript({ type: 'frame', id: 'olive-internal', filePath: path.join(__dirname, '../ui/olive-preload.js') });
     }
 
     if (ses.__oliveDownloadsInstalled) return;

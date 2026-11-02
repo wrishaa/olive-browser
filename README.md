@@ -28,7 +28,14 @@ installed app, not `npm start`).
   inline host completion; ⇧↵ opens the result in split view
 - ⌘L edits the current url in the same bar. Type `shortcuts` / `settings` to
   remap keys, or `activities` / `site time` to see time spent per site; app commands
-  appear ahead of web search and do not navigate the current tab.
+  appear ahead of web search and open Olive's own pages as tabs.
+- Olive's own pages are normal tabs with real `olive://` addresses: `olive://settings`
+  (`/general`, `/shortcuts`, `/activities`, `/extensions`), `olive://ledger`,
+  `olive://profiles`, `olive://extensions/ublock` (`/options`, `/popup`) and
+  `olive://onboarding/<step>`. Type them in ⌘L, split, pin, rename, close and reopen
+  them like any site. ⌘, focuses an open Settings tab (else opens one). Web pages,
+  iframes, redirects and the agent api can't reach `olive://`. See
+  notes/internal-pages-as-tabs.md.
 - split view: ⌃⇧= (split with a new tab), ⌘-click a tab, drag a tab onto the page,
   or right-click → open in split view. drag the divider to resize. up to 4 panes.
 - devtools docked inside the window next to the page (⌥⌘I, right-click → inspect).
@@ -66,7 +73,7 @@ passwords / autofill (chromium's password manager isn't in electron: plan is
 keychain + our own fill), extensions (electron has partial chrome.* support),
 bookmarks ui (pinned tabs cover it for now), Safari/Firefox import, auto-update,
 and notarization. Local profiles, configurable shortcuts and Chromium cookie import
-are implemented, with setup and settings embedded in the browser's page pane.
+are implemented; setup and settings are `olive://` tabs.
 
 ## import your Arc session
 
@@ -126,7 +133,7 @@ Permission regression tests: `node scripts/media-permissions-unit.cjs` and `OLIV
 - Browser discovery is read-only and never quits the source browser. Import supports Chromium-family cookies only, keeping existing Olive cookies; not passwords, history/bookmarks, site storage or IndexedDB. Unsupported Safari/Firefox profiles are identified, not silently imported. Some sign-ins still need a fresh login.
 - **Keyboard Shortcuts…** edits per-profile shortcuts, checks conflicts, and resets defaults. Ctrl+Tab / Ctrl+Shift+Tab use a frozen per-window most-recently-used order while held; releasing the mapped hold modifier commits the selection. Both are remappable. Cmd+1…9 and Cmd+Option+arrows remain available.
 - **Activity…** is local-only, with pause, retention, filtering, JSON/CSV export and delete. Private events are discarded. It records limited operation metadata, not page/form/search contents, cookies or passwords; URL credentials, query and fragment are removed. `activity.json` is mode 0600. It does not send telemetry.
-- Setup and settings use trusted child views inside the current browser window, not detached app windows. macOS-owned permission/authentication dialogs remain system UI.
+- Setup and settings are `olive://` tabs inside the browser window, not detached app windows or overlays (site settings and the capture picker stay small in-window panels). macOS-owned permission/authentication dialogs remain system UI.
 
 Safe isolated tests (each native test launches its own temporary profile):
 ```
@@ -163,7 +170,7 @@ kept outside the repo under `/tmp/olive-private-review`.
 ### activities / site time
 
 **Olive → Activities — Site Time…**, the sidebar Activity button, or ⌘L then
-`activities` opens the same inline page. Today / 7 Days / All Time show total,
+`activities` opens Settings > Activities (`olive://settings/activities`) as a tab. Today / 7 Days / All Time show total,
 site count, average per calendar day, a seven-day chart, and ranked site shares.
 Counting starts with this release; old history is not treated as elapsed time.
 

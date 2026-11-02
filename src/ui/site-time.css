@@ -45,4 +45,4 @@ footer .note { max-width:560px; margin:12px 0 0; line-height:1.5; }
 .ledger-entry { display:flex; align-items:center; justify-content:space-between; gap:24px; margin:28px 0 8px; padding:14px 16px; border:1px solid var(--line); border-radius:8px; }
 .ledger-entry h2 { margin:0 0 2px; }
 .ledger-entry p { margin:0; }
-.ledger-entry button { flex:none; }
+.ledger-entry .button { flex:none; }

@@ -9,8 +9,8 @@
           {
             "title": "Olive",
             "bounds": {
-              "x": 160,
-              "y": 30,
+              "x": 280,
+              "y": 36,
               "width": 1280,
               "height": 800
             }
@@ -307,37 +307,12 @@
             "styles": null
           },
           {
-            "id": "setup-row",
-            "rect": {
-              "x": 10,
-              "y": 92,
-              "width": 234,
-              "height": 36
-            },
-            "reasons": [],
-            "pointerEvents": "auto",
-            "styles": null
-          },
-          {
             "id": "newtab",
             "rect": {
               "x": 10,
-              "y": 132,
+              "y": 96,
               "width": 234,
               "height": 36
-            },
-            "reasons": [],
-            "pointerEvents": "auto",
-            "disabled": false,
-            "styles": null
-          },
-          {
-            "id": "btn-ublock",
-            "rect": {
-              "x": 10,
-              "y": 723,
-              "width": 234,
-              "height": 30
             },
             "reasons": [],
             "pointerEvents": "auto",
@@ -349,8 +324,8 @@
             "rect": {
               "x": 10,
               "y": 767.546875,
-              "width": 53.1484375,
-              "height": 16.8984375
+              "width": 53.15625,
+              "height": 16.890625
             },
             "reasons": [],
             "pointerEvents": "auto",
@@ -399,13 +374,8 @@
         ],
         "text": [
           {
-            "id": "host placeholder",
-            "text": "Search or enter URL",
-            "reasons": []
-          },
-          {
-            "id": "title",
-            "text": "Set Up Olive",
+            "id": "host",
+            "text": "olive://onboarding/welcome",
             "reasons": []
           },
           {
@@ -429,8 +399,8 @@
             "reasons": []
           },
           {
-            "id": "btn-ublock",
-            "text": "uBO Lite · on",
+            "id": "title",
+            "text": "Set Up Olive",
             "reasons": []
           },
           {
@@ -439,7 +409,7 @@
             "reasons": []
           }
         ],
-        "uiText": "Search or enter URL\nSet Up Olive\n+\nNew Tab\nF\nFixture tab\nuBO Lite · on\nActivity",
+        "uiText": "olive://onboarding/welcome\n+\nNew Tab\nF\nFixture tab\nSet Up Olive\nActivity",
         "viewport": {
           "width": 1280,
           "height": 800
@@ -460,8 +430,8 @@
           {
             "title": "Olive",
             "bounds": {
-              "x": 160,
-              "y": 30,
+              "x": 280,
+              "y": 36,
               "width": 1280,
               "height": 800
             }
@@ -743,37 +713,12 @@
             "styles": null
           },
           {
-            "id": "setup-row",
-            "rect": {
-              "x": 10,
-              "y": 92,
-              "width": 234,
-              "height": 36
-            },
-            "reasons": [],
-            "pointerEvents": "auto",
-            "styles": null
-          },
-          {
             "id": "newtab",
             "rect": {
               "x": 10,
-              "y": 132,
+              "y": 96,
               "width": 234,
               "height": 36
-            },
-            "reasons": [],
-            "pointerEvents": "auto",
-            "disabled": false,
-            "styles": null
-          },
-          {
-            "id": "btn-ublock",
-            "rect": {
-              "x": 10,
-              "y": 723,
-              "width": 234,
-              "height": 30
             },
             "reasons": [],
             "pointerEvents": "auto",
@@ -785,8 +730,8 @@
             "rect": {
               "x": 10,
               "y": 767.546875,
-              "width": 53.1484375,
-              "height": 16.8984375
+              "width": 53.15625,
+              "height": 16.890625
             },
             "reasons": [],
             "pointerEvents": "auto",
@@ -835,18 +780,8 @@
         ],
         "text": [
           {
-            "id": "host placeholder",
-            "text": "Search or enter URL",
-            "reasons": []
-          },
-          {
-            "id": "title",
-            "text": "Set Up Olive",
-            "reasons": []
-          },
-          {
-            "id": "setup-left",
-            "text": "3 left",
+            "id": "host",
+            "text": "olive://onboarding/calls",
             "reasons": []
           },
           {
@@ -870,8 +805,8 @@
             "reasons": []
           },
           {
-            "id": "btn-ublock",
-            "text": "uBO Lite · on",
+            "id": "title",
+            "text": "Set Up Olive",
             "reasons": []
           },
           {
@@ -880,7 +815,7 @@
             "reasons": []
           }
         ],
-        "uiText": "Search or enter URL\nSet Up Olive\n3 left\n+\nNew Tab\nF\nFixture tab\nuBO Lite · on\nActivity",
+        "uiText": "olive://onboarding/calls\n+\nNew Tab\nF\nFixture tab\nSet Up Olive\nActivity",
         "viewport": {
           "width": 1280,
           "height": 800
@@ -901,8 +836,8 @@
           {
             "title": "Olive",
             "bounds": {
-              "x": 160,
-              "y": 30,
+              "x": 280,
+              "y": 36,
               "width": 1280,
               "height": 800
             }
@@ -1156,37 +1091,12 @@
             "styles": null
           },
           {
-            "id": "setup-row",
-            "rect": {
-              "x": 10,
-              "y": 92,
-              "width": 234,
-              "height": 36
-            },
-            "reasons": [],
-            "pointerEvents": "auto",
-            "styles": null
-          },
-          {
             "id": "newtab",
             "rect": {
               "x": 10,
-              "y": 132,
+              "y": 96,
               "width": 234,
               "height": 36
-            },
-            "reasons": [],
-            "pointerEvents": "auto",
-            "disabled": false,
-            "styles": null
-          },
-          {
-            "id": "btn-ublock",
-            "rect": {
-              "x": 10,
-              "y": 723,
-              "width": 234,
-              "height": 30
             },
             "reasons": [],
             "pointerEvents": "auto",
@@ -1198,8 +1108,8 @@
             "rect": {
               "x": 10,
               "y": 767.546875,
-              "width": 53.1484375,
-              "height": 16.8984375
+              "width": 53.15625,
+              "height": 16.890625
             },
             "reasons": [],
             "pointerEvents": "auto",
@@ -1248,18 +1158,8 @@
         ],
         "text": [
           {
-            "id": "host placeholder",
-            "text": "Search or enter URL",
-            "reasons": []
-          },
-          {
-            "id": "title",
-            "text": "Set Up Olive",
-            "reasons": []
-          },
-          {
-            "id": "setup-left",
-            "text": "1 left",
+            "id": "host",
+            "text": "olive://onboarding/screen",
             "reasons": []
           },
           {
@@ -1283,8 +1183,8 @@
             "reasons": []
           },
           {
-            "id": "btn-ublock",
-            "text": "uBO Lite · on",
+            "id": "title",
+            "text": "Set Up Olive",
             "reasons": []
           },
           {
@@ -1293,7 +1193,7 @@
             "reasons": []
           }
         ],
-        "uiText": "Search or enter URL\nSet Up Olive\n1 left\n+\nNew Tab\nF\nFixture tab\nuBO Lite · on\nActivity",
+        "uiText": "olive://onboarding/screen\n+\nNew Tab\nF\nFixture tab\nSet Up Olive\nActivity",
         "viewport": {
           "width": 1280,
           "height": 800
@@ -1314,8 +1214,8 @@
           {
             "title": "Olive",
             "bounds": {
-              "x": 160,
-              "y": 30,
+              "x": 280,
+              "y": 36,
               "width": 1280,
               "height": 800
             }
@@ -1369,7 +1269,7 @@
             "id": "<input type=\"checkbox\" aria-label=\"Google Chrome · Personal\">",
             "rect": {
               "x": 696,
-              "y": 262.1171875,
+              "y": 262.109375,
               "width": 14,
               "height": 14
             },
@@ -1382,7 +1282,7 @@
             "id": "<input type=\"checkbox\" aria-label=\"Google Chrome · Work\">",
             "rect": {
               "x": 696,
-              "y": 298.1171875,
+              "y": 298.109375,
               "width": 14,
               "height": 14
             },
@@ -1395,7 +1295,7 @@
             "id": "<input type=\"checkbox\" aria-label=\"Arc · Personal\">",
             "rect": {
               "x": 696,
-              "y": 334.1171875,
+              "y": 334.109375,
               "width": 14,
               "height": 14
             },
@@ -1664,37 +1564,12 @@
             "styles": null
           },
           {
-            "id": "setup-row",
-            "rect": {
-              "x": 10,
-              "y": 92,
-              "width": 234,
-              "height": 36
-            },
-            "reasons": [],
-            "pointerEvents": "auto",
-            "styles": null
-          },
-          {
             "id": "newtab",
             "rect": {
               "x": 10,
-              "y": 132,
+              "y": 96,
               "width": 234,
               "height": 36
-            },
-            "reasons": [],
-            "pointerEvents": "auto",
-            "disabled": false,
-            "styles": null
-          },
-          {
-            "id": "btn-ublock",
-            "rect": {
-              "x": 10,
-              "y": 723,
-              "width": 234,
-              "height": 30
             },
             "reasons": [],
             "pointerEvents": "auto",
@@ -1706,8 +1581,8 @@
             "rect": {
               "x": 10,
               "y": 767.546875,
-              "width": 53.1484375,
-              "height": 16.8984375
+              "width": 53.15625,
+              "height": 16.890625
             },
             "reasons": [],
             "pointerEvents": "auto",
@@ -1756,18 +1631,8 @@
         ],
         "text": [
           {
-            "id": "host placeholder",
-            "text": "Search or enter URL",
-            "reasons": []
-          },
-          {
-            "id": "title",
-            "text": "Set Up Olive",
-            "reasons": []
-          },
-          {
-            "id": "setup-left",
-            "text": "2 left",
+            "id": "host",
+            "text": "olive://onboarding/import",
             "reasons": []
           },
           {
@@ -1791,8 +1656,8 @@
             "reasons": []
           },
           {
-            "id": "btn-ublock",
-            "text": "uBO Lite · on",
+            "id": "title",
+            "text": "Set Up Olive",
             "reasons": []
           },
           {
@@ -1801,7 +1666,7 @@
             "reasons": []
           }
         ],
-        "uiText": "Search or enter URL\nSet Up Olive\n2 left\n+\nNew Tab\nF\nFixture tab\nuBO Lite · on\nActivity",
+        "uiText": "olive://onboarding/import\n+\nNew Tab\nF\nFixture tab\nSet Up Olive\nActivity",
         "viewport": {
           "width": 1280,
           "height": 800
@@ -1822,8 +1687,8 @@
           {
             "title": "Olive",
             "bounds": {
-              "x": 160,
-              "y": 30,
+              "x": 280,
+              "y": 36,
               "width": 1280,
               "height": 800
             }
@@ -2107,37 +1972,12 @@
             "styles": null
           },
           {
-            "id": "setup-row",
-            "rect": {
-              "x": 10,
-              "y": 92,
-              "width": 234,
-              "height": 36
-            },
-            "reasons": [],
-            "pointerEvents": "auto",
-            "styles": null
-          },
-          {
             "id": "newtab",
             "rect": {
               "x": 10,
-              "y": 132,
+              "y": 96,
               "width": 234,
               "height": 36
-            },
-            "reasons": [],
-            "pointerEvents": "auto",
-            "disabled": false,
-            "styles": null
-          },
-          {
-            "id": "btn-ublock",
-            "rect": {
-              "x": 10,
-              "y": 723,
-              "width": 234,
-              "height": 30
             },
             "reasons": [],
             "pointerEvents": "auto",
@@ -2149,8 +1989,8 @@
             "rect": {
               "x": 10,
               "y": 767.546875,
-              "width": 53.1484375,
-              "height": 16.8984375
+              "width": 53.15625,
+              "height": 16.890625
             },
             "reasons": [],
             "pointerEvents": "auto",
@@ -2199,18 +2039,8 @@
         ],
         "text": [
           {
-            "id": "host placeholder",
-            "text": "Search or enter URL",
-            "reasons": []
-          },
-          {
-            "id": "title",
-            "text": "Set Up Olive",
-            "reasons": []
-          },
-          {
-            "id": "setup-left",
-            "text": "0 left",
+            "id": "host",
+            "text": "olive://onboarding/done",
             "reasons": []
           },
           {
@@ -2234,8 +2064,8 @@
             "reasons": []
           },
           {
-            "id": "btn-ublock",
-            "text": "uBO Lite · on",
+            "id": "title",
+            "text": "Set Up Olive",
             "reasons": []
           },
           {
@@ -2244,7 +2074,7 @@
             "reasons": []
           }
         ],
-        "uiText": "Search or enter URL\nSet Up Olive\n0 left\n+\nNew Tab\nF\nFixture tab\nuBO Lite · on\nActivity",
+        "uiText": "olive://onboarding/done\n+\nNew Tab\nF\nFixture tab\nSet Up Olive\nActivity",
         "viewport": {
           "width": 1280,
           "height": 800
@@ -2265,8 +2095,8 @@
           {
             "title": "Olive",
             "bounds": {
-              "x": 160,
-              "y": 30,
+              "x": 280,
+              "y": 36,
               "width": 1280,
               "height": 800
             }
@@ -2563,37 +2393,12 @@
             "styles": null
           },
           {
-            "id": "setup-row",
-            "rect": {
-              "x": 10,
-              "y": 92,
-              "width": 234,
-              "height": 36
-            },
-            "reasons": [],
-            "pointerEvents": "auto",
-            "styles": null
-          },
-          {
             "id": "newtab",
             "rect": {
               "x": 10,
-              "y": 132,
+              "y": 96,
               "width": 234,
               "height": 36
-            },
-            "reasons": [],
-            "pointerEvents": "auto",
-            "disabled": false,
-            "styles": null
-          },
-          {
-            "id": "btn-ublock",
-            "rect": {
-              "x": 10,
-              "y": 723,
-              "width": 234,
-              "height": 30
             },
             "reasons": [],
             "pointerEvents": "auto",
@@ -2605,8 +2410,8 @@
             "rect": {
               "x": 10,
               "y": 767.546875,
-              "width": 53.1484375,
-              "height": 16.8984375
+              "width": 53.15625,
+              "height": 16.890625
             },
             "reasons": [],
             "pointerEvents": "auto",
@@ -2655,13 +2460,8 @@
         ],
         "text": [
           {
-            "id": "host placeholder",
-            "text": "Search or enter URL",
-            "reasons": []
-          },
-          {
-            "id": "title",
-            "text": "Set Up Olive",
+            "id": "host",
+            "text": "olive://onboarding/welcome",
             "reasons": []
           },
           {
@@ -2685,8 +2485,8 @@
             "reasons": []
           },
           {
-            "id": "btn-ublock",
-            "text": "uBO Lite · on",
+            "id": "title",
+            "text": "Set Up Olive",
             "reasons": []
           },
           {
@@ -2695,7 +2495,7 @@
             "reasons": []
           }
         ],
-        "uiText": "Search or enter URL\nSet Up Olive\n+\nNew Tab\nF\nFixture tab\nuBO Lite · on\nActivity",
+        "uiText": "olive://onboarding/welcome\n+\nNew Tab\nF\nFixture tab\nSet Up Olive\nActivity",
         "viewport": {
           "width": 1280,
           "height": 800
@@ -2716,8 +2516,8 @@
           {
             "title": "Olive",
             "bounds": {
-              "x": 160,
-              "y": 30,
+              "x": 280,
+              "y": 36,
               "width": 1280,
               "height": 800
             }
@@ -2999,37 +2799,12 @@
             "styles": null
           },
           {
-            "id": "setup-row",
-            "rect": {
-              "x": 10,
-              "y": 92,
-              "width": 234,
-              "height": 36
-            },
-            "reasons": [],
-            "pointerEvents": "auto",
-            "styles": null
-          },
-          {
             "id": "newtab",
             "rect": {
               "x": 10,
-              "y": 132,
+              "y": 96,
               "width": 234,
               "height": 36
-            },
-            "reasons": [],
-            "pointerEvents": "auto",
-            "disabled": false,
-            "styles": null
-          },
-          {
-            "id": "btn-ublock",
-            "rect": {
-              "x": 10,
-              "y": 723,
-              "width": 234,
-              "height": 30
             },
             "reasons": [],
             "pointerEvents": "auto",
@@ -3041,8 +2816,8 @@
             "rect": {
               "x": 10,
               "y": 767.546875,
-              "width": 53.1484375,
-              "height": 16.8984375
+              "width": 53.15625,
+              "height": 16.890625
             },
             "reasons": [],
             "pointerEvents": "auto",
@@ -3091,18 +2866,8 @@
         ],
         "text": [
           {
-            "id": "host placeholder",
-            "text": "Search or enter URL",
-            "reasons": []
-          },
-          {
-            "id": "title",
-            "text": "Set Up Olive",
-            "reasons": []
-          },
-          {
-            "id": "setup-left",
-            "text": "3 left",
+            "id": "host",
+            "text": "olive://onboarding/calls",
             "reasons": []
           },
           {
@@ -3126,8 +2891,8 @@
             "reasons": []
           },
           {
-            "id": "btn-ublock",
-            "text": "uBO Lite · on",
+            "id": "title",
+            "text": "Set Up Olive",
             "reasons": []
           },
           {
@@ -3136,7 +2901,7 @@
             "reasons": []
           }
         ],
-        "uiText": "Search or enter URL\nSet Up Olive\n3 left\n+\nNew Tab\nF\nFixture tab\nuBO Lite · on\nActivity",
+        "uiText": "olive://onboarding/calls\n+\nNew Tab\nF\nFixture tab\nSet Up Olive\nActivity",
         "viewport": {
           "width": 1280,
           "height": 800
@@ -3157,8 +2922,8 @@
           {
             "title": "Olive",
             "bounds": {
-              "x": 160,
-              "y": 30,
+              "x": 280,
+              "y": 36,
               "width": 1280,
               "height": 800
             }
@@ -3412,37 +3177,12 @@
             "styles": null
           },
           {
-            "id": "setup-row",
-            "rect": {
-              "x": 10,
-              "y": 92,
-              "width": 234,
-              "height": 36
-            },
-            "reasons": [],
-            "pointerEvents": "auto",
-            "styles": null
-          },
-          {
             "id": "newtab",
             "rect": {
               "x": 10,
-              "y": 132,
+              "y": 96,
               "width": 234,
               "height": 36
-            },
-            "reasons": [],
-            "pointerEvents": "auto",
-            "disabled": false,
-            "styles": null
-          },
-          {
-            "id": "btn-ublock",
-            "rect": {
-              "x": 10,
-              "y": 723,
-              "width": 234,
-              "height": 30
             },
             "reasons": [],
             "pointerEvents": "auto",
@@ -3454,8 +3194,8 @@
             "rect": {
               "x": 10,
               "y": 767.546875,
-              "width": 53.1484375,
-              "height": 16.8984375
+              "width": 53.15625,
+              "height": 16.890625
             },
             "reasons": [],
             "pointerEvents": "auto",
@@ -3504,18 +3244,8 @@
         ],
         "text": [
           {
-            "id": "host placeholder",
-            "text": "Search or enter URL",
-            "reasons": []
-          },
-          {
-            "id": "title",
-            "text": "Set Up Olive",
-            "reasons": []
-          },
-          {
-            "id": "setup-left",
-            "text": "1 left",
+            "id": "host",
+            "text": "olive://onboarding/screen",
             "reasons": []
           },
           {
@@ -3539,8 +3269,8 @@
             "reasons": []
           },
           {
-            "id": "btn-ublock",
-            "text": "uBO Lite · on",
+            "id": "title",
+            "text": "Set Up Olive",
             "reasons": []
           },
           {
@@ -3549,7 +3279,7 @@
             "reasons": []
           }
         ],
-        "uiText": "Search or enter URL\nSet Up Olive\n1 left\n+\nNew Tab\nF\nFixture tab\nuBO Lite · on\nActivity",
+        "uiText": "olive://onboarding/screen\n+\nNew Tab\nF\nFixture tab\nSet Up Olive\nActivity",
         "viewport": {
           "width": 1280,
           "height": 800
@@ -3570,8 +3300,8 @@
           {
             "title": "Olive",
             "bounds": {
-              "x": 160,
-              "y": 30,
+              "x": 280,
+              "y": 36,
               "width": 1280,
               "height": 800
             }
@@ -3625,7 +3355,7 @@
             "id": "<input type=\"checkbox\" aria-label=\"Google Chrome · Personal\" style=\"\">",
             "rect": {
               "x": 696,
-              "y": 262.1171875,
+              "y": 262.109375,
               "width": 14,
               "height": 14
             },
@@ -3638,7 +3368,7 @@
             "id": "<input type=\"checkbox\" aria-label=\"Google Chrome · Work\" style=\"\">",
             "rect": {
               "x": 696,
-              "y": 298.1171875,
+              "y": 298.109375,
               "width": 14,
               "height": 14
             },
@@ -3651,7 +3381,7 @@
             "id": "<input type=\"checkbox\" aria-label=\"Arc · Personal\" style=\"\">",
             "rect": {
               "x": 696,
-              "y": 334.1171875,
+              "y": 334.109375,
               "width": 14,
               "height": 14
             },
@@ -3920,37 +3650,12 @@
             "styles": null
           },
           {
-            "id": "setup-row",
-            "rect": {
-              "x": 10,
-              "y": 92,
-              "width": 234,
-              "height": 36
-            },
-            "reasons": [],
-            "pointerEvents": "auto",
-            "styles": null
-          },
-          {
             "id": "newtab",
             "rect": {
               "x": 10,
-              "y": 132,
+              "y": 96,
               "width": 234,
               "height": 36
-            },
-            "reasons": [],
-            "pointerEvents": "auto",
-            "disabled": false,
-            "styles": null
-          },
-          {
-            "id": "btn-ublock",
-            "rect": {
-              "x": 10,
-              "y": 723,
-              "width": 234,
-              "height": 30
             },
             "reasons": [],
             "pointerEvents": "auto",
@@ -3962,8 +3667,8 @@
             "rect": {
               "x": 10,
               "y": 767.546875,
-              "width": 53.1484375,
-              "height": 16.8984375
+              "width": 53.15625,
+              "height": 16.890625
             },
             "reasons": [],
             "pointerEvents": "auto",
@@ -4012,18 +3717,8 @@
         ],
         "text": [
           {
-            "id": "host placeholder",
-            "text": "Search or enter URL",
-            "reasons": []
-          },
-          {
-            "id": "title",
-            "text": "Set Up Olive",
-            "reasons": []
-          },
-          {
-            "id": "setup-left",
-            "text": "2 left",
+            "id": "host",
+            "text": "olive://onboarding/import",
             "reasons": []
           },
           {
@@ -4047,8 +3742,8 @@
             "reasons": []
           },
           {
-            "id": "btn-ublock",
-            "text": "uBO Lite · on",
+            "id": "title",
+            "text": "Set Up Olive",
             "reasons": []
           },
           {
@@ -4057,7 +3752,7 @@
             "reasons": []
           }
         ],
-        "uiText": "Search or enter URL\nSet Up Olive\n2 left\n+\nNew Tab\nF\nFixture tab\nuBO Lite · on\nActivity",
+        "uiText": "olive://onboarding/import\n+\nNew Tab\nF\nFixture tab\nSet Up Olive\nActivity",
         "viewport": {
           "width": 1280,
           "height": 800
@@ -4078,8 +3773,8 @@
           {
             "title": "Olive",
             "bounds": {
-              "x": 160,
-              "y": 30,
+              "x": 280,
+              "y": 36,
               "width": 1280,
               "height": 800
             }
@@ -4363,37 +4058,12 @@
             "styles": null
           },
           {
-            "id": "setup-row",
-            "rect": {
-              "x": 10,
-              "y": 92,
-              "width": 234,
-              "height": 36
-            },
-            "reasons": [],
-            "pointerEvents": "auto",
-            "styles": null
-          },
-          {
             "id": "newtab",
             "rect": {
               "x": 10,
-              "y": 132,
+              "y": 96,
               "width": 234,
               "height": 36
-            },
-            "reasons": [],
-            "pointerEvents": "auto",
-            "disabled": false,
-            "styles": null
-          },
-          {
-            "id": "btn-ublock",
-            "rect": {
-              "x": 10,
-              "y": 723,
-              "width": 234,
-              "height": 30
             },
             "reasons": [],
             "pointerEvents": "auto",
@@ -4405,8 +4075,8 @@
             "rect": {
               "x": 10,
               "y": 767.546875,
-              "width": 53.1484375,
-              "height": 16.8984375
+              "width": 53.15625,
+              "height": 16.890625
             },
             "reasons": [],
             "pointerEvents": "auto",
@@ -4455,18 +4125,8 @@
         ],
         "text": [
           {
-            "id": "host placeholder",
-            "text": "Search or enter URL",
-            "reasons": []
-          },
-          {
-            "id": "title",
-            "text": "Set Up Olive",
-            "reasons": []
-          },
-          {
-            "id": "setup-left",
-            "text": "0 left",
+            "id": "host",
+            "text": "olive://onboarding/done",
             "reasons": []
           },
           {
@@ -4490,8 +4150,8 @@
             "reasons": []
           },
           {
-            "id": "btn-ublock",
-            "text": "uBO Lite · on",
+            "id": "title",
+            "text": "Set Up Olive",
             "reasons": []
           },
           {
@@ -4500,7 +4160,7 @@
             "reasons": []
           }
         ],
-        "uiText": "Search or enter URL\nSet Up Olive\n0 left\n+\nNew Tab\nF\nFixture tab\nuBO Lite · on\nActivity",
+        "uiText": "olive://onboarding/done\n+\nNew Tab\nF\nFixture tab\nSet Up Olive\nActivity",
         "viewport": {
           "width": 1280,
           "height": 800
@@ -4521,8 +4181,8 @@
           {
             "title": "Olive",
             "bounds": {
-              "x": 160,
-              "y": 30,
+              "x": 280,
+              "y": 36,
               "width": 1360,
               "height": 880
             }
@@ -4819,37 +4479,12 @@
             "styles": null
           },
           {
-            "id": "setup-row",
-            "rect": {
-              "x": 10,
-              "y": 92,
-              "width": 234,
-              "height": 36
-            },
-            "reasons": [],
-            "pointerEvents": "auto",
-            "styles": null
-          },
-          {
             "id": "newtab",
             "rect": {
               "x": 10,
-              "y": 132,
+              "y": 96,
               "width": 234,
               "height": 36
-            },
-            "reasons": [],
-            "pointerEvents": "auto",
-            "disabled": false,
-            "styles": null
-          },
-          {
-            "id": "btn-ublock",
-            "rect": {
-              "x": 10,
-              "y": 803,
-              "width": 234,
-              "height": 30
             },
             "reasons": [],
             "pointerEvents": "auto",
@@ -4861,8 +4496,8 @@
             "rect": {
               "x": 10,
               "y": 847.546875,
-              "width": 53.1484375,
-              "height": 16.8984375
+              "width": 53.15625,
+              "height": 16.890625
             },
             "reasons": [],
             "pointerEvents": "auto",
@@ -4911,13 +4546,8 @@
         ],
         "text": [
           {
-            "id": "host placeholder",
-            "text": "Search or enter URL",
-            "reasons": []
-          },
-          {
-            "id": "title",
-            "text": "Set Up Olive",
+            "id": "host",
+            "text": "olive://onboarding/welcome",
             "reasons": []
           },
           {
@@ -4941,8 +4571,8 @@
             "reasons": []
           },
           {
-            "id": "btn-ublock",
-            "text": "uBO Lite · on",
+            "id": "title",
+            "text": "Set Up Olive",
             "reasons": []
           },
           {
@@ -4951,7 +4581,7 @@
             "reasons": []
           }
         ],
-        "uiText": "Search or enter URL\nSet Up Olive\n+\nNew Tab\nF\nFixture tab\nuBO Lite · on\nActivity",
+        "uiText": "olive://onboarding/welcome\n+\nNew Tab\nF\nFixture tab\nSet Up Olive\nActivity",
         "viewport": {
           "width": 1360,
           "height": 880
@@ -4972,8 +4602,8 @@
           {
             "title": "Olive",
             "bounds": {
-              "x": 160,
-              "y": 30,
+              "x": 280,
+              "y": 36,
               "width": 1360,
               "height": 880
             }
@@ -5255,37 +4885,12 @@
             "styles": null
           },
           {
-            "id": "setup-row",
-            "rect": {
-              "x": 10,
-              "y": 92,
-              "width": 234,
-              "height": 36
-            },
-            "reasons": [],
-            "pointerEvents": "auto",
-            "styles": null
-          },
-          {
             "id": "newtab",
             "rect": {
               "x": 10,
-              "y": 132,
+              "y": 96,
               "width": 234,
               "height": 36
-            },
-            "reasons": [],
-            "pointerEvents": "auto",
-            "disabled": false,
-            "styles": null
-          },
-          {
-            "id": "btn-ublock",
-            "rect": {
-              "x": 10,
-              "y": 803,
-              "width": 234,
-              "height": 30
             },
             "reasons": [],
             "pointerEvents": "auto",
@@ -5297,8 +4902,8 @@
             "rect": {
               "x": 10,
               "y": 847.546875,
-              "width": 53.1484375,
-              "height": 16.8984375
+              "width": 53.15625,
+              "height": 16.890625
             },
             "reasons": [],
             "pointerEvents": "auto",
@@ -5347,18 +4952,8 @@
         ],
         "text": [
           {
-            "id": "host placeholder",
-            "text": "Search or enter URL",
-            "reasons": []
-          },
-          {
-            "id": "title",
-            "text": "Set Up Olive",
-            "reasons": []
-          },
-          {
-            "id": "setup-left",
-            "text": "3 left",
+            "id": "host",
+            "text": "olive://onboarding/calls",
             "reasons": []
           },
           {
@@ -5382,8 +4977,8 @@
             "reasons": []
           },
           {
-            "id": "btn-ublock",
-            "text": "uBO Lite · on",
+            "id": "title",
+            "text": "Set Up Olive",
             "reasons": []
           },
           {
@@ -5392,7 +4987,7 @@
             "reasons": []
           }
         ],
-        "uiText": "Search or enter URL\nSet Up Olive\n3 left\n+\nNew Tab\nF\nFixture tab\nuBO Lite · on\nActivity",
+        "uiText": "olive://onboarding/calls\n+\nNew Tab\nF\nFixture tab\nSet Up Olive\nActivity",
         "viewport": {
           "width": 1360,
           "height": 880
@@ -5413,8 +5008,8 @@
           {
             "title": "Olive",
             "bounds": {
-              "x": 160,
-              "y": 30,
+              "x": 280,
+              "y": 36,
               "width": 1360,
               "height": 880
             }
@@ -5668,37 +5263,12 @@
             "styles": null
           },
           {
-            "id": "setup-row",
-            "rect": {
-              "x": 10,
-              "y": 92,
-              "width": 234,
-              "height": 36
-            },
-            "reasons": [],
-            "pointerEvents": "auto",
-            "styles": null
-          },
-          {
             "id": "newtab",
             "rect": {
               "x": 10,
-              "y": 132,
+              "y": 96,
               "width": 234,
               "height": 36
-            },
-            "reasons": [],
-            "pointerEvents": "auto",
-            "disabled": false,
-            "styles": null
-          },
-          {
-            "id": "btn-ublock",
-            "rect": {
-              "x": 10,
-              "y": 803,
-              "width": 234,
-              "height": 30
             },
             "reasons": [],
             "pointerEvents": "auto",
@@ -5710,8 +5280,8 @@
             "rect": {
               "x": 10,
               "y": 847.546875,
-              "width": 53.1484375,
-              "height": 16.8984375
+              "width": 53.15625,
+              "height": 16.890625
             },
             "reasons": [],
             "pointerEvents": "auto",
@@ -5760,18 +5330,8 @@
         ],
         "text": [
           {
-            "id": "host placeholder",
-            "text": "Search or enter URL",
-            "reasons": []
-          },
-          {
-            "id": "title",
-            "text": "Set Up Olive",
-            "reasons": []
-          },
-          {
-            "id": "setup-left",
-            "text": "1 left",
+            "id": "host",
+            "text": "olive://onboarding/screen",
             "reasons": []
           },
           {
@@ -5795,8 +5355,8 @@
             "reasons": []
           },
           {
-            "id": "btn-ublock",
-            "text": "uBO Lite · on",
+            "id": "title",
+            "text": "Set Up Olive",
             "reasons": []
           },
           {
@@ -5805,7 +5365,7 @@
             "reasons": []
           }
         ],
-        "uiText": "Search or enter URL\nSet Up Olive\n1 left\n+\nNew Tab\nF\nFixture tab\nuBO Lite · on\nActivity",
+        "uiText": "olive://onboarding/screen\n+\nNew Tab\nF\nFixture tab\nSet Up Olive\nActivity",
         "viewport": {
           "width": 1360,
           "height": 880
@@ -5826,8 +5386,8 @@
           {
             "title": "Olive",
             "bounds": {
-              "x": 160,
-              "y": 30,
+              "x": 280,
+              "y": 36,
               "width": 1360,
               "height": 880
             }
@@ -6176,37 +5736,12 @@
             "styles": null
           },
           {
-            "id": "setup-row",
-            "rect": {
-              "x": 10,
-              "y": 92,
-              "width": 234,
-              "height": 36
-            },
-            "reasons": [],
-            "pointerEvents": "auto",
-            "styles": null
-          },
-          {
             "id": "newtab",
             "rect": {
               "x": 10,
-              "y": 132,
+              "y": 96,
               "width": 234,
               "height": 36
-            },
-            "reasons": [],
-            "pointerEvents": "auto",
-            "disabled": false,
-            "styles": null
-          },
-          {
-            "id": "btn-ublock",
-            "rect": {
-              "x": 10,
-              "y": 803,
-              "width": 234,
-              "height": 30
             },
             "reasons": [],
             "pointerEvents": "auto",
@@ -6218,8 +5753,8 @@
             "rect": {
               "x": 10,
               "y": 847.546875,
-              "width": 53.1484375,
-              "height": 16.8984375
+              "width": 53.15625,
+              "height": 16.890625
             },
             "reasons": [],
             "pointerEvents": "auto",
@@ -6268,18 +5803,8 @@
         ],
         "text": [
           {
-            "id": "host placeholder",
-            "text": "Search or enter URL",
-            "reasons": []
-          },
-          {
-            "id": "title",
-            "text": "Set Up Olive",
-            "reasons": []
-          },
-          {
-            "id": "setup-left",
-            "text": "2 left",
+            "id": "host",
+            "text": "olive://onboarding/import",
             "reasons": []
           },
           {
@@ -6303,8 +5828,8 @@
             "reasons": []
           },
           {
-            "id": "btn-ublock",
-            "text": "uBO Lite · on",
+            "id": "title",
+            "text": "Set Up Olive",
             "reasons": []
           },
           {
@@ -6313,7 +5838,7 @@
             "reasons": []
           }
         ],
-        "uiText": "Search or enter URL\nSet Up Olive\n2 left\n+\nNew Tab\nF\nFixture tab\nuBO Lite · on\nActivity",
+        "uiText": "olive://onboarding/import\n+\nNew Tab\nF\nFixture tab\nSet Up Olive\nActivity",
         "viewport": {
           "width": 1360,
           "height": 880
@@ -6334,8 +5859,8 @@
           {
             "title": "Olive",
             "bounds": {
-              "x": 160,
-              "y": 30,
+              "x": 280,
+              "y": 36,
               "width": 1360,
               "height": 880
             }
@@ -6619,37 +6144,12 @@
             "styles": null
           },
           {
-            "id": "setup-row",
-            "rect": {
-              "x": 10,
-              "y": 92,
-              "width": 234,
-              "height": 36
-            },
-            "reasons": [],
-            "pointerEvents": "auto",
-            "styles": null
-          },
-          {
             "id": "newtab",
             "rect": {
               "x": 10,
-              "y": 132,
+              "y": 96,
               "width": 234,
               "height": 36
-            },
-            "reasons": [],
-            "pointerEvents": "auto",
-            "disabled": false,
-            "styles": null
-          },
-          {
-            "id": "btn-ublock",
-            "rect": {
-              "x": 10,
-              "y": 803,
-              "width": 234,
-              "height": 30
             },
             "reasons": [],
             "pointerEvents": "auto",
@@ -6661,8 +6161,8 @@
             "rect": {
               "x": 10,
               "y": 847.546875,
-              "width": 53.1484375,
-              "height": 16.8984375
+              "width": 53.15625,
+              "height": 16.890625
             },
             "reasons": [],
             "pointerEvents": "auto",
@@ -6711,18 +6211,8 @@
         ],
         "text": [
           {
-            "id": "host placeholder",
-            "text": "Search or enter URL",
-            "reasons": []
-          },
-          {
-            "id": "title",
-            "text": "Set Up Olive",
-            "reasons": []
-          },
-          {
-            "id": "setup-left",
-            "text": "0 left",
+            "id": "host",
+            "text": "olive://onboarding/done",
             "reasons": []
           },
           {
@@ -6746,8 +6236,8 @@
             "reasons": []
           },
           {
-            "id": "btn-ublock",
-            "text": "uBO Lite · on",
+            "id": "title",
+            "text": "Set Up Olive",
             "reasons": []
           },
           {
@@ -6756,7 +6246,7 @@
             "reasons": []
           }
         ],
-        "uiText": "Search or enter URL\nSet Up Olive\n0 left\n+\nNew Tab\nF\nFixture tab\nuBO Lite · on\nActivity",
+        "uiText": "olive://onboarding/done\n+\nNew Tab\nF\nFixture tab\nSet Up Olive\nActivity",
         "viewport": {
           "width": 1360,
           "height": 880
@@ -6777,8 +6267,8 @@
           {
             "title": "Olive",
             "bounds": {
-              "x": 160,
-              "y": 30,
+              "x": 280,
+              "y": 36,
               "width": 1360,
               "height": 880
             }
@@ -7075,37 +6565,12 @@
             "styles": null
           },
           {
-            "id": "setup-row",
-            "rect": {
-              "x": 10,
-              "y": 92,
-              "width": 234,
-              "height": 36
-            },
-            "reasons": [],
-            "pointerEvents": "auto",
-            "styles": null
-          },
-          {
             "id": "newtab",
             "rect": {
               "x": 10,
-              "y": 132,
+              "y": 96,
               "width": 234,
               "height": 36
-            },
-            "reasons": [],
-            "pointerEvents": "auto",
-            "disabled": false,
-            "styles": null
-          },
-          {
-            "id": "btn-ublock",
-            "rect": {
-              "x": 10,
-              "y": 803,
-              "width": 234,
-              "height": 30
             },
             "reasons": [],
             "pointerEvents": "auto",
@@ -7117,8 +6582,8 @@
             "rect": {
               "x": 10,
               "y": 847.546875,
-              "width": 53.1484375,
-              "height": 16.8984375
+              "width": 53.15625,
+              "height": 16.890625
             },
             "reasons": [],
             "pointerEvents": "auto",
@@ -7167,13 +6632,8 @@
         ],
         "text": [
           {
-            "id": "host placeholder",
-            "text": "Search or enter URL",
-            "reasons": []
-          },
-          {
-            "id": "title",
-            "text": "Set Up Olive",
+            "id": "host",
+            "text": "olive://onboarding/welcome",
             "reasons": []
           },
           {
@@ -7197,8 +6657,8 @@
             "reasons": []
           },
           {
-            "id": "btn-ublock",
-            "text": "uBO Lite · on",
+            "id": "title",
+            "text": "Set Up Olive",
             "reasons": []
           },
           {
@@ -7207,7 +6667,7 @@
             "reasons": []
           }
         ],
-        "uiText": "Search or enter URL\nSet Up Olive\n+\nNew Tab\nF\nFixture tab\nuBO Lite · on\nActivity",
+        "uiText": "olive://onboarding/welcome\n+\nNew Tab\nF\nFixture tab\nSet Up Olive\nActivity",
         "viewport": {
           "width": 1360,
           "height": 880
@@ -7228,8 +6688,8 @@
           {
             "title": "Olive",
             "bounds": {
-              "x": 160,
-              "y": 30,
+              "x": 280,
+              "y": 36,
               "width": 1360,
               "height": 880
             }
@@ -7511,37 +6971,12 @@
             "styles": null
           },
           {
-            "id": "setup-row",
-            "rect": {
-              "x": 10,
-              "y": 92,
-              "width": 234,
-              "height": 36
-            },
-            "reasons": [],
-            "pointerEvents": "auto",
-            "styles": null
-          },
-          {
             "id": "newtab",
             "rect": {
               "x": 10,
-              "y": 132,
+              "y": 96,
               "width": 234,
               "height": 36
-            },
-            "reasons": [],
-            "pointerEvents": "auto",
-            "disabled": false,
-            "styles": null
-          },
-          {
-            "id": "btn-ublock",
-            "rect": {
-              "x": 10,
-              "y": 803,
-              "width": 234,
-              "height": 30
             },
             "reasons": [],
             "pointerEvents": "auto",
@@ -7553,8 +6988,8 @@
             "rect": {
               "x": 10,
               "y": 847.546875,
-              "width": 53.1484375,
-              "height": 16.8984375
+              "width": 53.15625,
+              "height": 16.890625
             },
             "reasons": [],
             "pointerEvents": "auto",
@@ -7603,18 +7038,8 @@
         ],
         "text": [
           {
-            "id": "host placeholder",
-            "text": "Search or enter URL",
-            "reasons": []
-          },
-          {
-            "id": "title",
-            "text": "Set Up Olive",
-            "reasons": []
-          },
-          {
-            "id": "setup-left",
-            "text": "3 left",
+            "id": "host",
+            "text": "olive://onboarding/calls",
             "reasons": []
           },
           {
@@ -7638,8 +7063,8 @@
             "reasons": []
           },
           {
-            "id": "btn-ublock",
-            "text": "uBO Lite · on",
+            "id": "title",
+            "text": "Set Up Olive",
             "reasons": []
           },
           {
@@ -7648,7 +7073,7 @@
             "reasons": []
           }
         ],
-        "uiText": "Search or enter URL\nSet Up Olive\n3 left\n+\nNew Tab\nF\nFixture tab\nuBO Lite · on\nActivity",
+        "uiText": "olive://onboarding/calls\n+\nNew Tab\nF\nFixture tab\nSet Up Olive\nActivity",
         "viewport": {
           "width": 1360,
           "height": 880
@@ -7669,8 +7094,8 @@
           {
             "title": "Olive",
             "bounds": {
-              "x": 160,
-              "y": 30,
+              "x": 280,
+              "y": 36,
               "width": 1360,
               "height": 880
             }
@@ -7924,37 +7349,12 @@
             "styles": null
           },
           {
-            "id": "setup-row",
-            "rect": {
-              "x": 10,
-              "y": 92,
-              "width": 234,
-              "height": 36
-            },
-            "reasons": [],
-            "pointerEvents": "auto",
-            "styles": null
-          },
-          {
             "id": "newtab",
             "rect": {
               "x": 10,
-              "y": 132,
+              "y": 96,
               "width": 234,
               "height": 36
-            },
-            "reasons": [],
-            "pointerEvents": "auto",
-            "disabled": false,
-            "styles": null
-          },
-          {
-            "id": "btn-ublock",
-            "rect": {
-              "x": 10,
-              "y": 803,
-              "width": 234,
-              "height": 30
             },
             "reasons": [],
             "pointerEvents": "auto",
@@ -7966,8 +7366,8 @@
             "rect": {
               "x": 10,
               "y": 847.546875,
-              "width": 53.1484375,
-              "height": 16.8984375
+              "width": 53.15625,
+              "height": 16.890625
             },
             "reasons": [],
             "pointerEvents": "auto",
@@ -8016,18 +7416,8 @@
         ],
         "text": [
           {
-            "id": "host placeholder",
-            "text": "Search or enter URL",
-            "reasons": []
-          },
-          {
-            "id": "title",
-            "text": "Set Up Olive",
-            "reasons": []
-          },
-          {
-            "id": "setup-left",
-            "text": "1 left",
+            "id": "host",
+            "text": "olive://onboarding/screen",
             "reasons": []
           },
           {
@@ -8051,8 +7441,8 @@
             "reasons": []
           },
           {
-            "id": "btn-ublock",
-            "text": "uBO Lite · on",
+            "id": "title",
+            "text": "Set Up Olive",
             "reasons": []
           },
           {
@@ -8061,7 +7451,7 @@
             "reasons": []
           }
         ],
-        "uiText": "Search or enter URL\nSet Up Olive\n1 left\n+\nNew Tab\nF\nFixture tab\nuBO Lite · on\nActivity",
+        "uiText": "olive://onboarding/screen\n+\nNew Tab\nF\nFixture tab\nSet Up Olive\nActivity",
         "viewport": {
           "width": 1360,
           "height": 880
@@ -8082,8 +7472,8 @@
           {
             "title": "Olive",
             "bounds": {
-              "x": 160,
-              "y": 30,
+              "x": 280,
+              "y": 36,
               "width": 1360,
               "height": 880
             }
@@ -8432,37 +7822,12 @@
             "styles": null
           },
           {
-            "id": "setup-row",
-            "rect": {
-              "x": 10,
-              "y": 92,
-              "width": 234,
-              "height": 36
-            },
-            "reasons": [],
-            "pointerEvents": "auto",
-            "styles": null
-          },
-          {
             "id": "newtab",
             "rect": {
               "x": 10,
-              "y": 132,
+              "y": 96,
               "width": 234,
               "height": 36
-            },
-            "reasons": [],
-            "pointerEvents": "auto",
-            "disabled": false,
-            "styles": null
-          },
-          {
-            "id": "btn-ublock",
-            "rect": {
-              "x": 10,
-              "y": 803,
-              "width": 234,
-              "height": 30
             },
             "reasons": [],
             "pointerEvents": "auto",
@@ -8474,8 +7839,8 @@
             "rect": {
               "x": 10,
               "y": 847.546875,
-              "width": 53.1484375,
-              "height": 16.8984375
+              "width": 53.15625,
+              "height": 16.890625
             },
             "reasons": [],
             "pointerEvents": "auto",
@@ -8524,18 +7889,8 @@
         ],
         "text": [
           {
-            "id": "host placeholder",
-            "text": "Search or enter URL",
-            "reasons": []
-          },
-          {
-            "id": "title",
-            "text": "Set Up Olive",
-            "reasons": []
-          },
-          {
-            "id": "setup-left",
-            "text": "2 left",
+            "id": "host",
+            "text": "olive://onboarding/import",
             "reasons": []
           },
           {
@@ -8559,8 +7914,8 @@
             "reasons": []
           },
           {
-            "id": "btn-ublock",
-            "text": "uBO Lite · on",
+            "id": "title",
+            "text": "Set Up Olive",
             "reasons": []
           },
           {
@@ -8569,7 +7924,7 @@
             "reasons": []
           }
         ],
-        "uiText": "Search or enter URL\nSet Up Olive\n2 left\n+\nNew Tab\nF\nFixture tab\nuBO Lite · on\nActivity",
+        "uiText": "olive://onboarding/import\n+\nNew Tab\nF\nFixture tab\nSet Up Olive\nActivity",
         "viewport": {
           "width": 1360,
           "height": 880
@@ -8590,8 +7945,8 @@
           {
             "title": "Olive",
             "bounds": {
-              "x": 160,
-              "y": 30,
+              "x": 280,
+              "y": 36,
               "width": 1360,
               "height": 880
             }
@@ -8875,37 +8230,12 @@
             "styles": null
           },
           {
-            "id": "setup-row",
-            "rect": {
-              "x": 10,
-              "y": 92,
-              "width": 234,
-              "height": 36
-            },
-            "reasons": [],
-            "pointerEvents": "auto",
-            "styles": null
-          },
-          {
             "id": "newtab",
             "rect": {
               "x": 10,
-              "y": 132,
+              "y": 96,
               "width": 234,
               "height": 36
-            },
-            "reasons": [],
-            "pointerEvents": "auto",
-            "disabled": false,
-            "styles": null
-          },
-          {
-            "id": "btn-ublock",
-            "rect": {
-              "x": 10,
-              "y": 803,
-              "width": 234,
-              "height": 30
             },
             "reasons": [],
             "pointerEvents": "auto",
@@ -8917,8 +8247,8 @@
             "rect": {
               "x": 10,
               "y": 847.546875,
-              "width": 53.1484375,
-              "height": 16.8984375
+              "width": 53.15625,
+              "height": 16.890625
             },
             "reasons": [],
             "pointerEvents": "auto",
@@ -8967,18 +8297,8 @@
         ],
         "text": [
           {
-            "id": "host placeholder",
-            "text": "Search or enter URL",
-            "reasons": []
-          },
-          {
-            "id": "title",
-            "text": "Set Up Olive",
-            "reasons": []
-          },
-          {
-            "id": "setup-left",
-            "text": "0 left",
+            "id": "host",
+            "text": "olive://onboarding/done",
             "reasons": []
           },
           {
@@ -9002,8 +8322,8 @@
             "reasons": []
           },
           {
-            "id": "btn-ublock",
-            "text": "uBO Lite · on",
+            "id": "title",
+            "text": "Set Up Olive",
             "reasons": []
           },
           {
@@ -9012,7 +8332,7 @@
             "reasons": []
           }
         ],
-        "uiText": "Search or enter URL\nSet Up Olive\n0 left\n+\nNew Tab\nF\nFixture tab\nuBO Lite · on\nActivity",
+        "uiText": "olive://onboarding/done\n+\nNew Tab\nF\nFixture tab\nSet Up Olive\nActivity",
         "viewport": {
           "width": 1360,
           "height": 880

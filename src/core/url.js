@@ -8,7 +8,7 @@ function looksLikeUrl(text) {
   if (/^data:/i.test(t)) return true;
   if (!t || /\s/.test(t)) return false;
   if (/^[a-z][a-z0-9+.-]*:\/\//i.test(t)) return true;
-  if (/^(about|data|view-source|mailto|file|chrome|devtools):/i.test(t)) return true;
+  if (/^(about|data|view-source|mailto|file|chrome|devtools|olive):/i.test(t)) return true;
   if (/^localhost(:\d+)?(\/|$)/i.test(t)) return true;
   if (/^\d{1,3}(\.\d{1,3}){3}(:\d+)?(\/|$)/.test(t)) return true;
   if (/^\[[0-9a-f:]+\](:\d+)?/i.test(t)) return true;

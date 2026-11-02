@@ -48,11 +48,15 @@ document.getElementById('reset').onclick = () => {
 document.getElementById('reset-cancel').onclick = () => { hideReset(); document.getElementById('reset').focus(); };
 document.getElementById('reset-accept').onclick = async () => { render(await window.shortcuts.reset()); hideReset(); document.getElementById('reset').focus(); };
 document.addEventListener('keydown', e => {
-  // The first Escape cancels an in-progress recording; outside it Escape closes.
-  if (e.key === 'Escape' && !e.defaultPrevented && !e.metaKey && !e.ctrlKey && !e.altKey && !e.shiftKey) {
+  // Escape cancels a recording (the field handles it) or the reset prompt. It never closes
+  // the tab: Settings is a normal tab now (cmd+w closes it).
+  if (e.key === 'Escape' && !e.defaultPrevented && !e.metaKey && !e.ctrlKey && !e.altKey && !e.shiftKey && !resetPrompt.hidden) {
     e.preventDefault();
-    if (!resetPrompt.hidden) { hideReset(); document.getElementById('reset').focus(); }
-    else window.shortcuts.close();
+    hideReset(); document.getElementById('reset').focus();
   }
 });
+// while a shortcut field has focus the tab gets every key (cmd+w, ctrl+tab, ...), so they
+// can be recorded; main resumes menu and tab keys on blur or navigation
+document.addEventListener('focusin', e => { if (e.target.closest?.('#commands input')) window.shortcuts.recording(true); });
+document.addEventListener('focusout', e => { if (e.target.closest?.('#commands input')) window.shortcuts.recording(false); });
 window.shortcuts.get().then(render);

@@ -7,21 +7,15 @@ const os = require('node:os');
 const path = require('node:path');
 const powerMonitor = new EventEmitter(), handlers = {};
 let seq = 0, response = 0, dialogOptions, dialogParent, dialogResolve;
-class Panel extends EventEmitter {
-  constructor(owner, options) { super(); this.owner = owner; this.options = options; this.dead = false; owner.appPanel?.close(); owner.appPanel = owner.inlinePage = this; this.webContents = { id: ++seq, mainFrame: {} }; }
-  isDestroyed() { return this.dead; }
-  show() {} focus() {} loadFile(file) { this.file = file; }
-  close() { if (this.dead) return; this.dead = true; this.owner.appPanel = this.owner.inlinePage = null; this.emit('closed'); }
-}
 const load = Module._load;
 Module._load = function(id, ...args) {
-  if (id === './app-panel') return { AppPanel: Panel };
   if (id === 'electron') return { ipcMain: { handle: (key, fn) => handlers[key] = fn }, powerMonitor,
     dialog: { showMessageBox: async (parent, options) => { dialogParent = parent; dialogOptions = options; if (response === 'pending') return new Promise(resolve => dialogResolve = resolve); return { response }; } } };
   return load.call(this, id, ...args);
 };
 const { SiteTimeController, foregroundPage, cachedFavicons, rasterData } = require('../src/main/site-time');
 Module._load = load;
+const { InternalPages } = require('../src/main/internal-pages');
 function fixture(t) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'olive-site-time-controller-'));
   let wall = new Date('2026-10-27T12:00:00').getTime(), mono = 0;
@@ -29,18 +23,28 @@ function fixture(t) {
   const win = Object.assign(new EventEmitter(), { isFocused: () => flags.focused, isVisible: () => flags.visible, isMinimized: () => flags.minimized, isDestroyed: () => flags.destroyed });
   const wc = Object.assign(new EventEmitter(), { isDestroyed: () => flags.wc, getURL: () => tab.url });
   const tab = { id: 1, wc, url: 'https://www.example.com/private?token=secret', view: { getVisible: () => flags.view, getBounds: () => ({ width: 800, height: 600 }) } };
-  const mgr = { dataPath: dir, windows: [] }, owner = { mgr, win, activeId: 1, tabs: new Map([[1, tab]]), visibleIds: () => [1], createTab: data => owner.opened = data };
+  const mgr = { dataPath: dir, windows: [] }, owner = { mgr, win, activeId: 1, tabs: new Map([[1, tab]]), visibleIds: () => [1], createTab: data => owner.opened = data, activate: id => { owner.activeId = id; } };
   mgr.windows.push(owner); mgr.focusedWindow = () => owner;
+  mgr.internal = new InternalPages(mgr); // the real olive:// sender check
   const controller = new SiteTimeController(mgr, { tickMs: 0, now: () => wall, monotonicNow: () => mono });
-  // stand-in for src/main/settings-page.js: hosts the Activities tab and lets the controller adopt it
-  // (the real one moves to a normal window instead of a private one; never inside a private window)
-  mgr.settingsPage = { show(o = mgr.focusedWindow(), tab) {
-    if (tab !== 'activities' || !o || o.isPrivate) return null;
-    if (controller.view && !controller.view.isDestroyed()) return controller.view;
-    const v = new Panel(o, { title: 'Settings' }); v.loadFile('/x/src/ui/site-time.html'); controller.adopt(v); return v;
+  // stand-in for src/main/settings-page.js: Settings > Activities is a tab at
+  // olive://settings/activities (the real one goes to a normal window from a private one)
+  const f = { mgr, owner, tab, flags, controller, dir, settings: null };
+  mgr.settingsPage = { show(o = mgr.focusedWindow(), section) {
+    if (section !== 'activities' || !o || o.isPrivate) return null;
+    if (!f.settings) {
+      const url = 'olive://settings/activities';
+      const wc = Object.assign(new EventEmitter(), { id: ++seq, mainFrame: { url }, isDestroyed: () => false });
+      f.settings = { id: 100 + seq, url, wc };
+      o.tabs.set(f.settings.id, f.settings);
+    }
+    o.activate(f.settings.id);
+    return f.settings;
   } };
   t.after(() => { controller.dispose(); fs.rmSync(dir, { recursive: true, force: true }); });
-  return { mgr, owner, tab, flags, controller, dir, advance(ms) { wall += ms; mono += ms; }, state() { return controller.state('all'); }, event() { return { sender: controller.view.webContents, senderFrame: controller.view.webContents.mainFrame }; } };
+  return Object.assign(f, { advance(ms) { wall += ms; mono += ms; }, state() { return controller.state('all'); }, event() { return { sender: f.settings.wc, senderFrame: f.settings.wc.mainFrame }; },
+    // the Settings tab goes somewhere else (another section, a site)
+    leave(url) { f.settings.url = url; f.settings.wc.mainFrame.url = url; } });
 }
 test('native focus and actual active visible page are the only foreground authority', t => {
   const f = fixture(t); assert.ok(foregroundPage(f.mgr));
@@ -63,17 +67,19 @@ test('suspend and screen locking pause, flush and do not backfill time on resume
   powerMonitor.emit('unlock-screen'); f.advance(1000); assert.equal(f.state().totalSeconds, 4);
   assert.equal(fs.statSync(path.join(f.dir,'site-time.json')).mode & 0o777, 0o600);
 });
-test('activities IPC accepts only its own top frame, cannot appear in private windows', async t => {
-  const f = fixture(t); f.owner.isPrivate = true; f.controller.show(); assert.equal(f.controller.view, null); f.owner.isPrivate = false;
-  f.advance(1000); f.controller.show(); const view = f.controller.view; assert.match(view.file, /site-time\.html$/);
+test('activities IPC accepts only the top frame of a Settings > Activities tab, never in private windows', async t => {
+  const f = fixture(t); f.owner.isPrivate = true; f.controller.show(); assert.equal(f.settings, null); f.owner.isPrivate = false;
+  f.advance(1000); f.controller.show(); const tab = f.settings; assert.equal(tab.url, 'olive://settings/activities');
   const invoke = handlers['olive:site-time'];
-  assert.equal(await invoke({sender:{id:view.webContents.id}},'get'), null);
-  assert.equal(await invoke({sender:view.webContents,senderFrame:{}},'get'), null);
+  assert.equal(await invoke({sender:{id:tab.wc.id}},'get'), null);
+  assert.equal(await invoke({sender:tab.wc,senderFrame:{url:tab.url}},'get'), null, 'a subframe');
+  assert.equal(await invoke({sender:f.tab.wc,senderFrame:f.tab.wc.mainFrame},'get'), null, 'a web tab');
   const event = f.event(); assert.equal((await invoke(event,'get',{range:'all'})).totalSeconds,1);
-  f.advance(10000); assert.equal((await invoke(event,'get',{range:'all'})).totalSeconds,1);
+  f.advance(10000); assert.equal((await invoke(event,'get',{range:'all'})).totalSeconds,1, 'the olive:// tab in front accrues nothing');
   await invoke(event,'open',{site:'evil.example'}); assert.equal(f.owner.opened,undefined);
-  await invoke(event,'open',{site:'example.com'}); assert.deepEqual(f.owner.opened,{url:'https://example.com/',activate:true});
-  assert.equal(await invoke(event,'get'),null);
+  await invoke(event,'open',{site:'example.com'}); assert.deepEqual(f.owner.opened,{url:'https://example.com/',activate:true,afterId:tab.id});
+  f.owner.isPrivate = true; assert.equal(await invoke(event,'get'),null, 'a private window never gets it'); f.owner.isPrivate = false;
+  f.leave('olive://settings/general'); assert.equal(await invoke(event,'get'),null, 'another section');
 });
 test('reset is a native attached confirmation with Cancel default; no ledger or history access', async t => {
   const f = fixture(t); f.advance(2000); f.controller.show(); const invoke=handlers['olive:site-time'], event=f.event();
@@ -82,11 +88,11 @@ test('reset is a native attached confirmation with Cancel default; no ledger or 
 });
 test('pending reset cannot clear another profile or a replacement page', async t => {
   const f=fixture(t); f.advance(1000); f.controller.show(); response='pending'; const result=handlers['olive:site-time'](f.event(),'reset',{range:'all'});
-  f.controller.closeView(); dialogResolve({response:1}); assert.equal(await result,null); assert.equal(f.state().totalSeconds,1); response=0;
+  f.leave('https://example.com/'); dialogResolve({response:1}); assert.equal(await result,null); assert.equal(f.state().totalSeconds,1); response=0;
 });
-test('profile reload closes old trusted page and keeps per-profile data separate', t => {
-  const f=fixture(t); f.advance(1000); f.controller.show(); const event=f.event(); f.controller.pause(); f.mgr.dataPath=path.join(f.dir,'Profiles','other'); f.controller.reload();
-  assert.equal(f.controller.view,null); assert.equal(f.controller.trusted(event),false); assert.equal(f.state().totalSeconds,0);
+test('profile reload: the old profile\'s Activities tab is gone and data stays per profile', t => {
+  const f=fixture(t); f.advance(1000); f.controller.show(); const event=f.event(); f.controller.pause(); f.mgr.windows.splice(0); /* switchProfile closes every window, Settings tabs too */ f.mgr.dataPath=path.join(f.dir,'Profiles','other'); f.controller.reload();
+  assert.ok(!f.controller.trusted(event)); assert.equal(f.state().totalSeconds,0);
   f.mgr.dataPath=f.dir; f.controller.reload(); assert.equal(f.state().totalSeconds,1);
 });
 test('favicons are raster data from normal in-memory entries only, never remote requests or private tabs', () => {

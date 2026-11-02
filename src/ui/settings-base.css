@@ -82,6 +82,9 @@ button {
   font-weight: 500;
   cursor: default;
 }
+/* a link that looks like a button (olive:// pages link to each other) */
+a.button { display: inline-flex; align-items: center; justify-content: center; height: 28px; min-width: 72px; padding: 0 12px; border-radius: 14px; background: var(--kbd); color: var(--text); font-weight: 500; text-decoration: none; cursor: default; }
+a.button:hover { background: var(--pill-hover); }
 button:hover:not(:disabled) { background: var(--pill-hover); }
 button:active:not(:disabled) { filter: brightness(.92); }
 button.primary { background: var(--accent); color: var(--card); }
