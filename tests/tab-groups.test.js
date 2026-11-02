@@ -285,7 +285,7 @@ async function api() {
     const r = await fetch(`http://127.0.0.1:${port}${p}`, { method, headers: { authorization: 'Bearer ' + token, host: '127.0.0.1' }, body: body ? JSON.stringify(body) : undefined });
     return { status: r.status, body: await r.json().catch(() => null) };
   };
-  const close = () => new Promise((r) => server.close(r));
+  const close = () => new Promise((r) => server.close(r)).then(() => fs.rmSync(dir, { recursive: true, force: true }));
   return { w, user, call, close };
 }
 
