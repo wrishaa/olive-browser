@@ -10,6 +10,8 @@ function buildMenu(mgr) {
     else if (type === 'newPrivateWindow') mgr.newWindow({ private: true });
   };
   const shortcut = (id) => mgr.shortcuts ? mgr.shortcuts.accelerator(id) : require('./shortcuts').COMMANDS.find(c => c.id === id)?.accelerator;
+  // works with no window open too (settings-page.js opens a normal window then)
+  const settings = (tab) => () => mgr.settingsPage?.show(mgr.focusedWindow(), tab);
   const hidden = (accelerator, type, args) => ({ label: type, accelerator, click: w(type, args), visible: false, acceleratorWorksWhenHidden: true });
 
   const template = [
@@ -18,12 +20,14 @@ function buildMenu(mgr) {
       submenu: [
         { role: 'about' },
         { type: 'separator' },
+        // one Settings page (olive://settings); the old items open its tabs
+        { label: 'Settings…', accelerator: shortcut('settings'), click: settings('general') },
         { label: 'Profiles…', click: () => mgr.profileControls?.show() },
-        { label: 'Activities — Site Time…', click: w('activities') },
+        { label: 'Activities — Site Time…', click: settings('activities') },
         { label: 'Activity Event Log…', click: w('ledger') },
         { label: 'Set Up Olive…', click: () => mgr.onboarding?.show() },
-        { label: 'Extensions…', click: w('extensions') },
-        { label: 'Keyboard Shortcuts…', accelerator: shortcut('settings'), click: () => mgr.shortcuts?.showSettings(mgr.focusedWindow()) },
+        { label: 'Extensions…', click: settings('extensions') },
+        { label: 'Keyboard Shortcuts…', click: settings('shortcuts') },
         { type: 'separator' },
         { label: 'Set as Default Browser…', click: () => mgr.makeDefault() },
         { label: 'Import from Browser…', click: () => mgr.onboarding?.showImport() },

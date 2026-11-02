@@ -58,7 +58,7 @@ try {
   check((await state()).totalSeconds===before,'inline activities excludes underlying page time');
   const layout=await app.evaluate(({BaseWindow})=>{const w=global.olive.focusedWindow(),p=w.inlinePage,{width,height}=w.win.getContentBounds();return {count:BaseWindow.getAllWindows().filter(w=>w.isVisible()).length,embedded:w.win.contentView.children.includes(p.content),bounds:p.content.getBounds(),expected:{x:w.sidebarWidth,y:8,width:width-w.sidebarWidth-8,height:height-16}};});
   assert.deepEqual(layout.bounds,layout.expected);check(layout.count===1&&layout.embedded,'activities is full browser-pane inline view, never a popup');
-  check(await app.evaluate(()=>global.olive.focusedWindow().snapshot().appPage?.title==='Activities — Site Time'),'activities snapshot exposes inline title and close row');
+  check(await app.evaluate(()=>global.olive.focusedWindow().snapshot().appPage?.title==='Settings'),'activities (Settings > Activities) snapshot exposes inline title and close row');
   check((await page.evaluate(()=>window.oliveSiteTime.get('all'))).siteCount===1,'trusted renderer main-frame IPC returns host-only data');
   check(!(await page.locator('#time-rows').innerText()).includes('private-path'),'UI never contains a path or query');
   await page.locator('#seg-today').click();await poll(async()=>await page.locator('#seg-today').getAttribute('aria-selected')==='true');

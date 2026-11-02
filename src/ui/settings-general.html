@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self'; script-src 'self'">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Settings — General</title>
+<link rel="stylesheet" href="settings-base.css"><link rel="stylesheet" href="settings-general.css"><link rel="stylesheet" href="settings-shell.css">
+</head>
+<body data-tab="general">
+<main>
+  <section id="unloading" class="card-section" aria-labelledby="unloading-title">
+    <h2 id="unloading-title">Tab unloading</h2>
+    <p class="intro">Tabs you haven’t looked at for a while give their memory back. They stay in the sidebar with their title and icon, and reload when you open them.</p>
+    <div class="group">
+      <div class="setting">
+        <label for="unloadAfterMinutes"><span class="label">Unload tabs after</span><span class="hint">Tabs that aren’t pinned. 0 = never. Default 120 (2 hours).</span></label>
+        <span class="field"><input id="unloadAfterMinutes" data-key="unloadAfterMinutes" type="number" min="0" step="1" inputmode="numeric"><span class="unit">minutes</span></span>
+      </div>
+      <div class="setting">
+        <label for="pinnedUnloadAfterMinutes"><span class="label">Unload pinned tabs after</span><span class="hint">Pinned tabs. 0 = never. Default 480 (8 hours).</span></label>
+        <span class="field"><input id="pinnedUnloadAfterMinutes" data-key="pinnedUnloadAfterMinutes" type="number" min="0" step="1" inputmode="numeric"><span class="unit">minutes</span></span>
+      </div>
+      <div class="setting">
+        <label for="capOn"><span class="label">Limit loaded tabs</span><span class="hint">Off by default. When more tabs are loaded than this, the ones you looked at longest ago unload first; pinned tabs only after every other tab.</span></label>
+        <span class="field"><input id="capOn" class="switch" type="checkbox" aria-label="Limit loaded tabs"><input id="maxLoadedTabs" data-key="maxLoadedTabs" type="number" min="1" step="1" inputmode="numeric" aria-label="Maximum loaded tabs"><span class="unit">tabs</span></span>
+      </div>
+    </div>
+    <p class="note" id="exempt"></p>
+    <div class="row-actions"><button id="unload-defaults" type="button">Restore defaults</button><span id="unload-status" role="status" aria-live="polite"></span></div>
+  </section>
+
+  <section id="permissions" class="card-section" aria-labelledby="permissions-title">
+    <h2 id="permissions-title">Site permissions</h2>
+    <p class="intro">Camera, microphone, screen sharing and other choices you made per site in this profile. Ask clears the saved choice; reload the site for a change to apply.</p>
+    <div id="sites" class="group"></div>
+    <h3>macOS access</h3>
+    <p class="note">macOS must also allow Olive to use these devices.</p>
+    <div id="system" class="group"></div>
+    <span id="permissions-status" role="status" aria-live="polite"></span>
+  </section>
+
+  <section id="agent" class="card-section" aria-labelledby="agent-title">
+    <h2 id="agent-title">Agent access</h2>
+    <p class="intro">Local endpoints that let agents and scripts drive Olive (127.0.0.1 only). Changes take effect after you relaunch Olive.</p>
+    <div class="group">
+      <div class="setting">
+        <label for="agentApi"><span class="label">Olive agent API</span><span class="hint" id="agentApi-hint">Tabs, eval and screenshots over a token-protected local API.</span></label>
+        <input id="agentApi" data-key="agentApi" class="switch" type="checkbox">
+      </div>
+      <div class="setting">
+        <label for="cdp"><span class="label">Chrome DevTools Protocol port</span><span class="hint" id="cdp-hint">Lets tools like Playwright connect. Any local program can then control the browser, and Google may refuse sign-in while it is on.</span></label>
+        <input id="cdp" data-key="cdp" class="switch" type="checkbox">
+      </div>
+    </div>
+    <span id="agent-status" role="status" aria-live="polite"></span>
+  </section>
+</main>
+<script src="settings-nav.js"></script><script src="settings-general.js"></script>
+</body>
+</html>

@@ -180,7 +180,7 @@ try {
   let page = await settingsPage(app);
   await page.locator('.ext').first().waitFor();
   s = await mainState(app);
-  check(s.panel === 'Extensions', 'cmd "extensions" opens the inline Extensions page', s);
+  check(s.panel === 'Settings' && /\/extensions\.html/.test(s.panelURL), 'cmd "extensions" opens Settings > Extensions inline', s);
   const sw = await page.evaluate(() => [...document.querySelectorAll('input.switch')].map(e => { const r = e.getBoundingClientRect(), c = getComputedStyle(e); return { w: Math.round(r.width), h: Math.round(r.height), bg: c.backgroundColor }; }));
   check(sw.length === 2 && sw.every(x => x.w === 32 && x.h === 19 && x.bg !== 'rgba(0, 0, 0, 0)'), 'switches render as 32x19 tracks with a visible background', sw);
   const row = () => page.evaluate(() => { const r = document.querySelector('.ext'), img = r.querySelector('img.icon'); return { count: document.querySelectorAll('.ext').length, name: r.querySelector('.name').textContent, version: r.querySelector('.version').textContent, icon: img.complete && img.naturalWidth > 0, enabled: r.querySelector('[data-key=enabled]').checked, toolbar: r.querySelector('[data-key=showInToolbar]').checked, options: !r.querySelector('button.options').disabled }; });
@@ -188,7 +188,7 @@ try {
   check(r.count === 1 && r.name === 'uBO Lite' && /^Version \d{4}\.\d+\.\d+$/.test(r.version) && r.icon, 'page lists uBO Lite with version and icon', r);
   check(r.enabled && !r.toolbar && r.options, 'enabled on, show-in-toolbar off, options button available', r);
   const sideRow = await ui.evaluate(() => !document.querySelector('#settings-row').hidden && document.querySelector('#settings-row .title').textContent);
-  check(sideRow === 'Extensions', 'sidebar shows the Extensions app-page row', sideRow);
+  check(sideRow === 'Settings', 'sidebar shows the Settings app-page row', sideRow);
   if (wantShots) for (const theme of ['light', 'dark']) { await setTheme(app, ui, theme); await page.emulateMedia({ colorScheme: theme }); await pause(150); written.push(await composite(app, path.join(shots, `extensions-settings-${theme}.png`), theme)); }
 
   // IPC guard: the web tab cannot call the page's channel (no preload there) and

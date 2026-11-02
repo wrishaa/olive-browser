@@ -136,42 +136,59 @@ try {
   assert.equal(items.find(x=>x.label==='Next Recently Used Tab').accelerator,'Ctrl+Tab');
   assert.ok(items.some(x=>x.accelerator==='Cmd+Alt+Down'));
   assert.ok(items.some(x=>x.accelerator==='Cmd+9'));
-  // Settings use the existing owner window's AppPanel, not a BrowserWindow.
+  // menu: Olive > Settings… owns Cmd+, (command id 'settings'); Keyboard Shortcuts… has no accelerator
+  assert.equal(items.find(x=>x.label==='Settings…').accelerator,'Cmd+,');
+  assert.equal(items.find(x=>x.label==='Keyboard Shortcuts…').accelerator,undefined);
+  assert.equal(COMMANDS.find(c=>c.id==='settings').label,'Settings');
+  assert.equal(items.filter(x=>x.accelerator==='Cmd+,').length,1,'nothing else on Cmd+,');
+  // The remapping UI is the Shortcuts tab of the one Settings page: an AppPanel in the owner window.
   const handlers = new Map();
-  const ipcMain = {handle:(key,fn)=>handlers.set(key,fn),removeHandler:key=>handlers.delete(key)};
+  const ipcMain = {handle:(key,fn)=>{ if(handlers.has(key)) throw new Error('second handler for '+key); handlers.set(key,fn); },removeHandler:key=>handlers.delete(key)};
   let panelCount=0;
   class Panel extends EventEmitter {
     constructor(owner,options) {
       super(); this.owner=owner;this.options=options;panelCount++;
-      this.webContents=Object.assign(new EventEmitter(),{mainFrame:{},setIgnoreMenuShortcuts(value){this.ignoreMenus=value;},setWindowOpenHandler(fn){this.openHandler=fn;}});
+      this.webContents=Object.assign(new EventEmitter(),{id:900+panelCount,mainFrame:{},setIgnoreMenuShortcuts(value){this.ignoreMenus=value;},setWindowOpenHandler(fn){this.openHandler=fn;},loadFile:(file)=>{this.file=file;return Promise.resolve();},isDestroyed:()=>!!this.closed});
     }
-    loadFile(file){this.file=file;return Promise.resolve();}
     isDestroyed(){return !!this.closed;}
     show(){this.shown=true;}
     focus(){this.focused=true;}
     close(){this.closed=true;this.emit('closed');}
   }
-  const panelShortcuts = new Shortcuts({dataPath:dir,focusedWindow:()=>w},{onChange:()=>{}});
+  const pmgr = {dataPath:dir,windows:[w],settings:{},focusedWindow:()=>w};
+  const panelShortcuts = new Shortcuts(pmgr,{onChange:()=>{}});
+  pmgr.shortcuts = panelShortcuts;
+  w.sendState = () => {};
   Module._load=function(id,...args){
-    if(id==='electron')return {ipcMain};
+    if(id==='electron')return {ipcMain,shell:{}};
     if(id==='./app-panel')return {AppPanel:Panel};
     return oldLoad.call(this,id,...args);
   };
   let panel;
-  try {panel=panelShortcuts.showSettings();} finally {Module._load=oldLoad;}
+  try {
+    const { SettingsPage } = require('../src/main/settings-page');
+    pmgr.settingsPage = new SettingsPage(pmgr);
+    panel=panelShortcuts.showSettings();
+  } finally {Module._load=oldLoad;}
   await Promise.resolve();
-  assert.equal(panel.owner,w);assert.equal(panelCount,1);assert.ok(panel.shown&&panel.focused);
+  assert.equal(panel.owner,w);assert.equal(panelCount,1);
   assert.ok(panel.options.captureEscape);assert.ok(panel.webContents.ignoreMenus);
   assert.ok(panel.file.endsWith('/shortcuts.html'));
-  assert.equal(panelShortcuts.showSettings(w),panel);assert.equal(panelCount,1);
+  assert.equal(panelShortcuts.showSettings(w),panel);assert.equal(panelCount,1);assert.ok(panel.shown&&panel.focused);
   const handle=handlers.get('olive:shortcuts');
   assert.equal(handle({sender:{},senderFrame:{}},'reset'),null);
   assert.equal(handle({sender:panel.webContents,senderFrame:{}},'reset'),null);
   const event={sender:panel.webContents,senderFrame:panel.webContents.mainFrame};
   assert.equal(handle(event,'set',{id:'mruNext',value:'Cmd+Alt+K'}).commands.find(c=>c.id==='mruNext').value,'Cmd+Alt+K');
   assert.match(handle(event,'set',{id:'reload',value:'Cmd+Alt+K'}).error,/Already used/);
+  assert.match(handle(event,'set',{id:'reload',value:'Cmd+,'}).error,/Already used by Settings/);
   assert.equal(handle(event,'reset').commands.find(c=>c.id==='mruNext').value,'Ctrl+Tab');
+  // other tabs of the same page keep menu shortcuts and let Escape close the page
+  pmgr.settingsPage.show(w,'extensions');
+  assert.ok(panel.file.endsWith('/extensions.html'));assert.equal(panel.webContents.ignoreMenus,false);assert.equal(panel.options.captureEscape,false);assert.equal(panelCount,1);
+  pmgr.settingsPage.show(w,'shortcuts');
   assert.equal(handle({sender:{},senderFrame:{}},'close'),null);assert.equal(panel.closed,undefined);
   assert.equal(handle(event,'close'),null);assert.equal(panelShortcuts.view,null);assert.equal(handlers.has('olive:shortcuts'),false);
+  assert.equal(pmgr.settingsPage.view,null);
   console.log('shortcuts + MRU tests passed (isolated profiles, live menu, real window input hooks, embedded settings panel + IPC guards)');
 } finally { rmSync(dir,{recursive:true,force:true}); }

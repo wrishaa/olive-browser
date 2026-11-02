@@ -56,7 +56,7 @@ async function openSettings() {
 }
 async function closeSettings(method='sidebar') {
   try {
-    if (method==='escape') {await settings.locator('h1').click();await settings.keyboard.press('Escape');}
+    if (method==='escape') {await settings.locator('header p').first().click();await settings.keyboard.press('Escape');}
     else {
       await app.evaluate((_,id)=>{const w=global.olive.windows.find(w=>w.id===id);if(w.sidebarHidden)w.toggleSidebar();w.win.focus();},win.id);
       await ui.locator('#settings-row').hover();
@@ -187,16 +187,16 @@ try {
   assert.equal((await settings.evaluate(()=>shortcuts.get())).commands.find(c=>c.id==='stop').value,'');
   await remap('stop','Stop','F6','F6');
   assert.equal((await settings.evaluate(()=>shortcuts.get())).commands.find(c=>c.id==='stop').value,'F6');
-  await settings.getByRole('button',{name:'reset all to defaults',exact:true}).click();
+  await settings.getByRole('button',{name:'Reset all to defaults',exact:true}).click();
   await settings.keyboard.press('Escape');
   assert.equal(settings.isClosed(),false);
   assert.equal(await settings.locator('#reset-confirm').isVisible(),false);
-  await settings.getByRole('button',{name:'reset all to defaults',exact:true}).click();
-  await settings.getByRole('button',{name:'cancel',exact:true}).click();
+  await settings.getByRole('button',{name:'Reset all to defaults',exact:true}).click();
+  await settings.getByRole('button',{name:'Cancel',exact:true}).click();
   assert.equal(await settings.locator('#mruNext').inputValue(),'⌥⌘K');
   assert.equal(await settings.locator('#mruNext').getAttribute('data-accelerator'),'Cmd+Alt+K');
-  await settings.getByRole('button',{name:'reset all to defaults',exact:true}).click();
-  await settings.getByRole('button',{name:'reset shortcuts',exact:true}).click();
+  await settings.getByRole('button',{name:'Reset all to defaults',exact:true}).click();
+  await settings.getByRole('button',{name:'Reset shortcuts',exact:true}).click();
   await wait(()=>settings.locator('#mruNext').getAttribute('data-accelerator').then(v=>v==='Ctrl+Tab'), 'reset defaults');
   assert.equal(await settings.locator('#mruNext').inputValue(),'⌃⇥');
   assert.equal(await settings.locator('#mruPrev').inputValue(),'⌃⇧⇥');

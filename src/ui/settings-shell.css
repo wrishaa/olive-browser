@@ -1,0 +1,19 @@
+/* Settings page frame shared by its tab documents: title, tab bar, one width. Loaded last. */
+body { max-width: 960px; padding: 28px 40px 40px; }
+#settings-tabs { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 20px; margin: 0 0 26px; padding-bottom: 14px; border-bottom: 1px solid var(--line); }
+#settings-tabs .settings-title { font-size: 20px; letter-spacing: -.4px; margin: 0; }
+.settings-tablist { display: flex; justify-self: start; padding: 3px; gap: 2px; border-radius: 9px; background: var(--kbd); }
+.settings-tablist button { height: 26px; min-width: 0; padding: 0 14px; border-radius: 6px; background: transparent; font-size: 12px; font-weight: 500; color: var(--text-dim); }
+.settings-tablist button:hover:not([aria-selected="true"]) { background: color-mix(in srgb, var(--text) 8%, transparent); }
+.settings-tablist button[aria-selected="true"] { background: var(--card); color: var(--text); box-shadow: var(--row-active-shadow); }
+.settings-url { font: 11px ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--text-dim); }
+/* the tab documents' own page titles become section titles under the tab bar */
+body > main > h1:first-child, body > header > h1:first-child, .page-header h1 { font-size: 15px; letter-spacing: -.2px; }
+@media (max-width: 720px) { #settings-tabs { grid-template-columns: 1fr; gap: 10px; } .settings-url { display: none; } }
+/* one content width on every tab (the pages had their own 720/760/840 caps) */
+body > main, body > header, body > main#site-time-page { max-width: none; }
+/* the tab bar names the page: drop the title that repeats it */
+body[data-tab="shortcuts"] > header > h1, body[data-tab="extensions"] > main > h1 { display: none; }
+body[data-tab="shortcuts"] > header > p:first-of-type, body[data-tab="extensions"] > main > p:first-of-type { margin-top: 0; }
+body[data-tab="shortcuts"] #status { min-height: 0; margin: 4px 0 0; }
+body[data-tab="shortcuts"] #status:empty { display: none; }

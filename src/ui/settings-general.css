@@ -1,0 +1,46 @@
+/* Settings > General. Layout only; settings-base.css owns colors and controls. */
+.card-section { margin: 0 0 34px; scroll-margin-top: 20px; }
+.card-section h2 { font-size: 14px; margin: 0 0 4px; }
+.card-section h3 { font-size: 13px; font-weight: 600; margin: 22px 0 2px; }
+.intro { margin: 0 0 12px; font-size: 12px; max-width: 640px; }
+.group { border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.setting { display: flex; align-items: center; justify-content: space-between; gap: 24px; min-height: 52px; padding: 9px 14px; }
+.setting + .setting, .site + .site, .os + .os { border-top: 1px solid var(--line); }
+.setting label { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.setting .label { color: var(--text); }
+.setting .hint { font-size: 11px; color: var(--text-dim); line-height: 1.4; max-width: 470px; }
+.field { display: flex; align-items: center; gap: 8px; flex: none; }
+.field input[type="number"] { width: 76px; text-align: right; font-variant-numeric: tabular-nums; }
+.field input[type="number"]::-webkit-inner-spin-button, .field input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+.field input[type="number"]:focus-visible { outline-offset: 0; }
+.field input[type="number"]:disabled { opacity: .45; }
+.field .unit { width: 52px; color: var(--text-dim); font-size: 12px; }
+.field input[aria-invalid="true"] { border-color: #c4473a; }
+#exempt { margin: 10px 0 0; line-height: 1.5; }
+.row-actions { display: flex; align-items: center; gap: 12px; margin-top: 10px; }
+.row-actions button, .site button, .os button { height: 24px; min-width: 0; padding: 0 12px; border-radius: 12px; font-size: 12px; }
+[role="status"] { font-size: 12px; color: var(--text-dim); min-height: 15px; }
+.site summary { display: flex; align-items: center; gap: 10px; min-height: 42px; padding: 0 14px; list-style: none; cursor: default; }
+.site summary::-webkit-details-marker { display: none; }
+.site summary::before { content: ''; width: 6px; height: 6px; border-right: 1.5px solid var(--text-dim); border-bottom: 1.5px solid var(--text-dim); transform: rotate(-45deg); transition: transform .12s; flex: none; }
+.site[open] summary::before { transform: rotate(45deg); }
+.site .origin { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text); }
+.site .badge { font-size: 11px; color: var(--text-dim); }
+.site .badge.current { color: var(--accent); }
+.site .perms { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 24px; padding: 4px 14px 12px 30px; }
+.site .perm { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 12px; }
+.site .perm select { width: 92px; height: 24px; font-size: 12px; padding: 2px 24px 2px 8px; background-position: calc(100% - 11px) 9px, calc(100% - 7px) 9px; }
+.site .forget { margin: 0 14px 12px 30px; }
+.empty { padding: 12px 14px; margin: 0; font-size: 12px; }
+.os { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 40px; padding: 0 14px; font-size: 12px; }
+.os .state { color: var(--text-dim); margin-left: 8px; }
+/* macOS-style switch (same as Extensions) */
+input.switch[type="checkbox"] { appearance: none; position: relative; flex: none; width: 32px; height: 19px; margin: 0; padding: 0; border: 0; border-radius: 10px;
+  background: color-mix(in srgb, var(--text) 32%, transparent); transition: background .15s; }
+@media (prefers-color-scheme: dark) { input.switch[type="checkbox"]:not(:checked) { background: color-mix(in srgb, var(--text) 26%, transparent); } }
+input.switch[type="checkbox"]::after { content: ''; position: absolute; top: 2px; left: 2px; width: 15px; height: 15px; border-radius: 50%; background: #fff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 0 0 .5px rgba(0, 0, 0, .08); transition: transform .15s; }
+input.switch[type="checkbox"]:checked { background: var(--accent); }
+input.switch[type="checkbox"]:checked::after { transform: translateX(13px); }
+.section-flash { animation: flash 1.2s ease-out; border-radius: 8px; }
+@keyframes flash { from { box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 35%, transparent); } to { box-shadow: 0 0 0 4px transparent; } }

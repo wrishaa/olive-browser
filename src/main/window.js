@@ -7,6 +7,7 @@ const { COMMANDS } = require('./shortcuts');
 const { matchesInput, holdForInput, holdReleased, holdRepressed, cancelsWalk } = require('./shortcut-input');
 const { toUrl, displayHost, SEARCH } = require('../core/url');
 const { commandSuggestions, isAppCommand } = require('../core/app-commands');
+const { parseSettingsUrl, settingsUrl, TAB_TITLES } = require('../core/settings-url');
 const TG = require('../core/tab-groups');
 const TM = require('../core/tab-meta');
 
@@ -292,6 +293,9 @@ class OliveWindow {
     tab.view = view;
     tab.crashed = false;
     tab.targetId = null;
+    tab.loadedAt = this.mgr.now ? this.mgr.now() : Date.now(); // tab unloading: idle counts from here at the earliest
+    tab.dirty = false;
+    tab.capturing = false;
     view.setBorderRadius(RADIUS);
     view.setBackgroundColor('#ffffffff');
     view.setVisible(false);
@@ -309,6 +313,7 @@ class OliveWindow {
   wireTab(tab) {
     const wc = tab.view.webContents;
     this.wireTabKeys(wc);
+    this.wireDirtyInput(tab, wc);
     wc.setVisualZoomLevelLimits(1, 4).catch(() => {});
 
     wc.setWindowOpenHandler(({ url, disposition, features }) => {
@@ -365,6 +370,9 @@ class OliveWindow {
       if (details.isMainFrame && !details.isSameDocument && !details.url.startsWith('data:text/html;olive-error')) tab.errorFor = null;
     });
     wc.on('did-navigate', (_e, url) => {
+      // a new main document (link, reload, back/forward): typed input and capture are gone
+      tab.dirty = false;
+      tab.capturing = false;
       if (url.startsWith('data:text/html;olive-error')) return;
       if (!tab.committedUrl || displayHost(url) !== displayHost(tab.committedUrl)) tab.favicon = '';
       tab.committedUrl = url;
@@ -410,6 +418,8 @@ class OliveWindow {
       this.sendState();
     });
     wc.on('render-process-gone', (_e, d) => {
+      tab.dirty = false;
+      tab.capturing = false;
       if (d.reason === 'clean-exit') return;
       tab.crashed = true;
       tab.loading = false;
@@ -527,9 +537,11 @@ class OliveWindow {
     if (next != null) this.activate(next);
   }
 
-  unload(tab) {
-    if (tab.view) this.recordActivity('tab-unload', { tabId: tab.id, url: tab.url });
+  unload(tab, { reason = 'user' } = {}) {
+    if (tab.view) this.recordActivity('tab-unload', { tabId: tab.id, url: tab.url, reason });
     this.dropDevtools(tab);
+    tab.dirty = false;
+    tab.capturing = false;
     if (tab.view) {
       const view = tab.view;
       tab.view = null;
@@ -1417,13 +1429,14 @@ class OliveWindow {
       case 'onboarding': return this.mgr.onboarding?.show();
       case 'importBrowser': return this.mgr.onboarding?.showImport();
       case 'onboardingLater': return this.mgr.onboarding?.command('later');
-      case 'shortcuts': return this.mgr.shortcuts?.showSettings(this);
-      case 'activities': return this.mgr.siteTime?.show(this);
-      case 'settings': return this.mgr.shortcuts?.showSettings(this);
+      // one Settings page; the old page names open its tabs (src/main/settings-page.js)
+      case 'settings': return this.mgr.settingsPage?.show(this, a.tab || 'general', { section: a.section || null });
+      case 'shortcuts': return this.mgr.settingsPage?.show(this, 'shortcuts');
+      case 'activities': return this.mgr.settingsPage?.show(this, 'activities');
       case 'ledger': return this.mgr.ledgerUI ? this.mgr.ledgerUI.show(this) : require('./ledger-review').show(this);
       case 'ublock': return this.mgr.extensions?.open(this);
-      case 'extensions': return this.mgr.extensionSettings?.show(this);
-      case 'sitePermissions': return this.mgr.permissions.showSettings(this);
+      case 'extensions': return this.mgr.settingsPage?.show(this, 'extensions');
+      case 'sitePermissions': return this.mgr.settingsPage?.show(this, 'general', { section: 'permissions' });
       case 'resetPermissions': this.mgr.permissions.reset(this); break;
       case 'newTab': return this.openPalette('new');
       case 'splitNew': return this.openPalette('split');
@@ -1518,9 +1531,16 @@ class OliveWindow {
     const pendingGroup = this.pendingGroup;
     this.pendingGroup = null;
     if (item?.kind === 'command') {
+      if (item.commandId === 'settings') {
+        const target = parseSettingsUrl(item.url || '') || { tab: 'general' };
+        return this.cmd('settings', target);
+      }
       if (isAppCommand(item.commandId)) return this.cmd(item.commandId);
       return;
     }
+    // olive://settings[/tab] (and the old page names) typed or pasted: the Settings page
+    const settingsTarget = parseSettingsUrl(item?.url || input);
+    if (settingsTarget) return this.cmd('settings', settingsTarget);
     if (item && item.kind === 'tab') {
       const w = this.mgr.windows.find((x) => x.tabs.has(item.tabId));
       if (w) {
@@ -1539,6 +1559,27 @@ class OliveWindow {
     if (mode === 'edit' && active) return this.navigate(active, url);
     if (pendingGroup != null && this.groups.has(pendingGroup)) return this.createTab({ url, groupId: pendingGroup });
     this.createTab({ url });
+  }
+
+  // tab unloading never drops a page the user typed into (an unsent message, a half-filled
+  // form). a key that edits text, typed while focus is in an editable field of the page,
+  // marks the tab dirty until its next main-document navigation / reload / crash / unload.
+  // the field check runs in the focused frame (cross-origin iframes too) only on the first
+  // such key, so it costs one tiny script per page, not one per keystroke.
+  // limits: paste from the context menu, drag-and-drop, autofill and IME composition
+  // without a key event don't count; a page can't clear it by itself (no submit detection),
+  // only navigating does. see notes/settings-and-unloading.md.
+  wireDirtyInput(tab, wc) {
+    let checking = false;
+    wc.on('before-input-event', (_event, input) => {
+      if (tab.dirty || checking || input.type !== 'keyDown' || !editingKey(input)) return;
+      const frame = wc.focusedFrame || wc.mainFrame;
+      if (!frame) return;
+      checking = true;
+      frame.executeJavaScript(EDITABLE_FOCUS_CHECK, false).then((editable) => {
+        if (editable === true && !tab.dirty && tab.wc === wc) { tab.dirty = true; this.changed(); }
+      }).catch(() => {}).finally(() => { checking = false; });
+    });
   }
 
   wireTabKeys(wc) {
@@ -1645,7 +1686,10 @@ class OliveWindow {
   suggest(query) {
     const q = (query || '').trim();
     const out = commandSuggestions(q);
-    if (q) {
+    const settingsTarget = parseSettingsUrl(q);
+    if (settingsTarget) {
+      out.unshift({ kind: 'command', commandId: 'settings', title: settingsTarget.tab === 'general' ? 'Settings' : `Settings — ${TAB_TITLES[settingsTarget.tab]}`, sub: settingsUrl(settingsTarget.tab), url: settingsUrl(settingsTarget.tab) });
+    } else if (q) {
       const url = toUrl(q);
       const isSearch = url.startsWith(SEARCH);
       out.push(isSearch ? { kind: 'search', title: q, url, sub: 'Search Google' } : { kind: 'url', title: url.replace(/^https?:\/\//, ''), url, sub: 'Open' });
@@ -1689,6 +1733,27 @@ class OliveWindow {
     this.mgr.onWindowClosed(this);
   }
 }
+
+// keys that change the text of a field: printable characters, delete keys, enter (textareas),
+// and cmd+v / cmd+x paste and cut. not navigation keys or other shortcuts.
+function editingKey(input) {
+  const k = input.key || '';
+  if (input.meta || input.control) return !input.alt && /^[vx]$/i.test(k);
+  return k.length === 1 || k === 'Backspace' || k === 'Delete' || k === 'Enter' || k === 'Process' || k === 'Dead';
+}
+
+// runs in the page's focused frame: is focus in a field the user can type into?
+const EDITABLE_FOCUS_CHECK = `(() => {
+  let e = document.activeElement;
+  while (e && e.shadowRoot && e.shadowRoot.activeElement) e = e.shadowRoot.activeElement;
+  if (!e) return false;
+  if (e.isContentEditable) return true;
+  if (e.disabled || e.readOnly) return false;
+  if (e.tagName === 'TEXTAREA') return true;
+  if (e.tagName !== 'INPUT') return false;
+  const t = (e.getAttribute('type') || 'text').toLowerCase();
+  return !['button','submit','reset','checkbox','radio','range','color','file','image','hidden'].includes(t);
+})()`;
 
 function clamp(v, lo, hi) {
   return Math.max(lo, Math.min(hi, v));

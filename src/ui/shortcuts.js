@@ -33,7 +33,7 @@ function render(result) {
       const key = codes[e.code] || keys[e.key] || (e.key.length === 1 ? e.key.toUpperCase() : e.key);
       setRecordedShortcut(input, [...(e.metaKey ? ['Cmd'] : []), ...(e.ctrlKey ? ['Ctrl'] : []), ...(e.altKey ? ['Alt'] : []), ...(e.shiftKey ? ['Shift'] : []), key].join('+'));
     });
-    const save = document.createElement('button'); save.textContent = 'save'; save.setAttribute('aria-label', `save ${command.label}`);
+    const save = document.createElement('button'); save.textContent = 'Save'; save.setAttribute('aria-label', `save ${command.label}`);
     save.onclick = async () => render(await window.shortcuts.set(command.id, input.dataset.accelerator));
     row.append(label,input,save); return row;
   }));

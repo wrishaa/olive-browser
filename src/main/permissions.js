@@ -61,6 +61,13 @@ class Permissions {
     });
   }
   origin(raw) { try { const u = new URL(raw); return ['https:','http:'].includes(u.protocol) ? u.origin : null; } catch { return null; } }
+  // tab unloading must not drop a tab in a call. electron 44 has no "is capturing" signal
+  // (isCurrentlyAudible is playback only), so a tab whose camera / mic / screen request was
+  // granted counts as capturing until its next main-document navigation, reload or unload
+  // (window.js clears it). conservative: a call that ended without leaving the page keeps it.
+  markCapturing(wc) {
+    for (const w of this.mgr.windows) for (const t of w.tabs.values()) if (t.wc && t.wc === wc) t.capturing = true;
+  }
   windowFor(wc) { return this.mgr.windows.find(w => [...w.tabs.values()].some(t => t.wc === wc)); }
   keys(origin, permission, details = {}) {
     if (permission !== 'media') return [`${origin}|${permission}`];
@@ -140,6 +147,7 @@ class Permissions {
           if (!source || !request.frame || wc.isDestroyed()) return callback(null);
           // Never select a screen automatically. No system-audio loopback on macOS.
           callback({ video: source });
+          this.markCapturing(wc);
         } catch { callback(null); }
       });
     }, { useSystemPicker: false });
@@ -180,6 +188,7 @@ class Permissions {
     else if (allow) for (const key of p.keys) this.grants(p.wc).add(key);
     this.mgr.ledger?.record('permission', { origin:p.origin, permission:p.permission, allowed:!!allow, remember:!!remember, private:p.win.isPrivate });
     try { p.callback(allow); } catch {}
+    if (allow && p.permission === 'media') this.markCapturing(p.wc);
     this.broadcast();
     this.refresh(p.win);
   }
@@ -193,6 +202,51 @@ class Permissions {
   }
   settingsState(e) {
     return { origin: e.origin, permissions: settingsPermissions.map(([key,label]) => ({ key,label,value: e.choices[`${e.origin}|${key}`] === true ? 'allow' : e.choices[`${e.origin}|${key}`] === false ? 'block' : 'ask' })), system: { microphone:this.status('microphone'),camera:this.status('camera'),screen:this.status('screen') }, screenSetup: { requested:this.screenSetupRequested, appPath:process.platform === 'darwin' && app.isPackaged ? path.dirname(path.dirname(app.getPath('exe'))) : null } };
+  }
+  // ---- the Site permissions section of Settings > General (every site, this profile) ----
+  // current: the origin of the tab that was active when Settings opened (listed first,
+  // even without saved choices). private windows' choices are never listed here.
+  globalState(current = null) {
+    const choices = this.mgr.perms.data, sites = new Map();
+    const site = origin => { if (!sites.has(origin)) sites.set(origin, {}); return sites.get(origin); };
+    const cur = this.origin(current);
+    if (cur) site(cur);
+    for (const [k, v] of Object.entries(choices)) {
+      const i = k.indexOf('|'); if (i < 0 || typeof v !== 'boolean') continue;
+      const origin = this.origin(k.slice(0, i)); if (!origin) continue;
+      site(origin)[k.slice(i + 1)] = v ? 'allow' : 'block';
+    }
+    const known = new Set(settingsPermissions.map(([key]) => key));
+    return {
+      current: cur,
+      sites: [...sites].sort(([a], [b]) => (b === cur) - (a === cur) || a.localeCompare(b)).map(([origin, saved]) => ({
+        origin,
+        saved: Object.keys(saved).length,
+        permissions: [...settingsPermissions.map(([key, label]) => ({ key, label, value: saved[key] || 'ask' })),
+          ...Object.keys(saved).filter(k => !known.has(k)).map(key => ({ key, label: labels[key] || key, value: saved[key] }))],
+      })),
+      system: { microphone: this.status('microphone'), camera: this.status('camera'), screen: this.status('screen') },
+    };
+  }
+  setGlobal(origin, key, value) {
+    const o = this.origin(origin);
+    if (!o || o !== origin || typeof key !== 'string' || !/^[a-z][a-z:-]{0,40}$/i.test(key) || !['ask', 'allow', 'block'].includes(value)) throw new Error('invalid site permission');
+    const choices = this.mgr.perms.data, k = `${o}|${key}`;
+    if (!settingsPermissions.some(([x]) => x === key) && !Object.hasOwn(choices, k)) throw new Error('unknown permission');
+    if (value === 'ask') delete choices[k]; else choices[k] = value === 'allow';
+    this.afterGlobalChange([k]);
+  }
+  forgetSite(origin) {
+    const o = this.origin(origin); if (!o || o !== origin) throw new Error('invalid site');
+    const choices = this.mgr.perms.data, keys = Object.keys(choices).filter(k => k.startsWith(o + '|'));
+    for (const k of keys) delete choices[k];
+    this.afterGlobalChange(keys);
+  }
+  afterGlobalChange(keys) {
+    for (const w of this.mgr.windows) if (!w.isPrivate) for (const t of w.tabs.values()) if (t.wc) for (const k of keys) this.once.get(t.wc)?.delete(k);
+    for (const p of [...this.pending.values()]) if (!p.win.isPrivate && p.keys.some(k => keys.includes(k))) this.finish(p, false, false);
+    this.mgr.perms.save();
+    this.broadcast();
   }
   showSettings(win, sourceWC = null) {
     const wc = sourceWC || win?.tabs.get(win.activeId)?.wc, origin = this.origin(wc?.getURL()); if (!origin) return win?.send('toast','Site permissions are available on web pages.');

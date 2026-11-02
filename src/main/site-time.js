@@ -1,7 +1,6 @@
 // Foreground accounting and trusted inline Activities page. No network requests.
 const { ipcMain, dialog, powerMonitor } = require('electron');
 const path = require('node:path');
-const { AppPanel } = require('./app-panel');
 const { SiteTime, siteForURL, validSite, RANGES } = require('../core/site-time');
 
 const entries = new Map();
@@ -175,15 +174,13 @@ class SiteTimeController {
     if (answer.response === 1) tracker.reset();
     return this.state(range);
   }
-  show(owner = this.mgr.focusedWindow?.()) {
-    if (this.disposed || !owner || owner.isPrivate || owner.destroyed || owner.win.isDestroyed() || this.mgr.switchingProfile || this.mgr.dataPath !== this.dataPath) return;
-    if (this.view && !this.view.isDestroyed() && this.view.owner === owner) { this.view.show(); this.view.focus(); return; }
-    this.closeView();
-    const view = this.view = new AppPanel(owner, {
-      title: 'Activities — Site Time',
-      webPreferences: { preload: path.join(__dirname, '../ui/site-time-preload.js'), contextIsolation: true, sandbox: true, nodeIntegration: false },
-    });
-    view.kind = 'activities';
+  // the Activities tab of Settings (src/main/settings-page.js)
+  show(owner = this.mgr.focusedWindow?.()) { return this.mgr.settingsPage?.show(owner, 'activities'); }
+  // the settings page hosts the Activities document: answer its main frame
+  adopt(view) {
+    if (this.disposed) return;
+    if (this.view && this.view !== view) entries.delete(this.view.webContents?.id);
+    this.view = view;
     entries.set(view.webContents.id, this);
     const id = view.webContents.id;
     view.once('closed', () => {
@@ -192,7 +189,6 @@ class SiteTimeController {
       this.refresh();
     });
     this.refresh();
-    view.loadFile(path.join(__dirname, '../ui/site-time.html'));
   }
   closeView() { if (this.view && !this.view.isDestroyed()) this.view.close(); }
   dispose() {
