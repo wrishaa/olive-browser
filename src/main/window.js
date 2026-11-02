@@ -9,6 +9,7 @@ const { toUrl, displayHost, SEARCH } = require('../core/url');
 const { commandSuggestions, isAppCommand } = require('../core/app-commands');
 const { parseSettingsUrl, isOliveUrl } = require('../core/olive-url');
 const { blockedNavigation } = require('./internal-pages');
+const { wirePageDragRegions } = require('./page-drag-regions');
 // sidebar icons for olive:// tabs (they have no site favicon): one per page, so Settings,
 // uBO, the ledger, profiles and setup are told apart at a glance
 const svgIcon = (body) => 'data:image/svg+xml,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none" stroke="#6b7f3a" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">${body}</svg>`);
@@ -326,6 +327,7 @@ class OliveWindow {
     const wc = tab.view.webContents;
     this.wireTabKeys(wc);
     this.wireDirtyInput(tab, wc);
+    wirePageDragRegions(wc);
     wc.setVisualZoomLevelLimits(1, 4).catch(() => {});
 
     wc.setWindowOpenHandler(({ url, disposition, features }) => {
