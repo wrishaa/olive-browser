@@ -32,6 +32,13 @@ function fixture(t) {
   const mgr = { dataPath: dir, windows: [] }, owner = { mgr, win, activeId: 1, tabs: new Map([[1, tab]]), visibleIds: () => [1], createTab: data => owner.opened = data };
   mgr.windows.push(owner); mgr.focusedWindow = () => owner;
   const controller = new SiteTimeController(mgr, { tickMs: 0, now: () => wall, monotonicNow: () => mono });
+  // stand-in for src/main/settings-page.js: hosts the Activities tab and lets the controller adopt it
+  // (the real one moves to a normal window instead of a private one; never inside a private window)
+  mgr.settingsPage = { show(o = mgr.focusedWindow(), tab) {
+    if (tab !== 'activities' || !o || o.isPrivate) return null;
+    if (controller.view && !controller.view.isDestroyed()) return controller.view;
+    const v = new Panel(o, { title: 'Settings' }); v.loadFile('/x/src/ui/site-time.html'); controller.adopt(v); return v;
+  } };
   t.after(() => { controller.dispose(); fs.rmSync(dir, { recursive: true, force: true }); });
   return { mgr, owner, tab, flags, controller, dir, advance(ms) { wall += ms; mono += ms; }, state() { return controller.state('all'); }, event() { return { sender: controller.view.webContents, senderFrame: controller.view.webContents.mainFrame }; } };
 }
