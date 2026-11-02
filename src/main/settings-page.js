@@ -11,7 +11,6 @@ const { TABS, TAB_TITLES, validTab, settingsUrl, webOrigin } = require('../core/
 class SettingsPage {
   constructor(mgr) {
     this.mgr = mgr;
-    this.origin = null; // the site on screen when Settings was last opened (Site permissions)
     ipcMain.handle('olive:settings', async (event, action, payload = {}) => {
       const from = this.trusted(event);
       if (!from) return null;
@@ -23,7 +22,10 @@ class SettingsPage {
   trusted(event) { return this.mgr.internal.sender(event, 'settings'); }
   state(page = null) {
     const s = this.mgr.settings;
-    const origin = webOrigin(page?.query?.origin || '') || this.origin;
+    // a site comes first only when the address names it (site permissions from a web page:
+    // olive://settings/general?section=permissions&origin=...); Settings is its own tab, so
+    // "the site on screen" isn't a thing here
+    const origin = webOrigin(page?.query?.origin || '');
     return {
       tab: page?.tab || 'general', section: page?.query?.section || null,
       tabs: TABS.map(id => ({ id, title: TAB_TITLES[id], url: settingsUrl(id) })),
@@ -64,9 +66,6 @@ class SettingsPage {
   // owner: the OliveWindow it was asked from. tab undefined (cmd+,): focus any Settings tab
   // as it is; a named tab also navigates it there. private windows: a normal window.
   show(owner = this.mgr.focusedWindow(), tab, { section = null, origin = null } = {}) {
-    const active = owner && !owner.isPrivate ? owner.tabs.get(owner.activeId) : null;
-    const seen = webOrigin(active?.url || '');
-    if (seen) this.origin = seen;
     return this.mgr.internal.openSettings(tab === undefined ? undefined : validTab(tab), { section, origin, win: owner });
   }
   close() {}

@@ -9,8 +9,17 @@ const { toUrl, displayHost, SEARCH } = require('../core/url');
 const { commandSuggestions, isAppCommand } = require('../core/app-commands');
 const { parseSettingsUrl, isOliveUrl } = require('../core/olive-url');
 const { blockedNavigation } = require('./internal-pages');
-// sidebar icon for olive:// tabs (they have no site favicon)
-const OLIVE_FAVICON = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><ellipse cx="8" cy="8.5" rx="4.6" ry="6" transform="rotate(-30 8 8.5)" fill="#6b7f3a"/><circle cx="9.6" cy="6.2" r="1.3" fill="#c9d79a"/></svg>');
+// sidebar icons for olive:// tabs (they have no site favicon): one per page, so Settings,
+// uBO, the ledger, profiles and setup are told apart at a glance
+const svgIcon = (body) => 'data:image/svg+xml,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none" stroke="#6b7f3a" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">${body}</svg>`);
+const OLIVE_FAVICONS = {
+  settings: svgIcon('<circle cx="8" cy="8" r="2.2"/><path d="M8 1.8v1.6M8 12.6v1.6M1.8 8h1.6M12.6 8h1.6M3.6 3.6l1.1 1.1M11.3 11.3l1.1 1.1M3.6 12.4l1.1-1.1M11.3 4.7l1.1-1.1"/>'),
+  extensions: svgIcon('<path d="M8 1.8 2.8 3.8v4c0 3.1 2.4 5.3 5.2 6.4 2.8-1.1 5.2-3.3 5.2-6.4v-4z"/>'),
+  ledger: svgIcon('<path d="M4 3.5h8M4 8h8M4 12.5h8"/><circle cx="2" cy="3.5" r=".4"/><circle cx="2" cy="8" r=".4"/><circle cx="2" cy="12.5" r=".4"/>'),
+  profiles: svgIcon('<circle cx="8" cy="5.6" r="2.6"/><path d="M2.8 14c.6-2.7 2.7-4.2 5.2-4.2s4.6 1.5 5.2 4.2"/>'),
+  onboarding: svgIcon('<ellipse cx="8" cy="8.5" rx="4.4" ry="5.8" transform="rotate(-30 8 8.5)"/>'),
+};
+const oliveFavicon = (url) => { const m = /^olive:\/\/([a-z-]+)/i.exec(url || ''); return OLIVE_FAVICONS[m?.[1]?.toLowerCase()] || OLIVE_FAVICONS.onboarding; };
 const TG = require('../core/tab-groups');
 const TM = require('../core/tab-meta');
 
@@ -402,7 +411,7 @@ class OliveWindow {
       const url = this.mgr.internal ? this.mgr.internal.displayUrl(rawUrl) : rawUrl;
       const internal = !!this.mgr.internal?.isInternal(url);
       if (!tab.committedUrl || displayHost(url) !== displayHost(tab.committedUrl)) tab.favicon = '';
-      if (internal) tab.favicon = OLIVE_FAVICON;
+      if (internal) tab.favicon = oliveFavicon(url);
       tab.committedUrl = url;
       tab.url = url;
       this.mgr.internal?.check(tab);

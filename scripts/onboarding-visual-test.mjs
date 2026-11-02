@@ -60,6 +60,8 @@ async function poll(fn, label) {
   throw new Error('Timed out: ' + label);
 }
 async function renderer(name) {
+  // setup is a tab at olive://onboarding/<step>
+  if (name === 'onboarding') return poll(async () => (await app.windows()).filter(p => !p.isClosed() && p.url().startsWith('olive://onboarding')).pop(), name);
   return poll(async () => (await app.windows()).find(page => {
     try { return new URL(page.url()).pathname.endsWith(`/ui/${name}.html`); } catch { return false; }
   }), name);
@@ -71,11 +73,12 @@ async function structure() {
     return {
       visibleWindows: BaseWindow.getAllWindows().filter(win => win.isVisible()).map(win => ({ title: win.getTitle(), bounds: win.getBounds() })),
       expected: { x, y: 8, width: frame.width - x - 8, height: frame.height - 16 },
-      actual: page?.content?.getBounds(), pane: w.panes[0]?.rect,
-      embedded: !!page && page.owner === w && page === w.inlinePage && w.win.contentView.children.includes(page.content),
-      setupOnTop: !!page && w.win.contentView.children.at(-1) === page.content,
+      // the setup page is the active tab: its view fills the web-content pane, no overlay
+      actual: page?.tab?.view?.getBounds(), pane: w.panes[0]?.rect,
+      embedded: !!page && page.owner === w && !w.inlinePage && !w.appPanel && w.activeId === page.tab?.id && !!page.tab.view?.getVisible() && w.win.contentView.children.includes(page.tab.view),
+      setupOnTop: !!page && w.activeId === page.tab?.id,
       sidebarWidth: w.sidebarWidth, frame: { width: frame.width, height: frame.height },
-      hiddenTabs: [...w.tabs.values()].every(tab => !tab.view || !tab.view.getVisible()),
+      hiddenTabs: [...w.tabs.values()].every(tab => tab === page?.tab || !tab.view || !tab.view.getVisible()),
       normal: !w.isPrivate, overlay: w.overlay,
     };
   });
@@ -215,7 +218,7 @@ try {
         if (step === 'import') await page.locator('#sources input').first().waitFor();
         await page.waitForTimeout(180); // allow the intentional 140ms pane animation to finish
         const state = await structure(), result = await audit(page), sidebar = await audit(chrome, {sidebar:true});
-        check(state.visibleWindows.length === 1 && state.embedded && state.setupOnTop && state.hiddenTabs, `${label}: sole visible BaseWindow, setup is top child view; tabs hidden`, state);
+        check(state.visibleWindows.length === 1 && state.embedded && state.setupOnTop && state.hiddenTabs, `${label}: sole visible BaseWindow, setup is the active tab; other tabs hidden`, state);
         check(JSON.stringify(state.actual) === JSON.stringify(state.expected) && JSON.stringify(state.pane) === JSON.stringify(state.expected), `${label}: exact live page/pane bounds`, state);
         check(state.frame.width === width && state.frame.height === height && result.viewport.width === state.expected.width && result.viewport.height === state.expected.height, `${label}: exact requested window and renderer dimensions`, {state, viewport:result.viewport});
         check(!result.scroll && !result.contentFooterOverlap && result.footnoteVisible, `${label}: no page scroll/overlap and disclosure visible`, result);
@@ -226,7 +229,7 @@ try {
         const contrast = result.text.filter(item=>item.error || item.contrast < 4.5);
         check(contrast.length === 0, `${label}: every visible text node contrast >=4.5 (footnotes and disabled labels included)`, contrast);
         check(!leakPattern.test(result.uiText+'\n'+sidebar.uiText), `${label}: no API/CDP/port strings in visible UI`, {page:result.uiText,sidebar:sidebar.uiText});
-        check(await chrome.locator('#setup-row.active').isVisible(), `${label}: sidebar shows active setup row`);
+        check(await chrome.locator('#pinned .row.active, #unpinned .row.active').filter({hasText:'Set Up Olive'}).first().isVisible() && await chrome.locator('#setup-row').isHidden(), `${label}: sidebar shows setup as the active tab row (no separate setup row)`);
         if (step==='import') check(await page.locator('#sources input:checked').count()===0 && await page.locator('#next').isDisabled(), `${label}: cookie import defaults unchecked/disabled`);
         await page.screenshot({path:path.join(output, `${label}-page.png`)});
         await chrome.screenshot({path:path.join(output, `${label}-chrome.png`)});
@@ -249,13 +252,14 @@ try {
   // Test actual renderer -> IPC -> host chrome. No direct command stand-ins.
   await app.evaluate(() => { const o=global.olive.onboarding; o.saved.step='screen'; o.push(); });
   await page.locator('#screen-title').waitFor();
-  await chrome.locator('#setup-row').hover();
-  await chrome.locator('#setup-close').click();
-  await poll(async()=>!(await app.evaluate(()=>!!global.olive.onboarding.view)), 'sidebar Set Up Later');
-  check(await app.evaluate(()=>global.olive.onboarding.saved.paused), 'sidebar close pauses inline setup');
+  // closing the setup tab (cmd+w) pauses setup; the sidebar setup row then reopens it
+  await app.evaluate(()=>{const w=global.olive.focusedWindow();w.activate(global.olive.onboarding.view.tab.id);w.cmd('closeTab');});
+  await poll(async()=>!(await app.evaluate(()=>!!global.olive.onboarding.view)), 'close setup tab');
+  check(await app.evaluate(()=>global.olive.onboarding.saved.paused), 'closing the setup tab pauses setup');
+  await chrome.locator('#setup-row').waitFor();
   await chrome.locator('#setup-row').click();
   page = await renderer('onboarding'); await page.locator('#screen-title').waitFor();
-  check((await structure()).visibleWindows.length===1, 'sidebar setup row reopens same step without detached windows');
+  check((await structure()).visibleWindows.length===1 && await chrome.locator('#setup-row').isHidden(), 'sidebar setup row reopens the same step as a tab, without detached windows');
   await chrome.locator('#btn-sidebar').click();
   await poll(async()=>await app.evaluate(()=>global.olive.focusedWindow().sidebarHidden), 'sidebar hide');
   let state=await structure();
@@ -263,7 +267,7 @@ try {
   await app.evaluate(()=>global.olive.focusedWindow().cmd('toggleSidebar'));
   await chrome.locator('#newtab').click();
   await poll(async()=>await app.evaluate(()=>global.olive.focusedWindow().overlay==='palette'), 'live New Tab');
-  check(await chrome.locator('#palette').isVisible() && !(await app.evaluate(()=>!!global.olive.onboarding.view)), 'live sidebar New Tab closes setup and opens actual palette');
+  check(await chrome.locator('#palette').isVisible() && (await app.evaluate(()=>!!global.olive.onboarding.view)), 'live sidebar New Tab opens the actual palette; the setup tab stays open like any tab');
   check((await app.evaluate(()=>global.visualCalls)).length===0, 'no macOS/media/screen/Keychain/import/relaunch/dialog call occurred', await app.evaluate(()=>global.visualCalls));
   assert.equal(path.resolve(await app.evaluate(({app})=>app.getPath('userData'))),root);
 } catch (error) {
