@@ -58,6 +58,21 @@ General > Site permissions), and the url deep-links there. open q below.
 
 shots (notes/test-shots/olive-tab-scenarios/fixed/, 1440 wide, light/dark): internal-settings-tab, internal-settings-split (Settings next to a web page), internal-settings-pinned, internal-ublock-options, internal-onboarding-tab.
 
+## found on the way
+
+- **error-page loop (pre-existing since 2df4ed4, window.js did-fail-load):** if the `data:text/html;olive-error` page itself failed to load, the handler loaded an error page about the error page, forever, growing the url until `RangeError: Invalid string length` (seen once in the settings native while switching Settings sections; first failure not reproduced in 3 later runs). now the error page never reloads itself.
+- `sendState` after a window closed threw "Object has been destroyed" (a setup tab closing with its window broadcasts); guarded.
+- the old natives "passed" some site-time exclusions trivially (the Activities overlay hid the page); site-time native now goes back to the web tab before measuring palette/minimize/suspend/private exclusions, and waits for the minimize to land.
+
+## visual review (blind reviewer, 2 rounds)
+
+no blockers. fixed: per-page sidebar icons (gear, shield, list, person, olive); Settings no longer shows a stale "current site" (only `?origin=` from site permissions pins one). left as is:
+- the split row in the sidebar truncates "Settings — …" (generic sidebar split-row width)
+- the pinned divider is shorter than the rows (sidebar style, not new)
+- uBO's own dashboard sits close to the pane top and keeps uBO's look (it's the extension's page)
+- setup in a full-width tab: back chevron far from the centered column, lots of space (the page was designed for the 740px panel; the visual contract passes 193/0)
+- the empty, disabled cap field while the cap is off (dj's spec: "empty or disabled")
+
 ## open questions (defaults taken, for dj)
 
 1. cmd+, focuses the existing Settings tab (current window first, then any window) and leaves its section alone; with none it opens a new foreground tab. ok? (alternative: always jump to General.)
@@ -66,3 +81,5 @@ shots (notes/test-shots/olive-tab-scenarios/fixed/, 1440 wide, light/dark): inte
 4. site settings (lock icon) stays a per-tab overlay; `olive://site-settings?origin=` goes to Settings > General > Site permissions. turn the lock panel into a tab too?
 5. agent api can't open, read or drive olive:// tabs (403). right call, or should agents be allowed to read them?
 6. olive:// pages aren't in browsing history. should they show up in history search?
+7. setup as a full-width tab looks sparse (see visual review). give onboarding a tab layout (centered card, chevron inside the column)?
+8. typing a Settings url into a new tab (cmd+t) opens a second Settings tab, like any url; only cmd+, and the menu items reuse the open one. ok?
