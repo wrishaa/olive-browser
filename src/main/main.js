@@ -419,6 +419,8 @@ ipcMain.handle('olive:invoke', (e, type, args) => {
   if (!w) return null;
   if (type === 'suggest') return w.suggest(args?.query || '');
   if (type === 'state') return w.snapshot();
+  // enter-to-rename: is the keyboard really in the sidebar ui (notes/tab-rename-spec.md)
+  if (type === 'uiFocused') return w.ui.webContents.isFocused();
   return null;
 });
 
