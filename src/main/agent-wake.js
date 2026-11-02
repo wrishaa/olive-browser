@@ -61,6 +61,7 @@ class AgentWake {
     if (!this.isHidden(win, tab)) return fn();
     const s = this.st(tab);
     s.steps++;
+    tab.lastAgentStep = Date.now(); // tab unloading counts agent use as activity
     if (frames) s.frameSteps++;
     if (s.timer) { this.clearTimer(s.timer); s.timer = null; }
     try {
@@ -176,6 +177,12 @@ class AgentWake {
     if (attachedByUs) { try { dbg.detach(); } catch {} return; } // detaching drops every override, and idle discarding sees the tab again
     if (focused) { try { await withTimeout(dbg.sendCommand('Emulation.setFocusEmulationEnabled', { enabled: false }), this.cmdTimeoutMs, 'focus emulation off'); } catch {} }
     if (!tab.agentMetrics) { try { await withTimeout(dbg.sendCommand('Emulation.clearDeviceMetricsOverride', {}), this.cmdTimeoutMs, 'clear size override'); } catch {} }
+  }
+
+  // an agent step is running on tab or it is still awake from one (tab unloading exempts it)
+  busy(tab) {
+    const s = this.state.get(tab);
+    return !!(s && (s.steps > 0 || s.awake));
   }
 
   isAwake(tab) {

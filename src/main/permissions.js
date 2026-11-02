@@ -61,6 +61,13 @@ class Permissions {
     });
   }
   origin(raw) { try { const u = new URL(raw); return ['https:','http:'].includes(u.protocol) ? u.origin : null; } catch { return null; } }
+  // tab unloading must not drop a tab in a call. electron 44 has no "is capturing" signal
+  // (isCurrentlyAudible is playback only), so a tab whose camera / mic / screen request was
+  // granted counts as capturing until its next main-document navigation, reload or unload
+  // (window.js clears it). conservative: a call that ended without leaving the page keeps it.
+  markCapturing(wc) {
+    for (const w of this.mgr.windows) for (const t of w.tabs.values()) if (t.wc && t.wc === wc) t.capturing = true;
+  }
   windowFor(wc) { return this.mgr.windows.find(w => [...w.tabs.values()].some(t => t.wc === wc)); }
   keys(origin, permission, details = {}) {
     if (permission !== 'media') return [`${origin}|${permission}`];
@@ -140,6 +147,7 @@ class Permissions {
           if (!source || !request.frame || wc.isDestroyed()) return callback(null);
           // Never select a screen automatically. No system-audio loopback on macOS.
           callback({ video: source });
+          this.markCapturing(wc);
         } catch { callback(null); }
       });
     }, { useSystemPicker: false });
@@ -180,6 +188,7 @@ class Permissions {
     else if (allow) for (const key of p.keys) this.grants(p.wc).add(key);
     this.mgr.ledger?.record('permission', { origin:p.origin, permission:p.permission, allowed:!!allow, remember:!!remember, private:p.win.isPrivate });
     try { p.callback(allow); } catch {}
+    if (allow && p.permission === 'media') this.markCapturing(p.wc);
     this.broadcast();
     this.refresh(p.win);
   }

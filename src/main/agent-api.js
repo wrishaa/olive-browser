@@ -103,7 +103,7 @@ const HELP = {
     'POST /windows {private?, url?}': 'open a window',
     'GET /history?q=': 'browsing history',
     'GET /downloads': 'downloads',
-    'POST /discard {olderThanMinutes?}': 'unload background tabs idle longer than that (default: settings.discardMinutes)',
+    'POST /discard {olderThanMinutes?}': 'unload background tabs idle longer than that, pinned or not (default: the settings: unloadAfterMinutes / pinnedUnloadAfterMinutes / maxLoadedTabs). on-screen, audible, capturing, agent, devtools, unsaved-input and loading tabs never unload',
     'GET /metrics': 'process count + memory',
   },
 };

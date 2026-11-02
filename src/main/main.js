@@ -22,13 +22,13 @@ function portFree(port) {
 
 // settings that must be read before chromium starts
 const SETTINGS_FILE = path.join(app.getPath('userData'), 'settings.json');
-const DEFAULT_SETTINGS = { cdp: false, agentApi: true, discardMinutes: 30, maxLoadedTabs: 16 };
-let settings = { ...DEFAULT_SETTINGS };
-try { settings = { ...DEFAULT_SETTINGS, ...JSON.parse(fs.readFileSync(SETTINGS_FILE, 'utf8')) }; } catch {}
+const AppSettings = require('../core/app-settings');
+const TabUnload = require('../core/tab-unload');
+let { settings, changed: settingsMigrated } = AppSettings.loadSettings(SETTINGS_FILE);
 function saveSettings() {
-  fs.mkdirSync(path.dirname(SETTINGS_FILE), { recursive: true });
-  fs.writeFileSync(SETTINGS_FILE, JSON.stringify(settings, null, 2));
+  try { AppSettings.saveSettings(SETTINGS_FILE, settings); } catch (err) { console.error('[olive] settings not saved', err); }
 }
+if (settingsMigrated) saveSettings(); // legacy discardMinutes / old cap default, once
 
 // the chromium remote-debugging port is opt-in: it lets any local process drive the
 // browser, and google sign-in treats debuggable chromium as automated. turn it on with
@@ -317,39 +317,62 @@ class Manager {
     if (wc.getUserAgent() !== want) wc.setUserAgent(want);
   }
 
-  // tab discarding: background tabs that haven't been looked at for a while give
-  // their renderer back. the sidebar entry stays (url/title/favicon) and reloads on click.
+  // tab unloading: background tabs that haven't been looked at for a while give their
+  // renderer back. the sidebar entry stays (url/title/favicon) and reloads on click.
+  // rules + exemptions: src/core/tab-unload.js, notes/settings-and-unloading.md
   startDiscardTimer() {
     clearInterval(this.discardTimer);
-    this.discardTimer = setInterval(() => this.discardIdleTabs(), 60 * 1000);
+    this.discardTimer = setInterval(() => this.discardIdleTabs(), Number(process.env.OLIVE_UNLOAD_TICK_MS) || 60 * 1000);
   }
 
-  discardIdleTabs({ olderThanMinutes = null } = {}) {
-    const now = Date.now();
-    const minutes = olderThanMinutes != null ? Number(olderThanMinutes) : Number(settings.discardMinutes) || 0;
-    const max = Number(settings.maxLoadedTabs) || 0;
-    const candidates = [];
-    let loaded = 0;
+  now() { return this.clock ? this.clock() : Date.now(); } // tests swap the clock
+
+  // what tab-unload.js needs to know about every tab in every window
+  unloadFacts() {
+    const now = this.now();
+    const out = [];
     for (const w of this.windows) {
       const visible = new Set(w.visibleIds());
       for (const t of w.tabs.values()) {
-        if (!t.wc) continue;
-        loaded++;
-        if (visible.has(t.id) || t.devtools || t.wc.isCurrentlyAudible() || t.wc.debugger.isAttached()) continue;
-        candidates.push({ w, t });
+        const wc = t.wc;
+        if (visible.has(t.id)) t.lastVisible = now;
+        if (!wc) { out.push({ id: t.id, w, t, loaded: false }); continue; }
+        const group = t.groupId != null ? w.groups.get(t.groupId) : null;
+        let attached = false; try { attached = wc.debugger.isAttached(); } catch {}
+        out.push({
+          id: t.id, w, t, loaded: true, pinned: !!t.pinned,
+          lastActive: t.lastActive, lastVisible: t.lastVisible, loadedAt: Math.max(t.loadedAt || 0, t.lastAgentStep || 0),
+          visible: visible.has(t.id),
+          loading: !!t.loading || wc.isLoading(),
+          audible: !!t.audible || wc.isCurrentlyAudible(),
+          capturing: !!t.capturing,
+          agent: attached || !!this.agentWake?.busy?.(t) || !!(group?.agent && group.working),
+          devtools: !!t.devtools,
+          dirty: !!t.dirty,
+        });
       }
     }
-    candidates.sort((a, b) => a.t.lastActive - b.t.lastActive); // oldest first
-    let discarded = 0;
-    for (const { w, t } of candidates) {
-      const idle = (minutes > 0 || olderThanMinutes != null) && now - t.lastActive > minutes * 60 * 1000;
-      const over = max > 0 && loaded - discarded > max;
-      if (!idle && !over) continue;
-      w.unload(t);
-      w.changed();
-      discarded++;
+    return out;
+  }
+
+  // olderThanMinutes (agent api POST /discard): one threshold for every tab instead of the
+  // settings. returns how many tabs unloaded.
+  discardIdleTabs({ olderThanMinutes = null } = {}) {
+    const facts = this.unloadFacts();
+    const byId = new Map(facts.map(f => [f.t, f]));
+    const plan = TabUnload.plan(facts.map(f => ({ ...f, id: f.t })), settings, { now: this.now(), olderThanMinutes });
+    const touched = new Set();
+    for (const { id: t, reason } of plan) {
+      const f = byId.get(t);
+      f.w.unload(t, { reason });
+      touched.add(f.w);
     }
-    return discarded;
+    for (const w of touched) w.changed();
+    return plan.length;
+  }
+
+  unloadState() {
+    return TabUnload.KEYS.reduce((o, k) => ({ ...o, [k]: settings[k] }), {});
   }
 
   get settings() {
@@ -357,9 +380,12 @@ class Manager {
   }
 
   setSetting(key, value) {
-    settings[key] = value;
+    settings[key] = AppSettings.normalizeSetting(key, value);
     saveSettings();
     this.broadcast();
+    if (key === 'cdp') buildMenu(this);
+    this.settingsPage?.push();
+    return settings[key];
   }
 
   async toggleCdp() {
