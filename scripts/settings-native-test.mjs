@@ -253,14 +253,12 @@ try {
     const pb = await app.evaluate(() => global.olive.focusedWindow().appPanel.content.getBounds());
     await composite(app, path.join(shots, 'settings-unloading-1440.png'), 'light', { x: pb.x + r.x - 24, y: pb.y + r.y - 18, w: r.w + 48, h: r.h + 36 });
   }
-  await gen.fill('#unloadAfterMinutes', '7'); await gen.press('#unloadAfterMinutes', 'Enter');
-  await gen.fill('#pinnedUnloadAfterMinutes', '11'); await gen.press('#pinnedUnloadAfterMinutes', 'Tab');
-  await poll(async () => (await app.evaluate(() => global.olive.unloadState().pinnedUnloadAfterMinutes)) === 11, 'pinned saved');
   await gen.click('#capOn');
   await poll(async () => (await app.evaluate(() => global.olive.unloadState().maxLoadedTabs)) === 16, 'cap on');
   f = await gen.evaluate(() => ({ cap: maxLoadedTabs.value, capDisabled: maxLoadedTabs.disabled, capOn: capOn.checked, status: document.querySelector('#unload-status').textContent }));
   check(f.cap === '16' && !f.capDisabled && f.capOn, 'turning the cap on prefills 16 and enables the field', f);
   if (wantShots) {
+    await gen.evaluate(() => document.activeElement?.blur());
     const r = await gen.evaluate(() => { const b = document.querySelector('#unloading').getBoundingClientRect(); return { x: b.x, y: b.y, w: b.width, h: b.height }; });
     const pb = await app.evaluate(() => global.olive.focusedWindow().appPanel.content.getBounds());
     await composite(app, path.join(shots, 'settings-unloading-cap-on-1440.png'), 'light', { x: pb.x + r.x - 24, y: pb.y + r.y - 18, w: r.w + 48, h: r.h + 36 });
@@ -271,6 +269,9 @@ try {
   check(f.cap === '' && f.capDisabled && !f.capOn, 'turning the cap off empties and disables the field (0 saved)', f);
   await gen.click('#capOn');
   await poll(async () => (await app.evaluate(() => global.olive.unloadState().maxLoadedTabs)) === 16, 'cap on again');
+  await gen.fill('#unloadAfterMinutes', '7'); await gen.press('#unloadAfterMinutes', 'Enter');
+  await gen.fill('#pinnedUnloadAfterMinutes', '11'); await gen.press('#pinnedUnloadAfterMinutes', 'Tab');
+  await poll(async () => (await app.evaluate(() => global.olive.unloadState().pinnedUnloadAfterMinutes)) === 11, 'pinned saved');
   await gen.fill('#maxLoadedTabs', '5'); await gen.press('#maxLoadedTabs', 'Enter');
   await poll(async () => (await app.evaluate(() => global.olive.unloadState().maxLoadedTabs)) === 5, 'cap 5');
   await gen.fill('#unloadAfterMinutes', '-4'); await gen.press('#unloadAfterMinutes', 'Enter');

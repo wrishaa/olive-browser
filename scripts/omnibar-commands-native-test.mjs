@@ -16,15 +16,15 @@ try {
   assert.ok(ui,'browser chrome loaded');
   await ui.waitForFunction(()=>window.olive && document.querySelector('#palette-input'));
   const baseline=await app.evaluate(()=>global.olive.focusedWindow().tabs.size);
-  for(const [word,pageName] of [['shortcuts','shortcuts'],['settings','shortcuts'],['activities','site-time']]){
+  for(const [word,pageName,title] of [['shortcuts','shortcuts','Keyboard Shortcuts'],['settings','settings-general','Settings'],['activities','site-time','Site Time']]){
     await app.evaluate(()=>global.olive.focusedWindow().cmd('openLocation'));
     await ui.locator('#palette-input').fill(word);
-    await ui.locator('.sug').first().filter({hasText:word==='activities'?'Site Time':'Keyboard Shortcuts'}).waitFor();
+    await ui.locator('.sug').first().filter({hasText:title}).waitFor();
     check(await ui.locator('.sug').first().getAttribute('class').then(v=>v.includes('sel')),word+' command is selected before web search');
     await ui.locator('#palette-input').press('Enter');
     let dest;
     for(let i=0;i<100;i++){dest=(await app.windows()).find(p=>p.url().includes('/ui/'+pageName+'.html'));if(dest)break;await new Promise(r=>setTimeout(r,30));}
-    check(!!dest,word+' opens inline '+pageName);
+    check(!!dest,word+' opens inline '+pageName+' (Settings page)');
     check(await app.evaluate(()=>global.olive.focusedWindow().tabs.size)===baseline,word+' does not navigate/create a web tab');
     check(await app.evaluate(({BaseWindow})=>BaseWindow.getAllWindows().filter(w=>w.isVisible()).length)===1,word+' creates no popup window');
   }

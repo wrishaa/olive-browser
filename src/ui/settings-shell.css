@@ -10,3 +10,10 @@ body { max-width: 960px; padding: 28px 40px 40px; }
 /* the tab documents' own page titles become section titles under the tab bar */
 body > main > h1:first-child, body > header > h1:first-child, .page-header h1 { font-size: 15px; letter-spacing: -.2px; }
 @media (max-width: 720px) { #settings-tabs { grid-template-columns: 1fr; gap: 10px; } .settings-url { display: none; } }
+/* one content width on every tab (the pages had their own 720/760/840 caps) */
+body > main, body > header, body > main#site-time-page { max-width: none; }
+/* the tab bar names the page: drop the title that repeats it */
+body[data-tab="shortcuts"] > header > h1, body[data-tab="extensions"] > main > h1 { display: none; }
+body[data-tab="shortcuts"] > header > p:first-of-type, body[data-tab="extensions"] > main > p:first-of-type { margin-top: 0; }
+body[data-tab="shortcuts"] #status { min-height: 0; margin: 4px 0 0; }
+body[data-tab="shortcuts"] #status:empty { display: none; }
