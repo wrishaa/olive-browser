@@ -88,7 +88,6 @@
     try { await api.reset(range); } catch { error('Could not reset site time.'); }
     finally { busy = false; load(); }
   });
-  document.addEventListener('keydown', event => { if (event.key === 'Escape') api.close(); });
   select('week');
   setInterval(() => { if (!document.hidden && !busy) load(); }, 5000);
 })();

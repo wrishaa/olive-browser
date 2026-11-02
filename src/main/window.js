@@ -7,7 +7,10 @@ const { COMMANDS } = require('./shortcuts');
 const { matchesInput, holdForInput, holdReleased, holdRepressed, cancelsWalk } = require('./shortcut-input');
 const { toUrl, displayHost, SEARCH } = require('../core/url');
 const { commandSuggestions, isAppCommand } = require('../core/app-commands');
-const { parseSettingsUrl, settingsUrl, TAB_TITLES } = require('../core/settings-url');
+const { parseSettingsUrl, isOliveUrl } = require('../core/olive-url');
+const { blockedNavigation } = require('./internal-pages');
+// sidebar icon for olive:// tabs (they have no site favicon)
+const OLIVE_FAVICON = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><ellipse cx="8" cy="8.5" rx="4.6" ry="6" transform="rotate(-30 8 8.5)" fill="#6b7f3a"/><circle cx="9.6" cy="6.2" r="1.3" fill="#c9d79a"/></svg>');
 const TG = require('../core/tab-groups');
 const TM = require('../core/tab-meta');
 
@@ -305,7 +308,7 @@ class OliveWindow {
     if (tab.muted) view.webContents.setAudioMuted(true);
     if (!webContents && tab.url) {
       this.mgr.applyUserAgent(view.webContents, tab.url);
-      view.webContents.loadURL(tab.url).catch(() => {});
+      view.webContents.loadURL(this.loadUrl(tab.url)).catch(() => {});
     }
     return tab;
   }
@@ -317,6 +320,8 @@ class OliveWindow {
     wc.setVisualZoomLevelLimits(1, 4).catch(() => {});
 
     wc.setWindowOpenHandler(({ url, disposition, features }) => {
+      // web pages can't open olive:// (or the extension pages behind it)
+      if (blockedNavigation(wc.getURL(), url, this.mgr.internal)) return { action: 'deny' };
       if (disposition === 'new-window' && features) {
         // real popup (oauth, payment): keep it a window so window.opener works
         return {
@@ -346,11 +351,28 @@ class OliveWindow {
     // back/forward, reload and loadURL (omnibar, reset) never come through here.
     wc.on('will-navigate', (e, legacyUrl) => {
       const url = e.url || legacyUrl;
-      if (!tab.pinned || e.isMainFrame === false || !url) return;
+      if (!url || e.isMainFrame === false) return;
+      // links, forms and scripts in web pages can't reach olive://; olive pages can (their
+      // section links), and get the canonical address / the extension page directly
+      if (blockedNavigation(wc.getURL(), url, this.mgr.internal)) { e.preventDefault(); return; }
+      const load = this.loadUrl(url);
+      if (load !== url) { e.preventDefault(); wc.loadURL(load).catch(() => {}); return; }
+      if (!tab.pinned) return;
       if (!TM.shouldOpenOutside({ pinnedUrl: tab.pinnedUrl || tab.url, currentUrl: tab.committedUrl || tab.url, targetUrl: url })) return;
       e.preventDefault();
       this.recordActivity('navigation', { tabId: tab.id, url, action: 'pinned-domain-lock' });
       this.createTab({ url, activate: true, afterId: tab.id });
+    });
+
+    // no iframes of olive:// anywhere (the pages also send frame-ancestors 'none'), and no
+    // server redirect from a web page into olive://
+    wc.on('will-frame-navigate', (e) => {
+      if (!e.isMainFrame && e.url && (isOliveUrl(e.url) || this.mgr.internal?.isInternal(e.url))) e.preventDefault();
+    });
+    let navStart = '';
+    wc.on('did-start-navigation', (d) => { if (d.isMainFrame && !d.isSameDocument) navStart = d.url; });
+    wc.on('will-redirect', (e) => {
+      if (e.isMainFrame !== false && blockedNavigation(navStart, e.url, this.mgr.internal)) e.preventDefault();
     });
 
     wc.on('page-title-updated', (_e, title) => {
@@ -359,6 +381,7 @@ class OliveWindow {
       this.changed();
     });
     wc.on('page-favicon-updated', (_e, favs) => {
+      if (this.mgr.internal?.isInternal(tab.url)) return;
       tab.favicon = favs[0] || '';
       this.mgr.history.update(tab.url, { favicon: tab.favicon });
       this.changed();
@@ -369,23 +392,32 @@ class OliveWindow {
       if (details.isMainFrame && !details.isSameDocument) this.mgr.applyUserAgent(wc, details.url);
       if (details.isMainFrame && !details.isSameDocument && !details.url.startsWith('data:text/html;olive-error')) tab.errorFor = null;
     });
-    wc.on('did-navigate', (_e, url) => {
+    wc.on('did-navigate', (_e, rawUrl) => {
       // a new main document (link, reload, back/forward): typed input and capture are gone
       tab.dirty = false;
       tab.capturing = false;
-      if (url.startsWith('data:text/html;olive-error')) return;
+      if (wc.__oliveRecordingKeys) require('./shortcuts').setRecording(wc, false);
+      if (rawUrl.startsWith('data:text/html;olive-error')) return;
+      // uBO's own pages show as olive://extensions/ublock/<page>
+      const url = this.mgr.internal ? this.mgr.internal.displayUrl(rawUrl) : rawUrl;
+      const internal = !!this.mgr.internal?.isInternal(url);
       if (!tab.committedUrl || displayHost(url) !== displayHost(tab.committedUrl)) tab.favicon = '';
+      if (internal) tab.favicon = OLIVE_FAVICON;
       tab.committedUrl = url;
       tab.url = url;
-      if (!this.isPrivate) this.mgr.history.add(url, wc.getTitle());
+      this.mgr.internal?.check(tab);
+      // Olive's own pages stay out of history (the palette lists them as commands)
+      if (!this.isPrivate && !internal) this.mgr.history.add(url, wc.getTitle());
       this.recordActivity('visit', { tabId: tab.id, url });
       if (this.find.open && tab.id === this.activeId) this.closeFind();
       this.changed();
     });
-    wc.on('did-navigate-in-page', (_e, url, isMainFrame) => {
+    wc.on('did-navigate-in-page', (_e, rawUrl, isMainFrame) => {
       if (!isMainFrame) return;
+      const url = this.mgr.internal ? this.mgr.internal.displayUrl(rawUrl) : rawUrl;
       tab.url = url;
-      if (!this.isPrivate) this.mgr.history.add(url, wc.getTitle());
+      this.mgr.internal?.check(tab);
+      if (!this.isPrivate && !this.mgr.internal?.isInternal(url)) this.mgr.history.add(url, wc.getTitle());
       this.recordActivity('visit', { tabId: tab.id, url, sameDocument: true });
       this.changed();
     });
@@ -504,6 +536,7 @@ class OliveWindow {
     if (idx >= 0) list.splice(idx, 1);
     this.unload(tab);
     this.tabs.delete(id);
+    this.mgr.internal?.check(tab, { removed: true });
     this.tabMRU.remove(id);
     this.selection = this.selection.filter((x) => x !== id);
     if (tab.groupId != null) TG.prune(this, { by });
@@ -640,7 +673,7 @@ class OliveWindow {
     tab.errorFor = null;
     if (tab.wc) {
       this.mgr.applyUserAgent(tab.wc, tab.url);
-      tab.wc.loadURL(tab.url).catch(() => {});
+      tab.wc.loadURL(this.loadUrl(tab.url)).catch(() => {});
     }
     this.activate(tab.id);
   }
@@ -1002,14 +1035,20 @@ class OliveWindow {
 
   // ---------- navigation ----------
 
+  // what a tab actually loads for a url (olive://extensions/ublock/options is the extension's
+  // own page, an old olive:// name its new address); the tab keeps showing the olive:// url
+  loadUrl(url) { return this.mgr.internal ? this.mgr.internal.resolveLoad(url) : url; }
+
   navigate(tab, input) {
     const url = toUrl(input);
     if (!url || !tab) return;
+    // private windows don't serve olive:// pages: they open in a normal window
+    if (this.isPrivate && isOliveUrl(url)) return this.mgr.internal?.open(url);
     this.recordActivity(url.startsWith(SEARCH) ? 'search' : 'navigation', { tabId: tab.id, url, action: 'navigate', ...(url.startsWith(SEARCH) ? { engine: 'google' } : {}) });
     this.ensureView(tab);
     tab.url = url;
     this.mgr.applyUserAgent(tab.wc, url);
-    tab.wc.loadURL(url).catch(() => {});
+    tab.wc.loadURL(this.loadUrl(url)).catch(() => {});
     tab.wc.focus();
     this.changed();
   }
@@ -1237,14 +1276,15 @@ class OliveWindow {
       find: this.find,
       htmlFullscreen: !!this.htmlFullscreenId,
       appPage: ['settings','activities'].includes(this.inlinePage?.kind) ? {title:this.inlinePage.options.title||'Settings'} : null,
-      onboarding: !this.isPrivate && this.mgr.onboarding?.listed() ? {active:this.inlinePage?.kind==='setup', step:this.mgr.onboarding.saved.step, remaining:Math.max(0,4-require('./onboarding').STEPS.indexOf(this.mgr.onboarding.saved.step))} : null,
+      // the setup row stands in for setup while no olive://onboarding tab is open here
+      onboarding: !this.isPrivate && this.mgr.onboarding?.listed() && ![...this.tabs.values()].some(x => /^olive:\/\/onboarding(\/|$)/i.test(x.url || '')) ? {active:false, step:this.mgr.onboarding.saved.step, remaining:Math.max(0,4-require('./onboarding').STEPS.indexOf(this.mgr.onboarding.saved.step))} : null,
       active: !this.inlinePage && active
         ? {
             id: active.id,
             url: active.errorFor || active.url,
             host: displayHost(active.errorFor || active.url),
             title: active.title,
-            secure: /^https:/.test(active.url),
+            secure: /^https:/.test(active.url) || isOliveUrl(active.url), // olive:// is local, served by Olive
             loading: active.loading,
             canGoBack: wc ? wc.navigationHistory.canGoBack() : false,
             canGoForward: wc ? wc.navigationHistory.canGoForward() : false,
@@ -1430,13 +1470,14 @@ class OliveWindow {
       case 'importBrowser': return this.mgr.onboarding?.showImport();
       case 'onboardingLater': return this.mgr.onboarding?.command('later');
       // one Settings page; the old page names open its tabs (src/main/settings-page.js)
-      case 'settings': return this.mgr.settingsPage?.show(this, a.tab || 'general', { section: a.section || null });
+      // cmd+, (no tab): focus a Settings tab if there is one (this window first), else open one
+      case 'settings': return this.mgr.settingsPage?.show(this, a.tab, { section: a.section || null, origin: a.origin || null });
       case 'shortcuts': return this.mgr.settingsPage?.show(this, 'shortcuts');
       case 'activities': return this.mgr.settingsPage?.show(this, 'activities');
       case 'ledger': return this.mgr.ledgerUI ? this.mgr.ledgerUI.show(this) : require('./ledger-review').show(this);
       case 'ublock': return this.mgr.extensions?.open(this);
       case 'extensions': return this.mgr.settingsPage?.show(this, 'extensions');
-      case 'sitePermissions': return this.mgr.settingsPage?.show(this, 'general', { section: 'permissions' });
+      case 'sitePermissions': return this.mgr.settingsPage?.show(this, 'general', { section: 'permissions', origin: active?.url || null });
       case 'resetPermissions': this.mgr.permissions.reset(this); break;
       case 'newTab': return this.openPalette('new');
       case 'splitNew': return this.openPalette('split');
@@ -1532,15 +1573,13 @@ class OliveWindow {
     this.pendingGroup = null;
     if (item?.kind === 'command') {
       if (item.commandId === 'settings') {
-        const target = parseSettingsUrl(item.url || '') || { tab: 'general' };
-        return this.cmd('settings', target);
+        // the plain Settings command acts like cmd+, ; a deep link names its section
+        const target = item.url && item.url !== 'olive://settings' ? parseSettingsUrl(item.url) : null;
+        return this.cmd('settings', target || {});
       }
       if (isAppCommand(item.commandId)) return this.cmd(item.commandId);
       return;
     }
-    // olive://settings[/tab] (and the old page names) typed or pasted: the Settings page
-    const settingsTarget = parseSettingsUrl(item?.url || input);
-    if (settingsTarget) return this.cmd('settings', settingsTarget);
     if (item && item.kind === 'tab') {
       const w = this.mgr.windows.find((x) => x.tabs.has(item.tabId));
       if (w) {
@@ -1552,6 +1591,8 @@ class OliveWindow {
     const raw = item?.url || input;
     if (!raw) return;
     const url = toUrl(raw);
+    // typed olive:// urls are ordinary addresses; private windows send them to a normal window
+    if (this.isPrivate && isOliveUrl(url)) return this.mgr.internal?.open(url);
     if (url.startsWith(SEARCH) && (mode !== 'edit' || newTab)) this.recordActivity('search', { url, engine: 'google' });
     const active = this.tabs.get(this.activeId);
     if (inSplit || mode === 'split') return this.openInSplit(url, active);
@@ -1584,6 +1625,7 @@ class OliveWindow {
 
   wireTabKeys(wc) {
     wc.on('before-input-event', (event, input) => {
+      if (wc.__oliveRecordingKeys) return; // Settings > Keyboard Shortcuts is recording a shortcut
       // Esc while the walk is held cancels it: back to the start tab, mru untouched,
       // and the later modifier release finds no walk. Swallow the Esc (and its keyUp)
       // so the page / palette / inline page never sees it.
@@ -1686,10 +1728,7 @@ class OliveWindow {
   suggest(query) {
     const q = (query || '').trim();
     const out = commandSuggestions(q);
-    const settingsTarget = parseSettingsUrl(q);
-    if (settingsTarget) {
-      out.unshift({ kind: 'command', commandId: 'settings', title: settingsTarget.tab === 'general' ? 'Settings' : `Settings — ${TAB_TITLES[settingsTarget.tab]}`, sub: settingsUrl(settingsTarget.tab), url: settingsUrl(settingsTarget.tab) });
-    } else if (q) {
+    if (q) {
       const url = toUrl(q);
       const isSearch = url.startsWith(SEARCH);
       out.push(isSearch ? { kind: 'search', title: q, url, sub: 'Search Google' } : { kind: 'url', title: url.replace(/^https?:\/\//, ''), url, sub: 'Open' });
@@ -1726,6 +1765,7 @@ class OliveWindow {
     this.destroyed = true;
     clearInterval(this.groupTimer);
     for (const tab of this.tabs.values()) {
+      this.mgr.internal?.check(tab, { removed: true });
       if (tab.devtools?.webContents && !tab.devtools.webContents.isDestroyed()) tab.devtools.webContents.close();
       if (tab.view?.webContents && !tab.view.webContents.isDestroyed()) tab.view.webContents.close();
     }

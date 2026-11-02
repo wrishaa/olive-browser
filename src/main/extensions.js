@@ -1,7 +1,6 @@
 // uBO Lite: unmodified CWS package plus a small Olive overlay in the profile-local
 // copy (worker API shim, see extension-shims/). Olive's on/off drives native DNR.
 const { app, BrowserWindow, ipcMain } = require('electron');
-const { AppPanel } = require('./app-panel');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
@@ -70,12 +69,13 @@ class Extensions {
   constructor(mgr) {
     this.mgr = mgr;
     this.status = { installed: false, enabled: false, name: 'uBO Lite', gap: 'Starting the bundled network blocker…' };
-    this.popup = this.originalPopup = null;
+    // olive://extensions/ublock (ui/extension.html) only: InternalPages.sender
     ipcMain.handle('olive:ublock', async (event, command) => {
-      if (!this.popup || event.sender !== this.popup.webContents) throw new Error('not an extension control window');
-      if (command === 'close') { this.popup.close(); return this.status; }
+      const from = this.mgr.internal?.sender(event, 'extensions');
+      if (!from) throw new Error('not an extension control page');
       if (command === 'toggle') await this.setEnabled(!this.status.enabled);
-      if (command === 'original') this.openOriginal();
+      if (command === 'original') this.openOriginal(from.win);
+      if (command === 'options') this.openOptions(from.win);
       return this.status;
     });
   }
@@ -162,12 +162,9 @@ class Extensions {
     // Let an already-running operation observe cancellation before unloading.
     if (this.operation) await this.operation.catch(() => {});
     this.operation = null;
-    if (this.popup && !this.popup.isDestroyed()) this.popup.close();
-    if (this.originalPopup && !this.originalPopup.isDestroyed()) this.originalPopup.close();
-    if (this.optionsPage && !this.optionsPage.isDestroyed()) this.optionsPage.close();
     if (this.helper && !this.helper.isDestroyed()) this.helper.destroy();
     if (this.ext && this.ses) { try { await this.ses.extensions.removeExtension(this.ext.id); } catch {} }
-    this.popup = this.originalPopup = this.optionsPage = this.helper = this.ext = this.ses = null;
+    this.helper = this.ext = this.ses = null;
     this.status = { installed: false, enabled: false, name: 'uBO Lite', gap: 'Starting the bundled network blocker…' };
   }
   setEnabled(enabled) {
@@ -219,7 +216,7 @@ class Extensions {
     this.notify();
     return this.status;
   }
-  notify() { this.mgr.broadcast(); this.mgr.extensionSettings?.push?.(); }
+  notify() { this.mgr.broadcast(); this.mgr.extensionSettings?.push?.(); this.mgr.internal?.send('extensions', 'olive:ublock-state', this.status, p => p.kind === 'page'); }
   savePrefs() {
     if (!this.prefs) return;
     fs.writeFileSync(this.prefs, serializePrefs({ enabled: typeof this.desiredEnabled === "boolean" ? this.desiredEnabled : this.status.enabled, showInToolbar: this.status.showInToolbar === true }), { mode: 0o600 });
@@ -232,19 +229,11 @@ class Extensions {
     this.notify();
     return this.status;
   }
+  // the shield: Olive's uBO Lite page as a tab (olive://extensions/ublock); an open one is
+  // focused instead of opening another
   open(win) {
-    if (!win || win.isPrivate || win.win.isDestroyed()) return;
-    if (this.popup && !this.popup.isDestroyed()) {
-      if (this.popup.owner === win) return this.popup.focus();
-      this.popup.close();
-    }
-    const popup = this.popup = new AppPanel(win, { width: 370, height: 385, title: 'uBO Lite — basic rules', webPreferences: { preload: path.join(__dirname, '../ui/extension-preload.js'), sandbox: true, contextIsolation: true, nodeIntegration: false } });
-    popup.setMenu(null);
-    popup.webContents.on('will-navigate', event => event.preventDefault());
-    popup.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
-    popup.webContents.once('did-finish-load', () => popup.webContents.send('olive:ublock-state', this.status));
-    popup.loadFile(path.join(__dirname, '../ui/extension.html'));
-    popup.on('closed', () => { if (this.popup === popup) this.popup = null; });
+    if (!this.mgr.internal) return null;
+    return this.mgr.internal.open('olive://extensions/ublock', { win, reuse: page => page.kind === 'page' });
   }
   // Load the options page in a hidden window first: uBOL's dashboard stays blank
   // (body.loading) without its background worker, which Electron can't start.
@@ -269,28 +258,16 @@ class Extensions {
     this.optionsProbe = { context, ok };
     return ok;
   }
-  // The extension's own options page (uBO Lite: dashboard.html), inline in the pane.
+  // The extension's own options page (uBO Lite: dashboard.html) as a tab. The tab loads the
+  // chrome-extension page; its address bar shows olive://extensions/ublock/options.
   openOptions(win = this.mgr.focusedWindow()) {
-    const page = this.status.optionsPage;
-    if (!this.ext || !page || !win || win.isPrivate || win.win.isDestroyed()) return null;
-    if (this.optionsPage && !this.optionsPage.isDestroyed()) this.optionsPage.close();
-    const view = this.optionsPage = new AppPanel(win, { title: `${this.status.name} options`, webPreferences: { session: this.ses, sandbox: true, contextIsolation: true, nodeIntegration: false } });
-    view.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
-    view.webContents.loadURL(`chrome-extension://${this.ext.id}/${page.replace(/^\/+/, '')}`);
-    view.on('closed', () => { if (this.optionsPage === view) this.optionsPage = null; });
-    return view;
+    if (!this.ext || !this.status.optionsPage || !this.mgr.internal) return null;
+    return this.mgr.internal.open('olive://extensions/ublock/options', { win, reuse: () => false });
   }
-  openOriginal() {
-    const win = this.mgr.focusedWindow();
-    if (!this.ext || !win || win.isPrivate || win.win.isDestroyed()) return;
-    if (this.originalPopup && !this.originalPopup.isDestroyed()) {
-      if (this.originalPopup.owner === win) return this.originalPopup.focus();
-      this.originalPopup.close();
-    }
-    const popup = this.originalPopup = new AppPanel(win, { width: 400, height: 540, title: 'Official uBO Lite popup (limited in Electron)', webPreferences: { session: this.ses, sandbox: true, contextIsolation: true, nodeIntegration: false } });
-    popup.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
-    popup.webContents.loadURL(`chrome-extension://${this.ext.id}/popup.html`);
-    popup.on('closed', () => { if (this.originalPopup === popup) this.originalPopup = null; });
+  // uBO Lite's own popup page as a tab (olive://extensions/ublock/popup). limited in Electron.
+  openOriginal(win = this.mgr.focusedWindow()) {
+    if (!this.ext || !this.mgr.internal) return null;
+    return this.mgr.internal.open('olive://extensions/ublock/popup', { win, reuse: () => false });
   }
 }
 // Extension icon as a data URL from the verified local copy (never a remote fetch).

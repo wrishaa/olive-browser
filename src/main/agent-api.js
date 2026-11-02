@@ -64,7 +64,13 @@ function send(res, code, body, type = 'application/json') {
   res.end(data);
 }
 
+// read once: a route may peek at the body before the handler reads it
 async function readJson(req) {
+  if (!req.__oliveJson) req.__oliveJson = readBody(req);
+  return req.__oliveJson;
+}
+const peekJson = (req) => readJson(req).catch(() => ({}));
+async function readBody(req) {
   const chunks = [];
   let size = 0;
   for await (const c of req) {
@@ -123,6 +129,7 @@ async function handle(mgr, req, res, token) {
       if (m === 'GET') return send(res, 200, await Promise.all(mgr.allTabs().map(({ tab, win }) => describe(mgr, win, tab))));
       if (m === 'POST') {
         const b = await readJson(req);
+        if (internalUrl(mgr, b.url)) return send(res, 403, { error: INTERNAL_ERROR });
         const win = (b.windowId && mgr.windows.find((w) => w.id === b.windowId)) || mgr.focusedWindow() || mgr.newWindow({ inactive: true });
         const activate = b.activate === true || b.background === false;
         let tab;
@@ -151,6 +158,9 @@ async function handle(mgr, req, res, token) {
     const { tab, win } = found;
     const action = parts[2] || '';
     if (m === 'GET' && !action) return send(res, 200, await describe(mgr, win, tab));
+    // Olive's own pages (olive://settings, ledger, profiles, setup, uBO) hold the browser's
+    // settings: agents can list them, not read, drive or navigate them (or to them)
+    if (internalUrl(mgr, tab.url) || (m === 'POST' && action === 'navigate' && internalUrl(mgr, (await peekJson(req)).url))) return send(res, 403, { error: INTERNAL_ERROR });
     if (m === 'GET' && action === 'screenshot') {
       // stayHidden: capture without flipping the page to visible (which unthrottles it)
       const img = await mgr.agentWake.step(win, tab, () => captureHidden(tab.wc), { focus: false });
@@ -405,4 +415,10 @@ async function describe(mgr, win, tab) {
   };
 }
 
+const INTERNAL_ERROR = 'olive:// pages are not available to the agent api';
+function internalUrl(mgr, raw) {
+  if (typeof raw !== 'string' || !raw.trim()) return false;
+  const url = require('../core/url').toUrl(raw) || '';
+  return /^olive:/i.test(url) || !!mgr.internal?.isInternal(url);
+}
 module.exports = { startAgentApi };

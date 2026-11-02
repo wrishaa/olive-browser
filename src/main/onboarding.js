@@ -17,7 +17,14 @@ class Onboarding {
     // macOS (Screen Recording "Quit & Reopen", SIGTERM) and app.quit() all land here first.
     for (const event of ['before-quit', 'will-quit']) this.electron.app.on?.(event, () => { this.quitting = true; });
     this.electron.ipcMain.handle('olive:onboarding', async (event, action, payload = {}) => {
-      if (!this.view || this.view.isDestroyed() || event.sender !== this.view.webContents || (this.view.webContents.mainFrame && event.senderFrame !== this.view.webContents.mainFrame)) throw new Error('Not a setup window');
+      // the setup page is a tab at olive://onboarding[/<step>] (InternalPages); an open one
+      // that isn't ours yet (restored from the session, reopened, typed) becomes ours
+      const internal = !this.Panel && this.mgr.internal;
+      const from = internal ? internal.sender(event, 'onboarding') : null;
+      if (internal && !from) throw new Error('Not a setup window');
+      if (from && (!this.view || this.view.isDestroyed()) && this.eligible()) this.attach(internal.adopt(from.win, from.tab, 'onboarding'));
+      const wc = this.view && !this.view.isDestroyed() ? this.view.webContents : null;
+      if (!wc || event.sender !== wc || (wc.mainFrame && event.senderFrame !== wc.mainFrame)) throw new Error('Not a setup window');
       return this.command(action, payload);
     });
   }
@@ -74,7 +81,7 @@ class Onboarding {
   show(options = {}) {
     if (!this.eligible()) return false;
     if (!options.only && this.only) { this.only = null; this.push(); }
-    if (this.view && !this.view.isDestroyed()) { this.view.show(); this.view.focus(); return true; }
+    if (this.view && !this.view.isDestroyed()) { this.view.show(); this.view.focus(); this.push(); return true; }
     if (options.only) return this.open();
     // Non-modal: skipping setup never prevents normal browsing.
     // A finished profile stays finished: reopening only replays the steps from the start.
@@ -84,23 +91,37 @@ class Onboarding {
     return this.open();
   }
   open() {
-    const options = { width: 740, height: 650, title: 'Set up Olive', webPreferences: { preload: path.join(__dirname, '../ui/onboarding-preload.js'), sandbox: true, contextIsolation: true, nodeIntegration: false } };
     const focused = this.mgr.focusedWindow?.();
-    const owner = focused?.isPrivate ? this.mgr.windows.find(w=>!w.isPrivate) || this.mgr.newWindow({}) : focused;
-    const view = this.view = this.Panel ? new this.Panel(options) : new (require('./inline-page').InlinePage)(owner, options);
+    const owner = focused?.isPrivate || focused?.destroyed ? this.mgr.windows.find(w=>!w.isPrivate && !w.destroyed) || this.mgr.newWindow({}) : focused;
+    // Olive: a normal tab at olive://onboarding/<step> (no overlay). Tests pass a Panel.
+    if (!this.Panel && this.mgr.internal) {
+      const view = this.mgr.internal.view(`olive://onboarding/${this.only || this.saved.step}`, { win: owner, host: 'onboarding' });
+      if (!view) return false;
+      this.attach(view);
+      Promise.resolve().then(() => { if (!view.isDestroyed()) { this.push(); view.focus(); } });
+      return true;
+    }
+    const options = { width: 740, height: 650, title: 'Set up Olive', webPreferences: { preload: path.join(__dirname, '../ui/olive-preload.js'), sandbox: true, contextIsolation: true, nodeIntegration: false } };
+    const view = new this.Panel(options);
     view.setMenu(null);
     view.webContents.on('will-navigate', event => event.preventDefault());
     view.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
+    this.attach(view);
     Promise.resolve(view.loadFile(path.join(__dirname, '../ui/onboarding.html'))).then(()=>{if(!view.isDestroyed())view.focus();});
+    return true;
+  }
+  attach(view) {
+    this.view = view;
     view.on('closed', () => {
       if (this.view === view) this.view = null;
       const standalone = !!this.only; this.only = null;
-      // Only a person closing setup pauses it; quitting keeps the saved step so the next launch resumes.
+      // Only a person closing setup (its tab, or navigating it away) pauses it; quitting
+      // keeps the saved step so the next launch resumes.
       if (!standalone && !this.saved.completed && !this.quittingNow()) this.pause();
       this.mgr.broadcast?.();
     });
     this.mgr.broadcast?.();
-    return true;
+    return view;
   }
   close() { if (this.view && !this.view.isDestroyed()) this.view.close(); }
   // Call after the manager has switched dataPath/profileInfo; no module-global state.
@@ -193,6 +214,6 @@ class Onboarding {
     this.mgr.broadcast?.();
     return this.state();
   }
-  push() { this.mgr.broadcast?.(); if (this.view && !this.view.isDestroyed()) this.view.webContents.send('olive:onboarding-state', this.state()); }
+  push() { this.mgr.broadcast?.(); const wc = this.view && !this.view.isDestroyed() ? this.view.webContents : null; if (wc) wc.send('olive:onboarding-state', this.state()); }
 }
 module.exports = { Onboarding, STEPS };

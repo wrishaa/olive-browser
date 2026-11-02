@@ -7,24 +7,22 @@ const { extensionRows } = require('../core/extension-prefs');
 class ExtensionSettings {
   constructor(mgr) {
     this.mgr = mgr;
-    this.view = null;
     ipcMain.handle('olive:extensions', async (event, action, payload = {}) => {
-      if (!this.trusted(event)) return null;
+      const from = this.trusted(event);
+      if (!from) return null;
       payload = payload && typeof payload === 'object' ? payload : {};
-      return this.handle(action, payload);
+      return this.handle(action, payload, from);
     });
   }
   get extensions() { return this.mgr.extensions; }
-  trusted(event) {
-    const view = this.view;
-    return !!(view && !view.isDestroyed() && !view.owner.isPrivate && event.sender === view.webContents && event.senderFrame === view.webContents.mainFrame);
-  }
+  // only the main frame of a Settings > Extensions tab (olive://settings/extensions)
+  trusted(event) { return this.mgr.internal?.sender(event, 'settings', { tab: 'extensions' }) || null; }
   rows() {
     const x = this.extensions;
     if (!x) return [];
     return extensionRows([{ ...x.status, icon: x.icon || null }]);
   }
-  async handle(action, payload) {
+  async handle(action, payload, from) {
     const x = this.extensions;
     if (action === 'get') return this.rows();
     if (!x || payload.id !== x.status.id) throw new Error('unknown extension');
@@ -36,21 +34,18 @@ class ExtensionSettings {
       return this.rows();
     }
     if (action === 'options') {
-      const owner = this.view.owner;
+      const owner = from.win;
       if (!(await x.probeOptions())) return { ok: false, message: `${x.status.name}’s options page didn’t finish loading. Blocking is unaffected.` };
-      if (this.view?.owner !== owner || owner.destroyed) return { ok: false, message: '' };
+      if (owner.destroyed) return { ok: false, message: '' };
       x.openOptions(owner);
       return { ok: true };
     }
     throw new Error('unknown action');
   }
   // Called by the Extensions controller whenever its status changes.
-  push() {
-    const view = this.view;
-    if (view && !view.isDestroyed() && !view.webContents.isDestroyed()) view.webContents.send('olive:extensions-state', this.rows());
-  }
-  // the Extensions tab of Settings (src/main/settings-page.js sets this.view)
+  push() { this.mgr.internal?.send('settings', 'olive:extensions-state', this.rows(), page => page.tab === 'extensions'); }
+  // the Extensions tab of Settings
   show(owner = this.mgr.focusedWindow?.()) { return this.mgr.settingsPage?.show(owner, 'extensions'); }
-  close() { if (this.view && !this.view.isDestroyed()) this.view.close(); this.view = null; }
+  close() {}
 }
 module.exports = { ExtensionSettings };

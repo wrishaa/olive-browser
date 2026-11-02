@@ -105,25 +105,28 @@ class Shortcuts {
   }
   // the remapping UI is the Keyboard Shortcuts tab of Settings (src/main/settings-page.js)
   showSettings(win) { return this.mgr.settingsPage?.show(win || this.mgr.focusedWindow(), 'shortcuts'); }
-  // Only the settings page's own main-frame document may read or change shortcuts.
-  // Returns an unbind function. One page at a time (ipcMain.handle is one per channel).
-  bind(view) {
-    const { ipcMain } = require('electron');
-    const channel = 'olive:shortcuts';
-    ipcMain.removeHandler(channel);
-    this.view = view;
-    ipcMain.handle(channel, (e, action, payload = {}) => {
-      if (this.view !== view || view.isDestroyed() || e.sender !== view.webContents || e.senderFrame !== view.webContents.mainFrame) return null;
+  // Only the main frame of a Settings > Keyboard Shortcuts tab (olive://settings/shortcuts)
+  // may read or change shortcuts. Installed once per manager (Manager constructor).
+  installIpc(ipcMain = require('electron').ipcMain) {
+    ipcMain.handle('olive:shortcuts', (e, action, payload = {}) => {
+      const from = this.mgr.internal?.sender(e, 'settings', { tab: 'shortcuts' });
+      if (!from) return null;
       try {
-        if (action === 'close') { view.close(); return null; }
+        // a focused shortcut field gets every key: menu accelerators and tab keys pause
+        // until it blurs or the page navigates (window.js resets it on navigation)
+        if (action === 'recording') { setRecording(from.tab.wc, payload?.on === true); return null; }
         if (action === 'set') this.set(payload?.id, payload?.value);
         else if (action === 'reset') this.reset();
         else if (action !== 'get') return null;
         return { commands: this.state() };
       } catch (error) { return { commands: this.state(), error: error.message }; }
     });
-    return () => { if (this.view === view) { ipcMain.removeHandler(channel); this.view = null; } };
   }
   flush() { this.store.flush(); }
 }
-module.exports = { Shortcuts, COMMANDS, RESERVED, normalize };
+function setRecording(wc, on) {
+  if (!wc || wc.isDestroyed?.()) return;
+  wc.__oliveRecordingKeys = on;
+  try { wc.setIgnoreMenuShortcuts(on); } catch {}
+}
+module.exports = { Shortcuts, COMMANDS, RESERVED, normalize, setRecording };

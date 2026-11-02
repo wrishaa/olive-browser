@@ -21,7 +21,8 @@ function buildMenu(mgr) {
         { role: 'about' },
         { type: 'separator' },
         // one Settings page (olive://settings); the old items open its tabs
-        { label: 'Settings…', accelerator: shortcut('settings'), click: settings('general') },
+        // cmd+, focuses an open Settings tab (this window first) or opens one
+        { label: 'Settings…', accelerator: shortcut('settings'), click: settings(undefined) },
         { label: 'Profiles…', click: () => mgr.profileControls?.show() },
         { label: 'Activities — Site Time…', click: settings('activities') },
         { label: 'Activity Event Log…', click: w('ledger') },
