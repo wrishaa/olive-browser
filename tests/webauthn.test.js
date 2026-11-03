@@ -91,29 +91,55 @@ function page() {
     };
     var credentials = new CredentialsContainer();`, ctx);
   const src = fs.readFileSync(path.join(__dirname, '../src/ui/webauthn-preload.js'), 'utf8');
-  const electron = { contextBridge: { executeInMainWorld: ({ func, args }) => vm.runInContext(`(${func.toString()})(...${JSON.stringify(args)})`, ctx) } };
-  vm.runInNewContext(src, { require: n => { if (n !== 'electron') throw new Error(n); return electron; } });
-  return { ctx, timers, run: code => vm.runInContext(code, ctx) };
+  const sent = [], on = {};
+  const ipcRenderer = { send: (...a) => sent.push(a), on: (ch, fn) => { on[ch] = fn; } };
+  const electron = { ipcRenderer, contextBridge: { executeInMainWorld: ({ func, args }) => { ctx.__args = args; vm.runInContext(`(${func.toString()})(...__args)`, ctx); } } };
+  vm.runInNewContext(src, { require: n => { if (n !== 'electron') throw new Error(n); return electron; }, Map });
+  // timeout timers vs the 600 ms "show the prompt" timers
+  const deadlines = () => timers.filter(t => t.ms !== 600), shows = () => timers.filter(t => t.ms === 600);
+  return { ctx, timers, deadlines, shows, sent, on, run: code => vm.runInContext(code, ctx) };
 }
 
 test('a passkey request nobody answers fails with NotAllowedError at its (clamped) timeout', async () => {
   const p = page();
   const pending = p.run(`credentials.create({ publicKey: { timeout: 60000 } })`);
-  assert.equal(p.timers.length, 1); assert.equal(p.timers[0].ms, 61000);
-  p.timers[0].fn();
+  assert.equal(p.deadlines().length, 1); assert.equal(p.deadlines()[0].ms, 61000);
+  p.deadlines()[0].fn();
   await assert.rejects(pending, e => e.name === 'NotAllowedError' && /timed out or was not allowed/.test(e.message));
-  p.run(`credentials.get({ publicKey: { timeout: 1 } })`); assert.equal(p.timers[1].ms, 11000, 'chromium lower clamp');
-  p.run(`credentials.get({ publicKey: { timeout: 3600000 } })`); assert.equal(p.timers[2].ms, 601000, 'upper clamp');
-  p.run(`credentials.get({ publicKey: {} })`); assert.equal(p.timers[3].ms, 301000, 'default when unset');
+  p.run(`credentials.get({ publicKey: { timeout: 1 } })`); assert.equal(p.deadlines()[1].ms, 11000, 'chromium lower clamp');
+  p.run(`credentials.get({ publicKey: { timeout: 3600000 } })`); assert.equal(p.deadlines()[2].ms, 601000, 'upper clamp');
+  p.run(`credentials.get({ publicKey: {} })`); assert.equal(p.deadlines()[3].ms, 301000, 'default when unset');
+});
+
+test('a waiting passkey request shows olive\'s prompt (electron has none); its Cancel ends the call, settling hides it', async () => {
+  const p = page();
+  const pending = p.run(`credentials.create({ publicKey: { rp: { id: 'webauthn.io', name: 'x' }, timeout: 60000 } })`);
+  assert.equal(p.sent.length, 0, 'nothing shown before the short delay (a fast key never flashes it)');
+  p.shows()[0].fn();
+  assert.deepEqual(p.sent[0], ['olive:webauthn-prompt', 1, 'create', 'webauthn.io']);
+  p.on['olive:webauthn-cancel']({}, 1); // the user pressed Cancel
+  await assert.rejects(pending, e => e.name === 'NotAllowedError');
+  await new Promise(r => setImmediate(r));
+  assert.equal(p.deadlines()[0].cleared, true);
+  // a request that settles while its prompt is up takes the prompt down
+  const ok = p.run(`credentials.get({ publicKey: { rpId: 'webauthn.io' } })`);
+  p.shows()[1].fn();
+  assert.deepEqual(p.sent.at(-1), ['olive:webauthn-prompt', 2, 'get', 'webauthn.io']);
+  p.deadlines()[1].fn(); await assert.rejects(ok, e => e.name === 'NotAllowedError'); await new Promise(r => setImmediate(r));
+  assert.deepEqual(p.sent.at(-1), ['olive:webauthn-prompt-end', 2]);
+  // answered before the delay: the show timer is cleared, nothing is sent
+  const n = p.sent.length;
+  await p.run(`credentials.get({ publicKey: {}, answer: true })`);
+  assert.equal(p.shows()[2].cleared, true); assert.equal(p.sent.length, n);
 });
 
 test('answered requests clear the timer; conditional, non-passkey and page aborts are untouched', async () => {
   const p = page();
   assert.equal((await p.run(`credentials.get({ publicKey: { timeout: 60000 }, answer: true })`)).id, 'cred');
-  assert.equal(p.timers[0].cleared, true);
+  assert.equal(p.deadlines()[0].cleared, true);
   p.run(`credentials.get({ publicKey: {}, mediation: 'conditional' })`);
   p.run(`credentials.get({ password: true })`);
-  assert.equal(p.timers.length, 1, 'no timer for conditional / non-publicKey');
+  assert.equal(p.timers.length, 2, 'no timer and no prompt for conditional / non-publicKey');
   assert.equal(p.run(`calls[1][1].signal`), undefined, 'conditional request passed through as is');
   // the page's own signal still aborts, with the page's reason
   const pending = p.run(`globalThis.ac = new AbortController(); credentials.create({ publicKey: {}, signal: ac.signal })`);

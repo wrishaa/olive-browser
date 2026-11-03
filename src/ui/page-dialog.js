@@ -16,12 +16,14 @@ function show(d) {
   $('#message').textContent = d.message;
   field.hidden = d.kind !== 'prompt';
   $('#cancel').hidden = d.kind === 'alert';
+  $('#ok').hidden = d.kind === 'passkey'; // only Cancel: the security key itself answers
+  card.classList.toggle('passkey', d.kind === 'passkey');
   $('#block').hidden = !d.offerBlock; box.checked = false;
   card.style.animation = 'none'; void card.offsetWidth; card.style.animation = '';
   if (d.kind === 'prompt') {
     field.value = drafts.has(d.id) ? drafts.get(d.id) : d.value;
     field.focus(); field.select();
-  } else $('#ok').focus();
+  } else (d.kind === 'passkey' ? $('#cancel') : $('#ok')).focus();
 }
 
 function answer(ok) {
@@ -32,13 +34,14 @@ function answer(ok) {
 }
 
 window.pageDialog.on(show);
-card.addEventListener('submit', (e) => { e.preventDefault(); answer(true); });
+card.addEventListener('submit', (e) => { e.preventDefault(); answer(cur?.kind !== 'passkey'); });
 $('#cancel').addEventListener('click', () => answer(false));
 document.addEventListener('keydown', (e) => {
   if (!cur) return;
+  if (cur.kind === 'passkey') { if (e.key === 'Escape' || e.key === 'Enter') { e.preventDefault(); answer(false); } return; }
   if (e.key === 'Escape') { e.preventDefault(); answer(cur.kind === 'alert'); }
   else if (e.key === 'Enter' && !e.isComposing && e.target !== $('#cancel') && e.target.tagName !== 'BUTTON') { e.preventDefault(); answer(true); }
 });
 // clicks on the dimmed page do nothing (the dialog stays modal for its tab), but bring
 // focus back to the dialog so enter / esc keep working
-$('#scrim').addEventListener('mousedown', (e) => { e.preventDefault(); (cur?.kind === 'prompt' ? field : $('#ok')).focus(); });
+$('#scrim').addEventListener('mousedown', (e) => { e.preventDefault(); (cur?.kind === 'prompt' ? field : cur?.kind === 'passkey' ? $('#cancel') : $('#ok')).focus(); });

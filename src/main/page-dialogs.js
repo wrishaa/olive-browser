@@ -5,6 +5,10 @@
 // and other tabs keep working). a dialog from a tab that isn't on screen waits until the
 // user opens that tab (chrome does the same); it never activates the tab or the window.
 // popup windows (oauth etc.) get the popup over their whole content.
+// passkeys: electron has no webauthn ui, so while a page's navigator.credentials.create/get
+// waits for a security key, src/ui/webauthn-preload.js asks for a 'passkey' prompt here (async
+// ipc, not sendSync: the page keeps running). it only has Cancel, which ends the page's call
+// with NotAllowedError; the page ends the prompt itself when the call settles.
 const { WebContentsView, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
 const D = require('../core/page-dialogs');
@@ -23,9 +27,13 @@ class PageDialogs {
       if (!req || this.views.get(req.host)?.view.webContents !== e.sender) return;
       if (block === true && req.offerBlock) {
         this.counter.block(req.key);
-        for (const other of [...this.pending.values()]) if (other !== req && other.key === req.key) this.finish(other, D.fallback(other.kind));
+        for (const other of [...this.pending.values()]) if (other !== req && other.kind !== 'passkey' && other.key === req.key) this.finish(other, D.fallback(other.kind));
       }
-      this.finish(req, D.result(req.kind, ok === true, text));
+      this.finish(req, req.kind === 'passkey' ? 'cancel' : D.result(req.kind, ok === true, text));
+    });
+    ipcMain.on('olive:webauthn-prompt', (e, pid, op, rpId) => this.passkey(e, pid, op, rpId));
+    ipcMain.on('olive:webauthn-prompt-end', (e, pid) => {
+      for (const r of [...this.pending.values()]) if (r.kind === 'passkey' && r.wc === e.sender && r.frame === e.senderFrame && r.pid === pid) this.finish(r, null);
     });
   }
 
@@ -47,6 +55,25 @@ class PageDialogs {
       title: D.title(wc.getURL(), frame?.url || '', isMainFrame),
       offerBlock: this.counter.next(key),
       ...where,
+    };
+    this.pending.set(req.id, req);
+    this.refresh(req.host);
+  }
+
+  // a page's webauthn request is waiting for an authenticator: show "insert your security key"
+  passkey(e, pid, op, rpId) {
+    const n = D.passkey(op, rpId);
+    if (!n || !Number.isInteger(pid)) return;
+    const wc = e.sender;
+    this.wire(wc);
+    const where = this.locate(wc);
+    if (!where) return; // nowhere to show it: the request still ends at its timeout
+    const frame = e.senderFrame;
+    const req = {
+      id: ++this.seq, kind: 'passkey', message: n.message, value: '', key: wc.id, wc, frame, pid,
+      title: n.title, offerBlock: false, ...where,
+      // 'cancel' (the user's Cancel, or the tab/window going away) ends the page's call
+      done: (value) => { if (value !== 'cancel') return; try { if (frame && !frame.isDestroyed?.()) frame.send('olive:webauthn-cancel', pid); } catch {} },
     };
     this.pending.set(req.id, req);
     this.refresh(req.host);
@@ -77,7 +104,8 @@ class PageDialogs {
   finish(req, value) {
     if (!this.pending.has(req.id)) return;
     this.pending.delete(req.id);
-    try { req.event.returnValue = value; } catch {}
+    if (req.done) req.done(value);
+    else try { req.event.returnValue = value; } catch {}
     this.refresh(req.host);
   }
 

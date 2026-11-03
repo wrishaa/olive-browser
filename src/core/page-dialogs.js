@@ -12,6 +12,7 @@ const SUPPRESS_AFTER = 2; // from the 3rd dialog of one page load on, offer "don
 // what the page gets back when the dialog is dismissed without an answer (tab closed,
 // navigated away, crashed, suppressed, or nowhere to show it)
 function fallback(kind) {
+  if (kind === 'passkey') return 'cancel';
   if (kind === 'confirm') return false;
   if (kind === 'prompt') return null;
   return null; // alert: the preload returns undefined either way
@@ -36,6 +37,19 @@ function normalize(kind, message, value) {
     kind,
     message: clip(typeof message === 'string' ? message : '', MAX_MESSAGE),
     value: kind === 'prompt' ? clip(typeof value === 'string' ? value : '', MAX_VALUE) : '',
+  };
+}
+
+// a passkey prompt (not a page dialog: electron has no webauthn ui, see
+// src/ui/webauthn-preload.js): what to say while a create/get waits for a security key
+function passkey(op, rpId) {
+  if (op !== 'create' && op !== 'get') return null;
+  const rp = clip(typeof rpId === 'string' ? rpId.trim() : '', 253);
+  const site = rp || 'this site';
+  return {
+    op,
+    title: op === 'create' ? `Create a passkey for ${site}` : `Sign in to ${site} with a passkey`,
+    message: 'Insert your security key and touch it.\n\nOlive can’t use passkeys saved in iCloud Keychain, on this Mac with Touch ID, or on a phone yet.',
   };
 }
 
@@ -73,4 +87,4 @@ class PageCounter {
   reset(key) { this.map.delete(key); }
 }
 
-module.exports = { KINDS, MAX_MESSAGE, MAX_VALUE, SUPPRESS_AFTER, fallback, result, normalize, title, originOf, PageCounter };
+module.exports = { KINDS, MAX_MESSAGE, MAX_VALUE, SUPPRESS_AFTER, fallback, result, normalize, passkey, title, originOf, PageCounter };

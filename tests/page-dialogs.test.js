@@ -143,3 +143,46 @@ test('queue: navigation / close answer with cancel; unknown senders get the fall
   assert.equal(e4.returnValue, null);
   assert.equal(pd.list().length, 0);
 });
+
+// ---------- passkey prompt (electron has no webauthn ui; src/ui/webauthn-preload.js asks) ----------
+
+test('passkey prompt: shown over the tab with only Cancel; Cancel tells that frame, the page ending it is silent', async () => {
+  assert.equal(D.passkey('shell', 'x'), null);
+  assert.match(D.passkey('create', 'webauthn.io').title, /Create a passkey for webauthn\.io/);
+  assert.match(D.passkey('get', '').title, /this site/);
+  assert.match(D.passkey('get', 'a.com').message, /security key/);
+  assert.equal(D.normalize('passkey', 'x', ''), null, 'not a page dialog kind: the sync alert path rejects it');
+
+  const fake = fakeElectron();
+  const { PageDialogs } = load(fake);
+  const wcA = new fake.WC('https://webauthn.io/');
+  const host = new fake.Host();
+  const w = { win: host, destroyed: false, tabs: new Map([[1, { id: 1, wc: wcA }]]), activeId: 1, panes: [{ id: 1, page: { x: 260, y: 8, width: 500, height: 580 } }], overlay: null, ui: { webContents: new fake.WC('ui') } };
+  const pd = new PageDialogs({ windows: [w] });
+  const frame = { url: wcA.getURL(), parent: null, sent: [], send(ch, id) { this.sent.push([ch, id]); }, isDestroyed: () => false };
+  const ev = { sender: wcA, senderFrame: frame };
+  fake.listeners['olive:webauthn-prompt'](ev, 7, 'create', 'webauthn.io');
+  fake.listeners['olive:webauthn-prompt'](ev, 'x', 'create', 'webauthn.io'); // bad id: ignored
+  await new Promise((r) => setImmediate(r));
+  const entry = pd.views.get(host);
+  const shown = entry.view.webContents.sent.at(-1);
+  assert.equal(shown.kind, 'passkey');
+  assert.match(shown.title, /webauthn\.io/);
+  assert.equal(pd.list().length, 1);
+  assert.ok(host.contentView.children.includes(entry.view));
+  // a stranger can't cancel it
+  fake.listeners['olive:page-dialog-answer']({ sender: wcA }, shown.id, false, '', false);
+  assert.equal(frame.sent.length, 0);
+  fake.listeners['olive:page-dialog-answer']({ sender: entry.view.webContents }, shown.id, false, '', false);
+  assert.deepEqual(frame.sent, [['olive:webauthn-cancel', 7]]);
+  assert.equal(pd.list().length, 0);
+  // the request settled by itself (key touched, timeout): the page ends the prompt, no cancel sent
+  fake.listeners['olive:webauthn-prompt'](ev, 8, 'get', 'webauthn.io');
+  assert.equal(pd.list().length, 1);
+  fake.listeners['olive:webauthn-prompt-end']({ sender: wcA, senderFrame: { other: true } }, 8); // another frame: no
+  assert.equal(pd.list().length, 1);
+  fake.listeners['olive:webauthn-prompt-end'](ev, 8);
+  assert.equal(pd.list().length, 0);
+  assert.equal(frame.sent.length, 1);
+  assert.ok(!host.contentView.children.includes(entry.view));
+});
