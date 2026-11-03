@@ -1,0 +1,50 @@
+{
+ "title": "[1hr Talk] Intro to Large Language Models - YouTube",
+ "url": "https://www.youtube-nocookie.com/embed/zjkBMFhNj_g?autoplay=1",
+ "selection": "",
+ "scrollY": 0,
+ "text": "",
+ "video": {
+  "readyState": 4,
+  "t": 601.429773,
+  "paused": false,
+  "w": 1280,
+  "h": 720
+ },
+ "audio": {
+  "ok": true,
+  "tracks": 1,
+  "start": 601.437061,
+  "bytes": 1210770
+ },
+ "end": 676.908636,
+ "secs": 75,
+ "sampled": 75,
+ "frames": [
+  {
+   "file": "f000-t601.6.jpg",
+   "t": 601.6,
+   "why": "scene 1.000"
+  },
+  {
+   "file": "f001-t617.5.jpg",
+   "t": 617.5,
+   "why": "heartbeat"
+  },
+  {
+   "file": "f002-t632.5.jpg",
+   "t": 632.5,
+   "why": "heartbeat"
+  },
+  {
+   "file": "f003-t647.5.jpg",
+   "t": 647.5,
+   "why": "heartbeat"
+  },
+  {
+   "file": "f004-t662.6.jpg",
+   "t": 662.6,
+   "why": "heartbeat"
+  }
+ ]
+}

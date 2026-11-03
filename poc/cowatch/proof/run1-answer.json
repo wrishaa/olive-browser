@@ -1,0 +1,16 @@
+{
+  "question": "what did he just show?",
+  "now": "11:16",
+  "window": "10:16-11:16",
+  "frames": [
+    "f001-t617.5.jpg",
+    "f002-t632.5.jpg",
+    "f003-t647.5.jpg",
+    "f004-t662.6.jpg"
+  ],
+  "segments": 27,
+  "ms": 13060,
+  "cost_usd": 0.1547806,
+  "model": "opus",
+  "answer": "the same slide the whole minute (frames 10:17–11:02): **\"the network 'dreams' internet documents\"**, three made-up outputs side by side:\n\n- **java code dream**: a fake `Field` class with a `HashMap<String, Card>` cardIndex and addCard/getCard/getCardCount methods (frame)\n- **amazon product dream (?)**: a fake book listing, \"Hades Heroes\" by Maureen Fergus, with ISBN, hardback, 176 pages, dims and pub date (frame). that's the one he meant at 10:18–10:23 (audio): the ISBN \"just kind of like puts in whatever looks reasonable… it's parroting the training dataset distribution.\" so the number is almost certainly made up\n- **wikipedia article dream**: \"blacknose dace (rhinichthys atratulus)\", a small north american freshwater fish with a black side stripe that eats insects and crustaceans (frame). the transcript says \"black nose days\", which is a mishearing\n\nhis point (audio, 10:26–11:14): he looked up the dace article. that exact text isn't in the training set, but the facts are \"roughly correct\". the model is a \"lossy compression of the internet\": it \"remembers the gestalt\", produces the right *form* and fills it with what it knows. so \"you're never 100% sure\" whether you're getting hallucination or a correct answer, and \"you don't exactly know which is which\" between memorized and made-up."
+}

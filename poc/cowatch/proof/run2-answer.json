@@ -1,0 +1,15 @@
+{
+  "question": "what did he just show?",
+  "now": "22:31",
+  "window": "21:46-22:31",
+  "frames": [
+    "f004-t1312.5.jpg",
+    "f005-t1327.6.jpg",
+    "f006-t1341.6.jpg"
+  ],
+  "segments": 12,
+  "ms": 12165,
+  "cost_usd": 0.12958,
+  "model": "opus",
+  "answer": "**right now (22:21 on): a \"labeling instructions\" slide.** it's an excerpt from the instructgpt paper, the guidelines openai gave human labelers. the slide says \"[InstructGPT paper]\" in the corner.\n\n**from the 22:21 frame:**\n- labelers judge outputs on whether they're **helpful, truthful and harmless**.\n- \"for most tasks, being truthful and harmless is more important than being helpful.\"\n- each criterion comes with examples. helpful: follow what the user meant and ask for clarification if needed. truthful: don't make up facts. harmless: no abusive content and no bad real-world advice.\n- tiebreaker for close calls: \"which output would you rather receive from a customer assistant who is trying to help you with this task?\"\n\n**before that (21:52 and 22:07 frames):** a slide titled \"the second kind of label: comparisons.\" it showed three chatgpt haikus for \"write a haiku about paperclips,\" to make the point that \"it's much easier to spot a good haiku than it is to generate one.\"\n\n**from the audio:** the speaker used that to set up stage three of fine-tuning. \"in many cases it is easier to do the comparison instead of the generation… at openai this process is called reinforcement learning from human feedback or rlhf.\" the speaker called it an \"optional stage three that can gain you additional performance.\" at 22:28 they started on the instructgpt slide: \"so this is an excerpt from the paper instruct gpt by…\""
+}
