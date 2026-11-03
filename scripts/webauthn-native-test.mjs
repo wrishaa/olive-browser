@@ -80,6 +80,19 @@ try {
   await new Promise(r => setTimeout(r, 300));
   check((await prompts()).length === 0, 'no key: the prompt is gone after cancel', await prompts());
 
+  // 5b. touch id on (app.configureWebAuthn active): the macos sheet covers touch id + security
+  // keys, so olive shows no prompt. real touch id needs a provisioned signed build, so we flip
+  // the state main reads (global.olive.webauthn) for this one request and put it back.
+  const realState = await app.evaluate(() => global.olive.webauthn);
+  await app.evaluate(() => { global.olive.webauthn = { enabled: true, group: 'SIMULATED.webauthn' }; });
+  await run(`window.__pk = (async () => { const ac = new AbortController(); setTimeout(() => ac.abort(), 3000); return reg('touch-id-on', { signal: ac.signal, timeout: 60000, sel: { authenticatorAttachment: 'cross-platform' } }); })(); 1`);
+  let tiSeen = [];
+  t0 = Date.now();
+  while (Date.now() - t0 < 2000) { tiSeen = await prompts(); if (tiSeen.length) break; await new Promise(r => setTimeout(r, 100)); }
+  const tiR = await run('window.__pk', 6000);
+  await app.evaluate((_, s) => { global.olive.webauthn = s; }, realState);
+  check(tiSeen.length === 0 && tiR.ok === false && tiR.name === 'AbortError', 'touch id on: no olive prompt (macos sheet covers it), page abort still ends the call', { tiSeen, tiR });
+
   // 1. nobody answers (--skip-hang: leave out, to check 2/3 alone on an old build)
   if (!process.argv.includes('--skip-hang')) {
   let t0 = Date.now();

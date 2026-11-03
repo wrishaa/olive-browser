@@ -9,6 +9,8 @@
 // waits for a security key, src/ui/webauthn-preload.js asks for a 'passkey' prompt here (async
 // ipc, not sendSync: the page keeps running). it only has Cancel, which ends the page's call
 // with NotAllowedError; the page ends the prompt itself when the call settles.
+// with touch id on (app.configureWebAuthn, mgr.webauthn.enabled) macos shows its own sheet for
+// touch id and security keys, so we stay out of the way and show nothing.
 const { WebContentsView, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
 const D = require('../core/page-dialogs');
@@ -62,7 +64,9 @@ class PageDialogs {
 
   // a page's webauthn request is waiting for an authenticator: show "insert your security key"
   passkey(e, pid, op, rpId) {
-    const n = D.passkey(op, rpId);
+    const touchId = this.mgr.webauthn?.enabled === true;
+    if (touchId) return; // the macos webauthn sheet covers touch id + security keys
+    const n = D.passkey(op, rpId, { touchId });
     if (!n || !Number.isInteger(pid)) return;
     const wc = e.sender;
     this.wire(wc);

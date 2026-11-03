@@ -186,3 +186,29 @@ test('passkey prompt: shown over the tab with only Cancel; Cancel tells that fra
   assert.equal(frame.sent.length, 1);
   assert.ok(!host.contentView.children.includes(entry.view));
 });
+
+test('passkey prompt: touch id on (app.configureWebAuthn) shows nothing, the macos sheet does it; off shows it', async () => {
+  assert.match(D.passkey('get', 'a.com').message, /Touch ID/);
+  assert.doesNotMatch(D.passkey('get', 'a.com', { touchId: true }).message, /Touch ID/);
+  assert.match(D.passkey('get', 'a.com', { touchId: true }).message, /security key/);
+  const fake = fakeElectron();
+  const { PageDialogs } = load(fake);
+  const wcA = new fake.WC('https://webauthn.io/');
+  const host = new fake.Host();
+  const w = { win: host, destroyed: false, tabs: new Map([[1, { id: 1, wc: wcA }]]), activeId: 1, panes: [{ id: 1, page: { x: 260, y: 8, width: 500, height: 580 } }], overlay: null, ui: { webContents: new fake.WC('ui') } };
+  const mgr = { windows: [w], webauthn: { enabled: true, group: 'GLUU6G59Y3.com.reframe.olive.webauthn' } };
+  const pd = new PageDialogs(mgr);
+  const frame = { url: wcA.getURL(), parent: null, sent: [], send(ch, id) { this.sent.push([ch, id]); }, isDestroyed: () => false };
+  const ev = { sender: wcA, senderFrame: frame };
+  fake.listeners['olive:webauthn-prompt'](ev, 1, 'create', 'webauthn.io');
+  await new Promise((r) => setImmediate(r));
+  assert.equal(pd.list().length, 0, 'touch id on: no olive prompt');
+  assert.ok(!pd.views.get(host), 'touch id on: no dialog view');
+  fake.listeners['olive:webauthn-prompt-end'](ev, 1); // harmless
+  assert.equal(frame.sent.length, 0);
+  mgr.webauthn = { enabled: false, reason: 'binary not signed with a *.webauthn keychain-access-groups entitlement' };
+  fake.listeners['olive:webauthn-prompt'](ev, 2, 'create', 'webauthn.io');
+  await new Promise((r) => setImmediate(r));
+  assert.equal(pd.list().length, 1, 'touch id off: olive prompt shows');
+  assert.match(pd.list()[0].message, /Touch ID/);
+});

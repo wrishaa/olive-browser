@@ -42,14 +42,18 @@ function normalize(kind, message, value) {
 
 // a passkey prompt (not a page dialog: electron has no webauthn ui, see
 // src/ui/webauthn-preload.js): what to say while a create/get waits for a security key
-function passkey(op, rpId) {
+// touchId: app.configureWebAuthn is on, so don't say touch id is unsupported (main doesn't
+// show this prompt at all then; the macos sheet does it).
+function passkey(op, rpId, { touchId = false } = {}) {
   if (op !== 'create' && op !== 'get') return null;
   const rp = clip(typeof rpId === 'string' ? rpId.trim() : '', 253);
   const site = rp || 'this site';
   return {
     op,
     title: op === 'create' ? `Create a passkey for ${site}` : `Sign in to ${site} with a passkey`,
-    message: 'Insert your security key and touch it.\n\nOlive can’t use passkeys saved in iCloud Keychain, on this Mac with Touch ID, or on a phone yet.',
+    message: touchId
+      ? 'Insert your security key and touch it.\n\nOlive can’t use passkeys saved in iCloud Keychain or on a phone yet.'
+      : 'Insert your security key and touch it.\n\nOlive can’t use passkeys saved in iCloud Keychain, on this Mac with Touch ID, or on a phone yet.',
   };
 }
 
