@@ -40,11 +40,19 @@ function configure(app, { platform = process.platform, execPath = process.execPa
   if (typeof app.configureWebAuthn !== 'function') return { enabled: false, reason: 'electron has no configureWebAuthn' };
   const group = pickGroup(readOwnGroups(execPath), env.OLIVE_WEBAUTHN_GROUP);
   if (!group) return { enabled: false, reason: 'binary not signed with a *.webauthn keychain-access-groups entitlement' };
-  try {
-    // macOS shows: "Olive" is trying to sign in to example.com
-    app.configureWebAuthn({ touchID: { keychainAccessGroup: group, promptReason: 'sign in to $1' } });
-    return { enabled: true, group };
-  } catch (err) { return { enabled: false, group, reason: String(err?.message || err) }; }
+  // macOS shows: "Olive" is trying to sign in to example.com
+  const opts = { touchID: { keychainAccessGroup: group, promptReason: 'sign in to $1' } };
+  const state = { enabled: true, group };
+  const apply = () => {
+    try { app.configureWebAuthn(opts); }
+    catch (err) { state.enabled = false; state.reason = String(err?.message || err); }
+  };
+  // electron 44 crashes (SIGTRAP in the main process) when configureWebAuthn runs before
+  // `ready`; measured on a signed build with the entitlement. so defer it to whenReady.
+  // main.js calls configure() at load, so this whenReady callback runs before the windows.
+  if (typeof app.isReady === 'function' && !app.isReady() && typeof app.whenReady === 'function') app.whenReady().then(apply);
+  else apply();
+  return state;
 }
 
 // label for one account in the chooser

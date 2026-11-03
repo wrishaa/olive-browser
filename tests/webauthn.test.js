@@ -46,6 +46,19 @@ test('touch id is only configured when the binary carries a .webauthn keychain g
   assert.deepEqual(webauthn.configure(throwing, { platform: 'darwin', execPath: tmpBinary(['GLUU6G59Y3.com.reframe.olive.webauthn']), env: {} }).reason, 'nope');
 });
 
+test('configureWebAuthn waits for app ready (electron 44 crashes when called before ready)', async () => {
+  let ready; const whenReady = new Promise(r => { ready = r; });
+  const app = { ...fakeApp(), isReady: () => false, whenReady: () => whenReady };
+  const r = webauthn.configure(app, { platform: 'darwin', execPath: tmpBinary(['GLUU6G59Y3.com.reframe.olive.webauthn']), env: {} });
+  assert.equal(r.enabled, true); assert.equal(app.calls.length, 0, 'not called before ready');
+  ready(); await whenReady; await null;
+  assert.equal(app.calls.length, 1, 'called once ready');
+  const late = { isReady: () => false, whenReady: () => Promise.resolve(), configureWebAuthn() { throw new Error('late nope'); } };
+  const s = webauthn.configure(late, { platform: 'darwin', execPath: tmpBinary(['GLUU6G59Y3.com.reframe.olive.webauthn']), env: {} });
+  await Promise.resolve(); await null;
+  assert.equal(s.enabled, false); assert.equal(s.reason, 'late nope');
+});
+
 function picker(response) {
   const ses = new EventEmitter(), shown = [];
   const dialog = { showMessageBox: async (...a) => { shown.push(a); if (response instanceof Error) throw response; return { response }; } };
