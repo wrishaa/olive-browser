@@ -10,6 +10,7 @@ const { commandSuggestions, isAppCommand } = require('../core/app-commands');
 const { parseSettingsUrl, isOliveUrl } = require('../core/olive-url');
 const { blockedNavigation } = require('./internal-pages');
 const { wirePageDragRegions } = require('./page-drag-regions');
+const { wirePopupZoom } = require('./popup-zoom');
 // sidebar icons for olive:// tabs (they have no site favicon): one per page, so Settings,
 // uBO, the ledger, profiles and setup are told apart at a glance
 const svgIcon = (body) => 'data:image/svg+xml,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none" stroke="#6b7f3a" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">${body}</svg>`);
@@ -330,6 +331,8 @@ class OliveWindow {
     wirePageDragRegions(wc);
     wc.setVisualZoomLevelLimits(1, 4).catch(() => {});
 
+    // real popups: double-click the thin border to fill the screen and back (popup-zoom.js)
+    wc.on('did-create-window', (child) => wirePopupZoom(child));
     wc.setWindowOpenHandler(({ url, disposition, features }) => {
       // web pages can't open olive:// (or the extension pages behind it)
       if (blockedNavigation(wc.getURL(), url, this.mgr.internal)) return { action: 'deny' };
