@@ -10,6 +10,7 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const { AgentWake, withTimeout } = require('./agent-wake');
+const { guardFor, sendGuarded } = require('./cdp-guard');
 
 // agents work in the background: no call here may focus a window, activate the
 // app, or (unless asked) change the tab the user is looking at.
@@ -45,7 +46,11 @@ function startAgentApi(mgr, port, dir) {
   mgr.agentTokenFile = file;
   mgr.agentWake = mgr.agentWake || new AgentWake();
   const server = http.createServer((req, res) => {
-    handle(mgr, req, res, token).catch((err) => send(res, err?.code === 'ETIMEDOUT' ? 504 : 500, { error: String(err?.message || err) }));
+    handle(mgr, req, res, token).catch((err) => {
+      // browser-wide cookie / storage clears (src/main/cdp-guard.js)
+      if (err?.code === 'OLIVE_CDP_BLOCKED') return send(res, 403, { error: err.message, blocked: true, method: err.method, why: err.why });
+      send(res, err?.code === 'ETIMEDOUT' ? 504 : 500, { error: String(err?.message || err) });
+    });
   });
   return new Promise((resolve) => {
     server.once('error', (err) => {
@@ -99,7 +104,7 @@ const HELP = {
     'POST /tabs/:id/navigate {url, frames?}': 'load a url or search text, waits for load',
     'POST /tabs/:id/back | /forward | /reload | /close {frames?}': '',
     'POST /tabs/:id/eval {expression, frames?}': 'run js in the page (awaits promises), returns {result}. a background tab runs timers at full speed during a step but draws ~1 frame/s; frames: true also draws at full frame rate (~60/s) for that step only',
-    'POST /tabs/:id/cdp {method, params, timeout?, frames?}': 'send any CDP command to this tab via the built-in debugger (times out after `timeout` ms, default 15000, with 504). a size set with Emulation.setDeviceMetricsOverride is kept until you clear it',
+    'POST /tabs/:id/cdp {method, params, timeout?, frames?}': 'send any CDP command to this tab via the built-in debugger. browser-wide cookie / storage clears are refused with 403 (Network.clearBrowserCookies, Storage.clearCookies, Storage.clearDataForOrigin with "*"/empty origin, Network.deleteCookies without url/domain, ...): delete per site instead (Network.deleteCookies {name, url|domain}, Storage.clearDataForOrigin {origin}). (times out after `timeout` ms, default 15000, with 504). a size set with Emulation.setDeviceMetricsOverride is kept until you clear it',
     'POST /tabs/:id/frames {on?, ms?}': 'full frame rate for a background tab for `ms` (default 30000, max 600000), e.g. to watch an animation or video; on: false ends it now. off by default; ends by itself. returns {frames, framesUntil}',
     'GET /tabs/:id/screenshot': 'png of the page, works for background tabs without waking them',
     'GET /tabs/:id/text': 'document.body.innerText',
@@ -210,10 +215,12 @@ async function handle(mgr, req, res, token) {
         const timeout = Number(b.timeout) > 0 ? Number(b.timeout) : CDP_TIMEOUT_MS;
         tab.agentCdp = true; // the agent owns this debugger session now: keep it attached
         const method = String(b.method);
+        const params = b.params || {};
+        guardFor(tab.wc.debugger).check(method, params); // refuse before waking the tab
         const result = await mgr.agentWake.step(win, tab, async () => {
           const dbg = tab.wc.debugger;
           if (!dbg.isAttached()) dbg.attach('1.3');
-          const sent = dbg.sendCommand(method, b.params || {});
+          const sent = sendGuarded(dbg, method, params);
           // a hidden view only draws when something asks for a frame: on a static
           // page Page.captureScreenshot waits forever. a stayHidden capturePage
           // makes the compositor draw without showing or unthrottling the page.
@@ -222,7 +229,7 @@ async function handle(mgr, req, res, token) {
           const pump = method === 'Page.captureScreenshot' && !win.visibleIds().includes(tab.id) ? pumpFrames(tab.wc, stop) : null;
           try {
             const r = await withTimeout(sent, timeout, `cdp ${method}`);
-            mgr.agentWake.noteCdp(tab, method, b.params);
+            mgr.agentWake.noteCdp(tab, method, params);
             return r;
           } finally {
             stop.done = true;
@@ -348,7 +355,7 @@ async function targetIdFor(tab) {
     const dbg = wc.debugger;
     const attached = dbg.isAttached();
     if (!attached) dbg.attach('1.3');
-    const { targetInfo } = await dbg.sendCommand('Target.getTargetInfo');
+    const { targetInfo } = await sendGuarded(dbg, 'Target.getTargetInfo');
     if (!attached) dbg.detach();
     tab.targetId = targetInfo.targetId;
   } catch {

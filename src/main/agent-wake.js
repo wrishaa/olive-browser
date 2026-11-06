@@ -21,6 +21,8 @@
 // /cdp, see noteCdp) wins over ours and is kept between steps: clearing it
 // would relayout the page to 0x0 under the agent (and hang the next capture).
 
+const { sendGuarded } = require('./cdp-guard');
+
 function withTimeout(promise, ms, label = 'operation') {
   if (!(ms > 0) || !Number.isFinite(ms)) return Promise.resolve(promise);
   let t;
@@ -130,15 +132,15 @@ class AgentWake {
       s.awake = true;
       if (!tab.agentMetrics) {
         const r = win.hiddenPaneRect?.() || { width: 1200, height: 800 };
-        await withTimeout(dbg.sendCommand('Emulation.setDeviceMetricsOverride', { width: r.width, height: r.height, deviceScaleFactor: 0, mobile: false }), this.cmdTimeoutMs, 'size override');
+        await withTimeout(sendGuarded(dbg, 'Emulation.setDeviceMetricsOverride', { width: r.width, height: r.height, deviceScaleFactor: 0, mobile: false }), this.cmdTimeoutMs, 'size override');
       } else if (fresh) {
         // a fresh session lost the agent's override (detach drops it): put it back
-        await withTimeout(dbg.sendCommand('Emulation.setDeviceMetricsOverride', tab.agentMetrics), this.cmdTimeoutMs, 'size override');
+        await withTimeout(sendGuarded(dbg, 'Emulation.setDeviceMetricsOverride', tab.agentMetrics), this.cmdTimeoutMs, 'size override');
       }
     }
     if (focus && !s.focused) {
       s.focused = true;
-      await withTimeout(dbg.sendCommand('Emulation.setFocusEmulationEnabled', { enabled: true }), this.cmdTimeoutMs, 'focus emulation');
+      await withTimeout(sendGuarded(dbg, 'Emulation.setFocusEmulationEnabled', { enabled: true }), this.cmdTimeoutMs, 'focus emulation');
     }
     if (frames && !s.frames) {
       s.frames = true;
@@ -175,8 +177,8 @@ class AgentWake {
     const dbg = wc.debugger;
     if (!dbg.isAttached()) return;
     if (attachedByUs) { try { dbg.detach(); } catch {} return; } // detaching drops every override, and idle discarding sees the tab again
-    if (focused) { try { await withTimeout(dbg.sendCommand('Emulation.setFocusEmulationEnabled', { enabled: false }), this.cmdTimeoutMs, 'focus emulation off'); } catch {} }
-    if (!tab.agentMetrics) { try { await withTimeout(dbg.sendCommand('Emulation.clearDeviceMetricsOverride', {}), this.cmdTimeoutMs, 'clear size override'); } catch {} }
+    if (focused) { try { await withTimeout(sendGuarded(dbg, 'Emulation.setFocusEmulationEnabled', { enabled: false }), this.cmdTimeoutMs, 'focus emulation off'); } catch {} }
+    if (!tab.agentMetrics) { try { await withTimeout(sendGuarded(dbg, 'Emulation.clearDeviceMetricsOverride', {}), this.cmdTimeoutMs, 'clear size override'); } catch {} }
   }
 
   // an agent step is running on tab or it is still awake from one (tab unloading exempts it)
