@@ -16,6 +16,11 @@ const shotDir = path.join(repo, 'notes/test-shots/olive-tab-scenarios/fixed');
 const wantShot = process.argv.includes('--shot');
 const root = fs.mkdtempSync(path.join(os.tmpdir(), 'olive-popup-zoom-fixture-'));
 fs.writeFileSync(path.join(root, 'onboarding.json'), JSON.stringify({ version: 1, step: 'done', completed: true }));
+// No focus grabs: boot through scripts/no-focus-preload.cjs (show() -> showInactive(), focus()/app.focus() no-ops,
+// activation policy 'prohibited'), so the fixture never comes to the front over the user's olive. Input is CDP, not OS.
+const boot = path.join(root, 'boot');
+fs.mkdirSync(boot);
+fs.writeFileSync(path.join(boot, 'package.json'), JSON.stringify({ name: 'olive-popup-zoom-fixture', main: path.join(repo, 'scripts/no-focus-preload.cjs') }));
 const results = [];
 const check = (yes, label, detail) => { results.push({ ok: !!yes, label, detail }); console.log((yes ? 'PASS ' : 'FAIL ') + label + (yes ? '' : ' ' + JSON.stringify(detail))); };
 const pause = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -28,7 +33,7 @@ const same = (a, b) => ['x', 'y', 'width', 'height'].every((k) => a[k] === b[k])
 try {
   await new Promise((r) => server.listen(0, '127.0.0.1', r));
   const base = 'http://127.0.0.1:' + server.address().port;
-  app = await _electron.launch({ executablePath: path.join(repo, 'node_modules/electron/dist/Electron.app/Contents/MacOS/Electron'), args: [repo], cwd: repo, env: { ...process.env, OLIVE_USER_DATA_DIR: root, OLIVE_PROFILE: 'popup-zoom-regression', OLIVE_CDP: '1', OLIVE_CDP_PORT: '0', OLIVE_API_PORT: '0' }, timeout: 30000 });
+  app = await _electron.launch({ executablePath: path.join(repo, 'node_modules/electron/dist/Electron.app/Contents/MacOS/Electron'), args: [boot], cwd: repo, env: { ...process.env, OLIVE_FIXTURE_MAIN: path.join(repo, 'src/main/main.js'), OLIVE_USER_DATA_DIR: root, OLIVE_PROFILE: 'popup-zoom-regression', OLIVE_CDP: '1', OLIVE_CDP_PORT: '0', OLIVE_API_PORT: '0' }, timeout: 30000 });
   await app.evaluate(async ({ BrowserWindow }, base) => {
     while (!global.olive?.ready) await new Promise((r) => setTimeout(r, 50));
     global.olive.onboarding.close();
