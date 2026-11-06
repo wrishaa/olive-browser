@@ -3,7 +3,7 @@ import os from 'node:os';
 import path from 'node:path';
 import http from 'node:http';
 import { fileURLToPath } from 'node:url';
-import { _electron } from 'playwright-core';
+import { _electron, chromium } from 'playwright-core';
 // browser-wide cookie / storage clears are blocked on the agent api (src/main/cdp-guard.js);
 // per-site deletes and clears inside a throwaway Target.createBrowserContext still work.
 // disposable electron fixture only (temp OLIVE_USER_DATA_DIR, api port 0, no raw cdp port);
@@ -107,6 +107,73 @@ try {
   // the agent api still works for ordinary cdp
   r = await cdp('Runtime.evaluate', { expression: '1+1', returnByValue: true });
   check(r.status === 200 && r.json?.result?.result?.value === 2, 'ordinary cdp commands still pass', { status: r.status });
+
+  // phase 2: the opt-in raw cdp port goes through olive's guarded proxy (src/main/cdp-proxy.js)
+  await app.close(); app = null;
+  app = await _electron.launch({ executablePath: path.join(repo, 'node_modules/electron/dist/Electron.app/Contents/MacOS/Electron'), args: [repo], cwd: repo, env: { ...process.env, OLIVE_USER_DATA_DIR: root, OLIVE_PROFILE: 'cdp-guard-regression', OLIVE_CDP: '1', OLIVE_CDP_PORT: '0', OLIVE_API_PORT: '0' }, timeout: 30000 });
+  const px = await app.evaluate(async () => { while (!global.olive?.ready || !global.olive.apiPort) await new Promise((r) => setTimeout(r, 50)); global.olive.onboarding.close(); return { cdp: global.olive.cdpPort, raw: global.olive.cdpRawPort, agent: global.olive.agentInfo().cdp }; });
+  check(px.cdp && px.raw && px.cdp !== px.raw && ![9222, 9333].includes(px.cdp) && px.agent === `http://127.0.0.1:${px.cdp}`, 'raw cdp is advertised on olive\'s proxy port, chromium\'s own port is a different one', px);
+  const ver = await (await fetch(`http://127.0.0.1:${px.cdp}/json/version`)).json();
+  check(ver.webSocketDebuggerUrl?.startsWith(`ws://127.0.0.1:${px.cdp}/`), '/json/version through the proxy points websockets at the proxy', { url: ver.webSocketDebuggerUrl?.replace(/[0-9a-f-]{36}/, '<id>') });
+  check(fs.readFileSync(path.join(root, 'DevToolsActivePort'), 'utf8').split('\n')[0] === String(px.cdp), 'DevToolsActivePort names the proxy port');
+  await seed();
+  const api2 = async (method, route, body) => (await fetch(`http://127.0.0.1:${(await app.evaluate(() => global.olive.apiPort))}${route}`, { method, headers: { authorization: `Bearer ${fs.readFileSync(path.join(root, 'agent-token'), 'utf8').trim()}`, 'content-type': 'application/json' }, body: JSON.stringify(body) })).json();
+  const t2 = await api2('POST', '/tabs', { url: A + '/' });
+  check(t2.targetId, 'opened a fixture tab after relaunch', { id: t2.id });
+  const ws = new WebSocket(ver.webSocketDebuggerUrl);
+  await new Promise((r, j) => { ws.onopen = r; ws.onerror = j; });
+  let seq = 0; const waiting = new Map();
+  ws.onmessage = (e) => { const m = JSON.parse(e.data); if (m.id != null && waiting.has(m.id)) { waiting.get(m.id)(m); waiting.delete(m.id); } };
+  const raw = (method, params = {}, sessionId) => new Promise((r) => { const id = ++seq; waiting.set(id, r); ws.send(JSON.stringify({ id, method, params, ...(sessionId ? { sessionId } : {}) })); });
+  const att = await raw('Target.attachToTarget', { targetId: t2.targetId, flatten: true });
+  const sid = att.result?.sessionId;
+  check(sid, 'attached a flat session to the fixture page through the proxy', { error: att.error?.message });
+  const pbase = await counts();
+  for (const [method, params, session] of [
+    ['Storage.clearCookies', {}], ['STORAGE.clearcookies', {}], ['Network.clearBrowserCookies', {}, sid], ['network.clearbrowsercookies', {}, sid],
+    ['Storage.clearDataForOrigin', { origin: '*', storageTypes: 'all' }], ['Storage.clearDataForOrigin', { origin: '', storageTypes: 'all' }, sid],
+    ['Storage.clearCookies', { browserContextId: 'not-a-created-context' }],
+    ['Target.sendMessageToTarget', { sessionId: sid, message: JSON.stringify({ id: 9, method: 'Network.clearBrowserCookies' }) }],
+  ]) {
+    await seed();
+    const r = await raw(method, params, session);
+    const after = await counts();
+    check(r.error?.message === BLOCK && after.total === pbase.total && after.a === pbase.a, `raw port: ${method}${session ? ' (flat session)' : ''} ${JSON.stringify(params).slice(0, 40)} refused, cookie count unchanged`, { error: r.error?.message, before: pbase, after });
+  }
+  await seed();
+  let q = await raw('Network.deleteCookies', { name: 'a1', url: A + '/' }, sid);
+  let qc = await counts();
+  check(!q.error && qc.a === 2 && qc.b === 2, 'raw port: per-site Network.deleteCookies works', { error: q.error?.message, qc });
+  // (the browser target's Storage acts on chromium's default context, not olive's
+  // persist:olive session: per-site clears go through the page's session)
+  q = await raw('Storage.clearDataForOrigin', { origin: B, storageTypes: 'cookies' }, sid);
+  qc = await counts();
+  check(!q.error && qc.b === 0 && qc.a === 2, 'raw port: Storage.clearDataForOrigin on one real origin clears only it', { error: q.error?.message, qc });
+  q = await raw('Target.createBrowserContext', { disposeOnDetach: true });
+  const pctx = q.result?.browserContextId;
+  // electron doesn't implement Target.createBrowserContext ("Failed to create browser
+  // context."): the context exemption is unit-tested; here olive just must not be the one refusing
+  check(pctx || (q.error && q.error.message !== BLOCK), 'raw port: Target.createBrowserContext not refused by olive', { error: q.error?.message });
+  if (pctx) {
+    await raw('Storage.setCookies', { browserContextId: pctx, cookies: [{ name: 't1', value: 'x', domain: 'localhost', path: '/' }, { name: 't2', value: 'x', domain: 'localhost', path: '/' }] });
+    const before = (await raw('Storage.getCookies', { browserContextId: pctx })).result?.cookies?.length;
+    q = await raw('Storage.clearCookies', { browserContextId: pctx });
+    const left = (await raw('Storage.getCookies', { browserContextId: pctx })).result?.cookies?.length;
+    qc = await counts();
+    check(before === 2 && !q.error && left === 0 && qc.a === 2, 'raw port: Storage.clearCookies inside the created context clears it, profile untouched', { before, error: q.error?.message, left, qc });
+    await raw('Target.disposeBrowserContext', { browserContextId: pctx });
+    q = await raw('Storage.clearCookies', { browserContextId: pctx });
+    check(q.error?.message === BLOCK, 'raw port: a disposed context no longer unlocks Storage.clearCookies', { error: q.error?.message });
+  }
+  // a second connection didn't create that context
+  ws.close();
+  const pw = await chromium.connectOverCDP(`http://127.0.0.1:${px.cdp}`);
+  const pwPages = pw.contexts().flatMap((c) => c.pages()).filter((p) => p.url().startsWith(A));
+  check(pwPages.length >= 1 && (await pwPages[0].evaluate(() => 1 + 1)) === 2, 'playwright connectOverCDP works through the proxy');
+  let pwErr = null; try { const s2 = await pwPages[0].context().newCDPSession(pwPages[0]); await s2.send('Network.clearBrowserCookies'); } catch (e) { pwErr = String(e.message); }
+  qc = await counts();
+  check(pwErr?.includes(BLOCK) && qc.a === 2, 'playwright cdp session: Network.clearBrowserCookies refused, cookie count unchanged', { pwErr: pwErr?.slice(0, 120), qc });
+  await pw.close().catch(() => {});
 } catch (error) { results.push({ ok: false, label: 'test exception', detail: String(error.stack || error) }); console.error(error); }
 finally {
   if (app) await app.close().catch(() => {});

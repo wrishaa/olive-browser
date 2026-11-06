@@ -39,9 +39,15 @@ if (settingsMigrated) saveSettings(); // legacy discardMinutes / old cap default
 // browser, and google sign-in treats debuggable chromium as automated. turn it on with
 // the Developer menu toggle (persists, needs a relaunch), OLIVE_CDP=1, or --cdp.
 const cdpEnabled = settings.cdp || process.env.OLIVE_CDP === '1' || process.argv.includes('--cdp');
+// chromium's own port is never advertised: it listens on a random loopback port and olive's
+// filtering proxy (src/main/cdp-proxy.js, same guard as the agent api: no browser-wide
+// cookie / storage clears) takes the advertised one (9222 when free).
 const wantCdp = Number(process.env.OLIVE_CDP_PORT || 9222);
-const cdpPortArg = wantCdp && portFree(wantCdp) ? wantCdp : 0; // 0 = let chromium pick, read DevToolsActivePort
-if (cdpEnabled) app.commandLine.appendSwitch('remote-debugging-port', String(cdpPortArg));
+const cdpPortArg = wantCdp && portFree(wantCdp) ? wantCdp : 0; // the proxy's port; 0 = random
+if (cdpEnabled) {
+  try { fs.unlinkSync(path.join(app.getPath('userData'), 'DevToolsActivePort')); } catch {} // a stale one would point at last run's port
+  app.commandLine.appendSwitch('remote-debugging-port', '0');
+}
 // passkeys: touch id platform authenticator when the signed app carries the keychain group
 // (src/main/webauthn.js). off in dev electron / unsigned builds.
 const webauthn = require('./webauthn');
@@ -437,7 +443,26 @@ class Manager {
       } catch {}
       await new Promise((r) => setTimeout(r, 100));
     }
-    return cdpPortArg || null;
+    return null;
+  }
+
+  // chromium's real port -> olive's guarded proxy port, also written to DevToolsActivePort
+  // so tools that read that file get the proxy too
+  async startCdpProxy() {
+    const raw = await this.discoverCdpPort();
+    if (!raw) return null;
+    const file = path.join(app.getPath('userData'), 'DevToolsActivePort');
+    try {
+      const proxy = await require('./cdp-proxy').startCdpProxy({ upstreamPort: raw, port: cdpPortArg, log: (m) => console.log('[olive] cdp guard:', m) });
+      this.cdpProxy = proxy;
+      this.cdpRawPort = raw;
+      try { const lines = fs.readFileSync(file, 'utf8').split('\n'); lines[0] = String(proxy.port); fs.writeFileSync(file, lines.join('\n')); } catch {}
+      return proxy.port;
+    } catch (err) {
+      // fail closed: no proxy, no advertised cdp
+      console.error('[olive] cdp proxy failed; cdp is not advertised', err);
+      return null;
+    }
   }
 
   writeAgentFile() {
@@ -518,7 +543,7 @@ app.whenReady().then(async () => {
   for (const u of [...mgr.pendingUrls, ...argvUrls]) mgr.openUrl(u);
   mgr.pendingUrls = [];
 
-  mgr.cdpPort = await mgr.discoverCdpPort();
+  mgr.cdpPort = await mgr.startCdpProxy();
   const server = settings.agentApi ? await startAgentApi(mgr, Number(process.env.OLIVE_API_PORT || 9333), app.getPath('userData')) : null;
   mgr.apiPort = server ? server.address().port : null;
   mgr.startDiscardTimer();
