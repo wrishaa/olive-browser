@@ -10,7 +10,7 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const { AgentWake, withTimeout } = require('./agent-wake');
-const { guardFor, sendGuarded } = require('./cdp-guard');
+const { guardFor, sendGuarded, siteOrigin } = require('./cdp-guard');
 
 // agents work in the background: no call here may focus a window, activate the
 // app, or (unless asked) change the tab the user is looking at.
@@ -87,6 +87,7 @@ async function readBody(req) {
   return JSON.parse(Buffer.concat(chunks).toString('utf8'));
 }
 
+const CLEAR_SITE_STORAGES = ['cookies', 'filesystem', 'indexdb', 'localstorage', 'serviceworkers', 'cachestorage', 'websql', 'shadercache'];
 const HELP = {
   name: 'olive agent api',
   note: 'send `Authorization: Bearer <token>` on every request; the token is in agent-token next to agent.json (mode 0600). ids are olive tab ids; targetId is the CDP target id for the same page.',
@@ -104,6 +105,7 @@ const HELP = {
     'POST /tabs/:id/navigate {url, frames?}': 'load a url or search text, waits for load',
     'POST /tabs/:id/back | /forward | /reload | /close {frames?}': '',
     'POST /tabs/:id/eval {expression, frames?}': 'run js in the page (awaits promises), returns {result}. a background tab runs timers at full speed during a step but draws ~1 frame/s; frames: true also draws at full frame rate (~60/s) for that step only',
+    'POST /clear-site {origin, storages?}': 'clear one site\'s data in the main profile (cookies + site storage by default; storages: some of cookies, filesystem, indexdb, localstorage, serviceworkers, cachestorage, websql, shadercache). origin must be one http(s) origin; "*", empty or missing is refused',
     'POST /tabs/:id/cdp {method, params, timeout?, frames?}': 'send any CDP command to this tab via the built-in debugger. browser-wide cookie / storage clears are refused with 403 (Network.clearBrowserCookies, Storage.clearCookies, Storage.clearDataForOrigin with "*"/empty origin, Network.deleteCookies without url/domain, ...): delete per site instead (Network.deleteCookies {name, url|domain}, Storage.clearDataForOrigin {origin}). (times out after `timeout` ms, default 15000, with 504). a size set with Emulation.setDeviceMetricsOverride is kept until you clear it',
     'POST /tabs/:id/frames {on?, ms?}': 'full frame rate for a background tab for `ms` (default 30000, max 600000), e.g. to watch an animation or video; on: false ends it now. off by default; ends by itself. returns {frames, framesUntil}',
     'GET /tabs/:id/screenshot': 'png of the page, works for background tabs without waking them',
@@ -297,6 +299,16 @@ async function handle(mgr, req, res, token) {
     return send(res, 200, mgr.history.list({ query: url.searchParams.get('q') || '', limit: Number(url.searchParams.get('limit') || 100) }));
   }
   if (parts[0] === 'downloads' && m === 'GET') return send(res, 200, mgr.downloads);
+  if (parts[0] === 'clear-site' && parts.length === 1 && m === 'POST') {
+    // per-site clear (the safe alternative to the refused browser-wide cdp clears)
+    const b = await readJson(req);
+    const origin = siteOrigin(b.origin);
+    if (!origin) return send(res, 400, { error: 'origin must be one http(s) origin like "https://example.com" (no "*", empty, path, list or other scheme)' });
+    const storages = Array.isArray(b.storages) ? b.storages.filter((x) => CLEAR_SITE_STORAGES.includes(x)) : CLEAR_SITE_STORAGES;
+    if (!storages.length) return send(res, 400, { error: `storages must be some of ${CLEAR_SITE_STORAGES.join(', ')}` });
+    await mgr.session.clearStorageData({ origin, storages });
+    return send(res, 200, { ok: true, origin, storages });
+  }
   if (parts[0] === 'discard' && m === 'POST') {
     const b = await readJson(req);
     return send(res, 200, { discarded: mgr.discardIdleTabs({ olderThanMinutes: b.olderThanMinutes ?? null }) });

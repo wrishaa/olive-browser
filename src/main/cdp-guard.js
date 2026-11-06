@@ -35,6 +35,17 @@ function realStorageKey(value) {
   if (typeof value !== 'string' || !value.trim() || value.includes('*')) return false;
   return realOrigin(value.split('^')[0]);
 }
+// POST /clear-site: exactly one http(s) origin ("https://a.test", trailing slash ok), lower-cased.
+// no wildcard, path, query, credentials, lists or other schemes. returns null when refused.
+function siteOrigin(value) {
+  if (typeof value !== 'string') return null;
+  const v = value.trim();
+  if (!v || /[*,\s]/.test(v)) return null;
+  let u; try { u = new URL(v); } catch { return null; }
+  if (!/^https?:$/.test(u.protocol) || !u.hostname || u.username || u.password || u.search || u.hash || (u.pathname !== '/' && u.pathname !== '')) return null;
+  if (!/^https?:\/\/[^/?#]+\/?$/i.test(v)) return null;
+  return u.origin;
+}
 const nonEmpty = (v) => typeof v === 'string' && v.trim() !== '' && !v.includes('*');
 
 class CdpGuard {
@@ -126,4 +137,4 @@ function guardFor(target) {
 // the guarded way to talk to a webContents.debugger
 const sendGuarded = (dbg, method, params, sessionId) => guardFor(dbg).send(dbg, method, params, sessionId);
 
-module.exports = { CdpGuard, CdpBlockedError, BLOCK_MESSAGE, NESTED_MESSAGE, guardFor, sendGuarded, realOrigin, realStorageKey };
+module.exports = { CdpGuard, CdpBlockedError, BLOCK_MESSAGE, NESTED_MESSAGE, guardFor, sendGuarded, realOrigin, realStorageKey, siteOrigin };

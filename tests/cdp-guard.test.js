@@ -89,3 +89,15 @@ test('every cdp sendCommand in src/main goes through the guard', () => {
     assert.ok(!/\.sendCommand\s*\(/.test(src), `${f} calls sendCommand directly: use sendGuarded from cdp-guard.js`);
   }
 });
+
+test('siteOrigin: one http(s) origin only, for POST /clear-site', () => {
+  const { siteOrigin } = require('../src/main/cdp-guard');
+  assert.equal(siteOrigin('https://a.test'), 'https://a.test');
+  assert.equal(siteOrigin('https://a.test/'), 'https://a.test');
+  assert.equal(siteOrigin('http://127.0.0.1:8080'), 'http://127.0.0.1:8080');
+  assert.equal(siteOrigin(' HTTPS://A.test '), 'https://a.test');
+  for (const bad of [undefined, null, '', ' ', '*', 'https://*', 'https://*.a.test', '*.a.test', 'a.test', 'file:///', 'chrome://settings', 'olive://settings',
+    'javascript:alert(1)', 'https://a.test/path', 'https://a.test?q=1', 'https://a.test#x', 'https://u:p@a.test', 'https://a.test, https://b.test', 42, ['https://a.test'], { origin: 'https://a.test' }]) {
+    assert.equal(siteOrigin(bad), null, JSON.stringify(bad));
+  }
+});
