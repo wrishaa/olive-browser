@@ -5,9 +5,12 @@
 // guard as the agent api (src/main/cdp-guard.js). a refused command never reaches
 // chromium; the client gets a normal cdp error reply for its id.
 //
-// limits: the real port still exists on loopback (any local process could scan for it),
-// so this protects tools that use the advertised url / DevToolsActivePort, not a
-// process that's out to bypass it.
+// limits: the real port still exists on loopback (any local process could scan for it,
+// e.g. lsof), so this protects tools that use the advertised url / DevToolsActivePort /
+// agent.json, not a process that's out to bypass it. --remote-debugging-pipe would remove
+// the port, but chromium reads fds 3/4 and those are taken by the time main.js runs, so it
+// needs a launcher parent process (not done). a same-user process can also just delete the
+// Cookies file, so the port is not the weakest point.
 const http = require('http');
 const net = require('net');
 const { CdpGuard } = require('./cdp-guard');
@@ -55,6 +58,16 @@ function textFrame(str) {
   const len = data.length;
   const head = len < 126 ? Buffer.from([0x81, len]) : len < 65536 ? Buffer.from([0x81, 126, len >> 8, len & 255]) : (() => { const h = Buffer.alloc(10); h[0] = 0x81; h[1] = 127; h.writeBigUInt64BE(BigInt(len), 2); return h; })();
   return Buffer.concat([head, data]);
+}
+
+// a masked client->server text frame (what olive forwards upstream: the json it checked)
+function clientTextFrame(str) {
+  const data = Buffer.from(str, 'utf8');
+  const len = data.length;
+  const head = len < 126 ? Buffer.from([0x81, 0x80 | len]) : len < 65536 ? Buffer.from([0x81, 0x80 | 126, len >> 8, len & 255]) : (() => { const h = Buffer.alloc(10); h[0] = 0x81; h[1] = 0x80 | 127; h.writeBigUInt64BE(BigInt(len), 2); return h; })();
+  const mask = require('crypto').randomBytes(4);
+  for (let i = 0; i < len; i++) data[i] ^= mask[i & 3];
+  return Buffer.concat([head, mask, data]);
 }
 
 // reassembles data messages (text or binary, fragmented or not); control frames pass alone
@@ -159,7 +172,9 @@ function startCdpProxy({ upstreamPort, port = 0, host = '127.0.0.1', log = () =>
           if (name === 'target.createbrowsercontext' || name === 'target.disposebrowsercontext') pendingNotes.set(key(msg.id, msg.sessionId), { method: msg.method, params: msg.params });
           // (a context made inside an old-style Target.sendMessageToTarget isn't learned:
           // clearing it stays refused, the safe side)
-          for (const m2 of m.raws) upstream.write(m2);
+          // forward the json the guard read, re-serialized: duplicate keys, odd escapes or a
+          // binary frame can't make chromium see something other than what was checked
+          upstream.write(clientTextFrame(JSON.stringify(msg)));
         }
       };
       const noteReply = (msg) => {
@@ -188,4 +203,4 @@ function startCdpProxy({ upstreamPort, port = 0, host = '127.0.0.1', log = () =>
   }
 }
 
-module.exports = { startCdpProxy, FrameReader, MessageReader, textFrame, rewritePorts };
+module.exports = { startCdpProxy, FrameReader, MessageReader, textFrame, clientTextFrame, rewritePorts };

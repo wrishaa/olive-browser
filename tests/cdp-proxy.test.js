@@ -34,3 +34,14 @@ test('16- and 64-bit lengths, server frames round-trip', () => {
 test('rewrites the upstream port in json', () => {
   assert.equal(rewritePorts('{"u":"ws://127.0.0.1:555/devtools/browser/x","f":"localhost:555"}', 555, 9222), '{"u":"ws://127.0.0.1:9222/devtools/browser/x","f":"localhost:9222"}');
 });
+
+test('client frames: masked text frames that the reader reads back exactly', () => {
+  const { clientTextFrame } = require('../src/main/cdp-proxy');
+  for (const s of ['{"id":1,"method":"Runtime.evaluate"}', 'x'.repeat(300), 'y'.repeat(70000)]) {
+    const f = clientTextFrame(s);
+    assert.equal(f[0], 0x81);
+    assert.ok(f[1] & 0x80, 'masked');
+    const [m] = new MessageReader().push(f);
+    assert.equal(m.data.toString('utf8'), s);
+  }
+});
